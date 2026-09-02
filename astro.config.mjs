@@ -1,18 +1,30 @@
 // @ts-check
 import { defineConfig, fontProviders } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import rehypeRaw from 'rehype-raw';
+import rehypeBaseLinks from './src/utils/rehype-base-links.mjs';
+
+// Hosted as a GitHub Pages project site under the gittower org:
+// https://gittower.github.io/swift-airframe-guide/
+// Move to a custom domain later (swiftairframe.dev / airframe.guide) by
+// dropping `base` back to '/' and adding a public/CNAME file.
+const base = '/swift-airframe-guide/';
 
 // https://astro.build/config
 export default defineConfig({
   devToolbar: {
     enabled: false,
   },
-  // TODO: update once a domain is registered (candidates: swiftairframe.dev, airframe.guide)
-  site: 'https://swift-airframe-guide.pages.dev',
+  site: 'https://gittower.github.io',
+  base,
   markdown: {
     shikiConfig: {
       theme: 'css-variables',
     },
+    // rehype-raw first: raw HTML embedded in markdown (the callout boxes,
+    // the SVG diagram, cross-reference links) otherwise stays an opaque
+    // "raw" string node, invisible to any rehype plugin that walks elements.
+    rehypePlugins: [rehypeRaw, [rehypeBaseLinks, base]],
   },
   fonts: [
     {

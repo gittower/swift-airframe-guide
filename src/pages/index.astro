@@ -28,7 +28,7 @@ const docs = (await getCollection('guide'))
   <div class="toc-grid">
     {
       docs.map((doc) => (
-        <a class="toc-card" href={`/guide/${doc.id}`}>
+        <a class="toc-card" href={`${import.meta.env.BASE_URL}guide/${doc.id}`}>
           <span class="gate">G{String(doc.data.order).padStart(2, '0')}</span>
           <h3>{doc.data.title}</h3>
           <p>{doc.data.description}</p>

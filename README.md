@@ -45,3 +45,15 @@ order: 11
 ```
 
 The sidebar, the overview grid, and prev/next navigation all derive from `order` automatically — nothing else needs to be updated by hand.
+
+## Hosting
+
+Deployed to GitHub Pages as a project site under the `gittower` org:
+
+**https://gittower.github.io/swift-airframe-guide/**
+
+Because a project site is served from a subpath rather than a domain root, the site is built with `base: '/swift-airframe-guide/'` in `astro.config.mjs`. Internal links inside `.astro` files use `import.meta.env.BASE_URL`; links written as raw HTML inside markdown content (cross-references between chapters) are rewritten automatically at build time by a small rehype plugin (`src/utils/rehype-base-links.mjs`) — nothing in the content files themselves needs to know about the base path.
+
+Deploys automatically via `.github/workflows/deploy.yml` on every push to `main`. Pages source is set to "GitHub Actions" in the repo settings, not "Deploy from a branch" — there's no `gh-pages` branch.
+
+**Moving to a custom domain later** (`swiftairframe.dev` / `airframe.guide`): drop `base` back to `'/'` in `astro.config.mjs`, remove it from the `rehypeBaseLinks` call, add a `public/CNAME` file containing the domain, and point DNS at GitHub Pages.
