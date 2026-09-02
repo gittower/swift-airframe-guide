@@ -1,0 +1,279 @@
+:root {
+  --bg: #f6efdf;
+  --bg-panel: #fffcf5;
+  --sidebar-bg: #10233e;
+  --sidebar-ink: #e7e0ce;
+  --sidebar-ink-dim: #8496b0;
+  --sidebar-line: rgba(231, 224, 206, 0.14);
+  --ink: #16233a;
+  --ink-soft: #52627a;
+  --accent: #1f78b4;
+  --accent-ink: #0b3b5c;
+  --line: #e2d6b8;
+  --pill-bg: #dceaf5;
+  --pill-ink: #0b3b5c;
+  --code-bg: #0f2036;
+  --code-border: #1c3654;
+  --code-ink: #dce6f2;
+  --shadow: 0 18px 40px -22px rgba(16, 35, 62, 0.35);
+
+  --font-display-fallback: 'Arial Narrow', Arial, sans-serif;
+  --font-body-fallback: Georgia, 'Times New Roman', serif;
+  --font-mono-fallback: 'SFMono-Regular', Consolas, monospace;
+
+  /* Shiki (code fences) — Astro's `css-variables` theme reads these
+     `--astro-code-*` names (its own prefix, not Shiki's raw `--shiki-*`). */
+  --astro-code-foreground: var(--code-ink);
+  --astro-code-background: var(--code-bg);
+  --astro-code-token-constant: #f0a6a6;
+  --astro-code-token-string: #e8c77e;
+  --astro-code-token-comment: #7488a3;
+  --astro-code-token-keyword: #7fc1f2;
+  --astro-code-token-parameter: var(--code-ink);
+  --astro-code-token-function: #f0a6a6;
+  --astro-code-token-string-expression: #e8c77e;
+  --astro-code-token-punctuation: #9fb2c9;
+  --astro-code-token-link: #7fc1f2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a1524;
+    --bg-panel: #0f1c30;
+    --sidebar-bg: #060d18;
+    --sidebar-ink: #ede6d3;
+    --sidebar-ink-dim: #5e7290;
+    --sidebar-line: rgba(237, 230, 211, 0.08);
+    --ink: #e7e1d2;
+    --ink-soft: #a6b2c4;
+    --accent: #5fb4ec;
+    --accent-ink: #bfe3fb;
+    --line: #1d2c42;
+    --pill-bg: #123350;
+    --pill-ink: #bfe3fb;
+    --code-border: #24405f;
+    --shadow: 0 18px 40px -20px rgba(0, 0, 0, 0.55);
+    --astro-code-token-punctuation: #7c8ea6;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), var(--font-body-fallback);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent-ink);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+code {
+  font-family: var(--font-mono), var(--font-mono-fallback);
+}
+
+/* ---------- Prose content shared across guide pages ---------- */
+
+.prose {
+  max-width: 900px;
+}
+
+.prose h2 {
+  font-family: var(--font-display), var(--font-display-fallback);
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin: 44px 0 14px;
+  letter-spacing: -0.005em;
+  max-width: 66ch;
+}
+
+.prose h3 {
+  font-family: var(--font-display), var(--font-display-fallback);
+  font-weight: 700;
+  font-size: 1.08rem;
+  margin: 30px 0 10px;
+  color: var(--ink);
+  max-width: 66ch;
+}
+
+.prose p {
+  max-width: 66ch;
+  margin: 0 0 16px;
+}
+
+.prose ul,
+.prose ol {
+  max-width: 66ch;
+  padding-left: 1.3em;
+  margin: 0 0 16px;
+}
+
+.prose li {
+  margin-bottom: 8px;
+}
+
+.prose li::marker {
+  color: var(--accent-ink);
+}
+
+.prose strong {
+  color: var(--ink);
+}
+
+.prose code:not(pre code) {
+  font-size: 0.86em;
+  background: var(--pill-bg);
+  color: var(--accent-ink);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+
+.prose .rule {
+  max-width: 66ch;
+  margin: 24px 0;
+  padding: 16px 20px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-panel);
+  border-radius: 0 8px 8px 0;
+  box-shadow: var(--shadow);
+}
+
+.prose .rule-label {
+  display: block;
+  font-family: var(--font-display), var(--font-display-fallback);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--accent-ink);
+  margin-bottom: 6px;
+}
+
+.prose .seealso {
+  max-width: 66ch;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  margin: 28px 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+
+.prose .seealso strong {
+  font-family: var(--font-display), var(--font-display-fallback);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.prose figure.diagram {
+  margin: 30px 0 12px;
+  max-width: 780px;
+}
+
+.prose figure.diagram svg {
+  width: 100%;
+  height: auto;
+  color: var(--ink);
+  display: block;
+}
+
+.prose figure.diagram figcaption {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  margin-top: 10px;
+  max-width: 66ch;
+}
+
+.prose pre {
+  margin: 20px 0 26px;
+  max-width: 780px;
+  border-radius: 10px;
+  overflow-x: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--code-border);
+  box-shadow: var(--shadow);
+}
+
+.prose pre code {
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.92rem;
+  background: var(--bg-panel);
+  box-shadow: var(--shadow);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 22px 0 28px;
+  max-width: 780px;
+}
+
+.prose .table-scroll {
+  overflow-x: auto;
+  margin: 22px 0 28px;
+  max-width: 780px;
+}
+
+.prose .table-scroll table {
+  margin: 0;
+}
+
+.prose thead th {
+  text-align: left;
+  font-family: var(--font-display), var(--font-display-fallback);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  background: var(--pill-bg);
+  padding: 10px 14px;
+}
+
+.prose tbody td {
+  padding: 11px 14px;
+  border-top: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.prose .pill {
+  display: inline-block;
+  font-family: var(--font-mono), var(--font-mono-fallback);
+  font-size: 0.76rem;
+  background: var(--pill-bg);
+  color: var(--pill-ink);
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}

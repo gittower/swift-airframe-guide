@@ -1,0 +1,142 @@
+---
+import { getCollection } from 'astro:content';
+import ShellLayout from '../layouts/ShellLayout.astro';
+
+const docs = (await getCollection('guide'))
+  .filter((d) => !d.data.draft)
+  .sort((a, b) => a.data.order - b.data.order);
+---
+
+<ShellLayout
+  title="Swift Airframe"
+  description="A layered architecture guide for native macOS apps — where state lives, who is allowed to mutate it, and what happens when the app launches."
+>
+  <header class="masthead">
+    <p class="eyebrow">The Airframe Guide</p>
+    <h1>Build on the Airframe.</h1>
+    <p class="doc-sub">
+      Swift Airframe is a layered architecture for native <strong>macOS</strong> apps — AppKit as
+      the skeleton, SwiftUI hosted inside it as a rendering layer. Every native app has an
+      airframe underneath its interface — the structure everything else is riveted to. Ten
+      chapters: how the layers fit together, how the app comes off the ground, where state lives,
+      how a user's intent becomes a change in that state, and how the interface, menus,
+      navigation, and test suite all follow from the same handful of rules.
+    </p>
+    <div class="horizon"></div>
+  </header>
+
+  <div class="toc-grid">
+    {
+      docs.map((doc) => (
+        <a class="toc-card" href={`/guide/${doc.id}`}>
+          <span class="gate">G{String(doc.data.order).padStart(2, '0')}</span>
+          <h3>{doc.data.title}</h3>
+          <p>{doc.data.description}</p>
+        </a>
+      ))
+    }
+  </div>
+</ShellLayout>
+
+<style>
+  .masthead {
+    padding: 72px 64px 44px;
+    max-width: 900px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--accent-ink);
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-weight: 800;
+    font-size: clamp(2.4rem, 4vw, 3.4rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin: 0 0 18px;
+    text-wrap: balance;
+  }
+
+  .doc-sub {
+    font-size: 1.15rem;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  .horizon {
+    height: 3px;
+    margin-top: 40px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--pill-bg) 55%, transparent 100%);
+  }
+
+  .toc-grid {
+    padding: 8px 64px 80px;
+    max-width: 1000px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .toc-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px 22px;
+    background: var(--bg-panel);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    text-decoration: none;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    transition:
+      transform 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .toc-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+
+  .toc-card .gate {
+    align-self: flex-start;
+    font-family: var(--font-mono), var(--font-mono-fallback);
+    font-size: 0.76rem;
+    background: var(--pill-bg);
+    color: var(--pill-ink);
+    padding: 2px 9px;
+    border-radius: 999px;
+  }
+
+  .toc-card h3 {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-weight: 700;
+    font-size: 1.12rem;
+    margin: 2px 0 0;
+  }
+
+  .toc-card p {
+    margin: 0;
+    font-size: 0.92rem;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 900px) {
+    .masthead {
+      padding: 48px 28px 32px;
+    }
+    .toc-grid {
+      padding: 8px 28px 60px;
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

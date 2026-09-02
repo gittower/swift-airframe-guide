@@ -1,0 +1,173 @@
+---
+import { getCollection } from 'astro:content';
+
+const docs = (await getCollection('guide'))
+  .filter((d) => !d.data.draft)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '');
+---
+
+<aside class="sidebar">
+  <a class="brand" href="/">
+    <svg width="26" height="26" viewBox="0 0 40 40" aria-hidden="true">
+      <path
+        d="M3 21 L37 4 L21 37 L16 19 L3 21 Z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.4"
+        stroke-linejoin="round"
+      ></path>
+      <path d="M16 19 L37 4" stroke="currentColor" stroke-width="2.4"></path>
+    </svg>
+    <span class="brand-word">Airframe</span>
+  </a>
+  <p class="brand-tag">Swift Airframe · for macOS</p>
+
+  <p class="nav-label">Flight plan</p>
+  <ol class="flightplan">
+    <li>
+      <a class="navlink" href="/" aria-current={currentPath === '' ? 'page' : undefined}>
+        <span class="gate">—</span> Overview
+      </a>
+    </li>
+    {
+      docs.map((doc) => {
+        const href = `/guide/${doc.id}`;
+        const isActive = currentPath === href;
+        return (
+          <li>
+            <a class="navlink" href={href} aria-current={isActive ? 'page' : undefined}>
+              <span class="gate">G{String(doc.data.order).padStart(2, '0')}</span>
+              {doc.data.title}
+            </a>
+          </li>
+        );
+      })
+    }
+  </ol>
+
+  <p class="sidebar-foot">
+    A guide to building native Swift apps on one architecture: unidirectional data flow, a single
+    write path, and a strict rule about where each kind of code is allowed to live.
+  </p>
+</aside>
+
+<style>
+  .sidebar {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-ink);
+    padding: 28px 24px 40px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    border-right: 1px solid var(--sidebar-line);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+    text-decoration: none;
+    color: var(--sidebar-ink);
+  }
+
+  .brand svg {
+    color: var(--accent);
+    flex: none;
+  }
+
+  .brand-word {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+  }
+
+  .brand-tag {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-size: 0.72rem;
+    color: var(--sidebar-ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin: 2px 0 30px 38px;
+  }
+
+  .nav-label {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--sidebar-ink-dim);
+    margin: 0 0 10px 2px;
+  }
+
+  .flightplan {
+    list-style: none;
+    margin: 0 0 28px;
+    padding: 0;
+    border-top: 1px solid var(--sidebar-line);
+  }
+
+  .flightplan li {
+    border-bottom: 1px solid var(--sidebar-line);
+  }
+
+  .navlink {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 4px;
+    text-decoration: none;
+    color: var(--sidebar-ink);
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-size: 0.86rem;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+  }
+
+  .navlink:hover {
+    background: var(--sidebar-line);
+  }
+
+  .navlink[aria-current='page'] {
+    background: var(--accent);
+    color: #06131f;
+  }
+
+  .gate {
+    font-family: var(--font-mono), var(--font-mono-fallback);
+    font-size: 0.68rem;
+    font-weight: 600;
+    background: var(--sidebar-line);
+    color: var(--sidebar-ink-dim);
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+    flex: none;
+  }
+
+  .navlink[aria-current='page'] .gate {
+    background: rgba(6, 19, 31, 0.25);
+    color: #06131f;
+  }
+
+  .sidebar-foot {
+    font-size: 0.78rem;
+    color: var(--sidebar-ink-dim);
+    line-height: 1.6;
+    padding-top: 14px;
+    border-top: 1px solid var(--sidebar-line);
+  }
+
+  @media (max-width: 900px) {
+    .sidebar {
+      position: static;
+      height: auto;
+    }
+  }
+</style>

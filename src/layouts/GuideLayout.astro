@@ -1,0 +1,110 @@
+---
+import ShellLayout from './ShellLayout.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  order: number;
+  prevDoc?: { href: string; title: string } | null;
+  nextDoc?: { href: string; title: string } | null;
+}
+
+const { title, description, order, prevDoc = null, nextDoc = null } = Astro.props;
+---
+
+<ShellLayout title={title} description={description}>
+  <article class="page">
+    <p class="eyebrow">Chapter {order} &nbsp;·&nbsp; Gate {String(order).padStart(2, '0')}</p>
+    <h1>{title}</h1>
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    <nav class="chapter-foot">
+      <span>
+        {
+          prevDoc && (
+            <a href={prevDoc.href}>
+              <span class="dir">Previous</span>← {prevDoc.title}
+            </a>
+          )
+        }
+      </span>
+      <span>
+        {
+          nextDoc && (
+            <a href={nextDoc.href}>
+              <span class="dir">Next</span>
+              {nextDoc.title} →
+            </a>
+          )
+        }
+      </span>
+    </nav>
+  </article>
+</ShellLayout>
+
+<style>
+  .page {
+    padding: 56px 64px 8px;
+    max-width: 900px;
+  }
+
+  .eyebrow {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--accent-ink);
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-weight: 800;
+    font-size: clamp(1.9rem, 3vw, 2.5rem);
+    letter-spacing: -0.005em;
+    margin: 10px 0 34px;
+    text-wrap: balance;
+  }
+
+  .chapter-foot {
+    margin-top: 56px;
+    padding: 26px 0 60px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    border-top: 1px solid var(--line);
+    max-width: 900px;
+  }
+
+  .chapter-foot a {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    color: var(--accent-ink);
+  }
+
+  .chapter-foot a:hover {
+    text-decoration: underline;
+  }
+
+  .chapter-foot .dir {
+    display: block;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 3px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 900px) {
+    .page {
+      padding: 40px 28px 8px;
+    }
+  }
+</style>
