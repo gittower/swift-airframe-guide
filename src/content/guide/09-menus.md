@@ -8,7 +8,7 @@ A menu isn't a special case bolted onto the architecture — it's the mutate pat
 
 ## Menus as an action-driven view concern
 
-Menu items are built through `make…()` factory methods in an `NSMenuItem` extension, so the same item can be assembled identically wherever it's needed. A dedicated <strong>menu controller</strong> owns a menu's lifecycle: it's the menu's `NSMenuDelegate` and rebuilds the item list on demand, reading whatever state the owning view controller has pushed into it.
+Menu items are built through `make…()` factory methods in an `NSMenuItem` extension, so the same item can be assembled identically wherever it's needed. A dedicated <strong>menu controller</strong> — a view component controller from <a href="/guide/07-views">Chapter 7</a>, specialized for menus — owns a menu's lifecycle: it's the menu's `NSMenuDelegate` and rebuilds the item list on demand, reading whatever state the owning view controller has pushed into it. When the menu is tied to a pop-up or popover button, the menu controller manages the button and its menu together — the two are one component.
 
 ```swift
 extension NSMenuItem {

@@ -68,6 +68,57 @@ Both a view and its owning controller swap subviews, but for different reasons, 
 
 Rule of thumb: if the controller would have to change what properties it sets or what closures it wires, it's a controller-level swap. If the public interface stays identical, the view handles it alone.
 
+## View component controllers
+
+Sometimes the behavior around a <em>single</em> component outgrows the view controller hosting it: a popover button whose menu is generated from current state, a toolbar item whose badge tracks activity, a segmented control with non-trivial mode logic. The component itself must stay dumb — that's the three-layer split — but the coordination has to live somewhere, and folding it into the view controller is how a controller quietly picks up a second concern.
+
+The extraction point is a <strong>view component controller</strong>: a plain `NSObject`, not an `NSViewController`, that owns one component and everything behavioral about it. It builds the component (or attaches to an existing one), acts as its target and delegate, holds whatever state the interaction needs, and reports outcomes to its owner through closures — or dispatches nil-targeted actions through the responder chain, picking up <a href="/guide/05-action-validation">Chapter 5</a>'s validation for free. The owning view controller just places the component in its layout, pushes inputs in, and reacts:
+
+```swift
+@StateObserving
+final class TagFilterButtonController: NSObject, NSMenuDelegate {
+    // The component — built and owned here, placed by the owner.
+    let button = NSPopUpButton()
+
+    // Inputs — pushed in by the owner.
+    var noteManager: NoteManager?
+
+    // Outcomes — reported back.
+    var onSelectTag: ((Tag?) -> Void)?
+
+    override init() {
+        super.init()
+        button.menu = NSMenu()
+        button.menu?.delegate = self
+    }
+
+    func observeState() {
+        // e.g. keep the button's title showing the active filter
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        menu.removeAllItems()
+        guard let tags = noteManager?.allTags else { return }
+        menu.items = NSMenuItem.makeTagFilterItems(tags: tags) { [weak self] tag in
+            self?.onSelectTag?(tag)
+        }
+    }
+}
+```
+
+Exposing the component as a property is one of two integration modes: a `make…()` method or a `let` component covers the common case where the controller creates the control, and an `attach(to:)` method covers a control that already exists — a toolbar item the window hands over, say. Either way the owner decides <em>where</em> the component goes; the component controller decides everything about how it behaves.
+
+Not being an `NSViewController` is the point, not a shortcut. There's no view hierarchy to own and no containment lifecycle to participate in, so an `NSViewController` would be ceremony around an object that is really just coordination. What a component controller <em>does</em> share with any other controller is observation: it conforms to `StateObserving` when it reacts to state, its owner activates it on the owner's own scope — or lists it in `childStateObservers` and lets a container do it — exactly as <a href="/guide/08-state-observing">Chapter 8</a> describes.
+
+<div class="rule">
+<span class="rule-label">The rule</span>
+
+A view component controller owns exactly one component and the behavior around it. The moment it starts assembling several components into a layout, it's becoming a view controller; the moment other objects start reading state off it, that state wants to be a state object. Both are signs to promote, not to grow.
+
+</div>
+
+The most common specialization is the menu controller — a component controller whose component is a menu (or a button-plus-menu pair) — which gets its own treatment in <a href="/guide/09-menus">Chapter 9</a>.
+
 ## Observable state objects: the seam between model and a dumb view
 
 A controller has exactly two mechanisms for responding to state, and conflating them is the second most common way this pattern erodes.
