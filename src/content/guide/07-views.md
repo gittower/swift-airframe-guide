@@ -76,8 +76,8 @@ A controller has exactly two mechanisms for responding to state, and conflating 
 <table>
 <thead><tr><th>Mechanism</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td>`observations.track { }`</td><td><strong>Render.</strong> Every view change — labels, visibility, swapped content, layout — belongs in a tracked updater and nowhere else. Runs automatically whenever an `@Observable` (or `@Tracked`) property read inside it changes.</td></tr>
-<tr><td>`observations.observe { }`</td><td><strong>React.</strong> Side effects that are <em>not</em> a view change — triggering a reload when an input changes, responding to a notification. Never touches a view directly.</td></tr>
+<tr><td><code>observations.track { }</code></td><td><strong>Render.</strong> Every view change — labels, visibility, swapped content, layout — belongs in a tracked updater and nowhere else. Runs automatically whenever an <code>@Observable</code> (or <code>@Tracked</code>) property read inside it changes.</td></tr>
+<tr><td><code>observations.observe { }</code></td><td><strong>React.</strong> Side effects that are <em>not</em> a view change — triggering a reload when an input changes, responding to a notification. Never touches a view directly.</td></tr>
 </tbody>
 </table>
 </div>

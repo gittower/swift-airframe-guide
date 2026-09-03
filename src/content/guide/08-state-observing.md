@@ -18,12 +18,12 @@ SwiftUI views get all of this for free — which is exactly the standard this pa
 <table>
 <thead><tr><th>SwiftUI</th><th>StateObserving</th></tr></thead>
 <tbody>
-<tr><td>`body`</td><td>`observations.track { render() }`</td></tr>
-<tr><td>`.onChange(of:)`</td><td>`observations.observe({ read }, perform:)`</td></tr>
-<tr><td>`.task(id:)`</td><td>`observations.observe({ input }) { loader.reload() }` — trigger half only</td></tr>
-<tr><td>`.task` (no id)</td><td>`reload()` at the activation call site</td></tr>
-<tr><td>`.onReceive(publisher)`</td><td>`observations.observe(publisher) { … }`</td></tr>
-<tr><td>`.onAppear` / `.onDisappear`</td><td>`activateObservation()` / `deactivateObservation()`</td></tr>
+<tr><td><code>body</code></td><td><code>observations.track { render() }</code></td></tr>
+<tr><td><code>.onChange(of:)</code></td><td><code>observations.observe({ read }, perform:)</code></td></tr>
+<tr><td><code>.task(id:)</code></td><td><code>observations.observe({ input }) { loader.reload() }</code> — trigger half only</td></tr>
+<tr><td><code>.task</code> (no id)</td><td><code>reload()</code> at the activation call site</td></tr>
+<tr><td><code>.onReceive(publisher)</code></td><td><code>observations.observe(publisher) { … }</code></td></tr>
+<tr><td><code>.onAppear</code> / <code>.onDisappear</code></td><td><code>activateObservation()</code> / <code>deactivateObservation()</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -53,10 +53,10 @@ The protocol supplies four calls; conformers never override any of them:
 <table>
 <thead><tr><th>Call</th><th>Effect</th></tr></thead>
 <tbody>
-<tr><td>`activateObservation()`</td><td>Runs `observeState()` — subscribes and seeds from the current state. A no-op when already active.</td></tr>
-<tr><td>`deactivateObservation()`</td><td>Tears every subscription and tracked updater down. A no-op when already inactive.</td></tr>
-<tr><td>`isActive`</td><td>Whether the object is currently observing.</td></tr>
-<tr><td>`updateStateObservation()`</td><td>Macro-generated <strong>private</strong> member, not protocol API: reconciles the installed observations with the current state — cancels and re-runs `observeState()` while active, does nothing while inactive. Only the conformer itself can call it; the sanctioned call site is a source property's `didSet` (see the re-arm below).</td></tr>
+<tr><td><code>activateObservation()</code></td><td>Runs <code>observeState()</code> — subscribes and seeds from the current state. A no-op when already active.</td></tr>
+<tr><td><code>deactivateObservation()</code></td><td>Tears every subscription and tracked updater down. A no-op when already inactive.</td></tr>
+<tr><td><code>isActive</code></td><td>Whether the object is currently observing.</td></tr>
+<tr><td><code>updateStateObservation()</code></td><td>Macro-generated <strong>private</strong> member, not protocol API: reconciles the installed observations with the current state — cancels and re-runs <code>observeState()</code> while active, does nothing while inactive. Only the conformer itself can call it; the sanctioned call site is a source property's <code>didSet</code> (see the re-arm below).</td></tr>
 </tbody>
 </table>
 </div>
@@ -69,8 +69,8 @@ Lifecycle calls are never hidden inside the macro — the owner always writes th
 <table>
 <thead><tr><th>Scope</th><th>Activate</th><th>Deactivate</th></tr></thead>
 <tbody>
-<tr><td>Visible view controller</td><td>`viewWillAppear`</td><td>`viewWillDisappear`</td></tr>
-<tr><td>View in a window</td><td>`viewDidMoveToWindow`, window non-nil</td><td>`viewDidMoveToWindow`, window nil</td></tr>
+<tr><td>Visible view controller</td><td><code>viewWillAppear</code></td><td><code>viewWillDisappear</code></td></tr>
+<tr><td>View in a window</td><td><code>viewDidMoveToWindow</code>, window non-nil</td><td><code>viewDidMoveToWindow</code>, window nil</td></tr>
 <tr><td>Object lifetime</td><td>once, in init or setup</td><td>never</td></tr>
 </tbody>
 </table>
@@ -105,9 +105,9 @@ Three kinds of statement can appear in `observeState()`:
 <table>
 <thead><tr><th>Role</th><th>API</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td>Bridge</td><td>`observations.observe(publisher) { state = … }`</td><td>Copy an external signal into tracked state.</td></tr>
-<tr><td>React</td><td>`observations.observe({ read }) { … }`</td><td>Run a side effect — not a view change — when something changes.</td></tr>
-<tr><td>Track</td><td>`observations.track { render() }`</td><td>Keep a render method applied to current state.</td></tr>
+<tr><td>Bridge</td><td><code>observations.observe(publisher) { state = … }</code></td><td>Copy an external signal into tracked state.</td></tr>
+<tr><td>React</td><td><code>observations.observe({ read }) { … }</code></td><td>Run a side effect — not a view change — when something changes.</td></tr>
+<tr><td>Track</td><td><code>observations.track { render() }</code></td><td>Keep a render method applied to current state.</td></tr>
 </tbody>
 </table>
 </div>

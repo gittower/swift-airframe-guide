@@ -121,8 +121,8 @@ However the state is shaped, it has to tell interested views when it changes. Th
 <table>
 <thead><tr><th>Source</th><th>Signal</th></tr></thead>
 <tbody>
-<tr><td>Shared app-wide state, scoped state, an in-memory domain manager, transient loaded data</td><td>`@Observable` — consumers read a property, re-render when it changes.</td></tr>
-<tr><td>Database-backed model</td><td>The manager posts a `Notification` after the write lands; consumers subscribe and re-read.</td></tr>
+<tr><td>Shared app-wide state, scoped state, an in-memory domain manager, transient loaded data</td><td><code>@Observable</code> — consumers read a property, re-render when it changes.</td></tr>
+<tr><td>Database-backed model</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read.</td></tr>
 <tr><td>Platform / framework events</td><td>Subscribe to the framework's own notification directly.</td></tr>
 </tbody>
 </table>
