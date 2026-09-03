@@ -132,5 +132,5 @@ Only store the returned `Task` when cancellation is a real requirement — a vie
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/07-views">Chapter 7</a>. Testing async, job-based code without mocking the runner is <a href="/guide/10-testing">Chapter 10</a>.
+How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/07-views">Chapter 7</a>. Testing async, job-based code without mocking the runner is <a href="/guide/11-testing">Chapter 11</a>.
 </div>

@@ -132,5 +132,5 @@ When a notification-based source has more than one consumer that wants to observ
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-View-side consumption of all three signals — the `update()` / `observe` mechanics — is <a href="/guide/07-views">Chapter 7</a>. What actually calls into the manager, and how a write earns the overhead of a full Action, is <a href="/guide/04-actions-and-controllers">Chapter 4</a>, next.
+View-side consumption of all three signals — the `observations.track` / `observations.observe` mechanics — is <a href="/guide/07-views">Chapter 7</a>, with the full activation lifecycle in <a href="/guide/08-state-observing">Chapter 8</a>. What actually calls into the manager, and how a write earns the overhead of a full Action, is <a href="/guide/04-actions-and-controllers">Chapter 4</a>, next.
 </div>

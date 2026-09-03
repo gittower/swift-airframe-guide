@@ -1,7 +1,7 @@
 ---
 title: "Testing"
 description: "Not everything earns a test. This closing chapter is about testing at the altitude where regressions actually happen, skipping the layers that structurally can't fail on their own, and reaching for real collaborators instead of mocks almost everywhere."
-order: 10
+order: 11
 ---
 
 Not everything earns a test. This closing chapter is about testing at the altitude where regressions actually happen, skipping the layers that structurally can't fail on their own, and reaching for real collaborators instead of mocks almost everywhere.
@@ -61,5 +61,5 @@ Performance tests live in their own test plan, run separately from the default s
 
 <div class="seealso">
 <strong>End of the guide</strong>
-That closes the ten chapters. <a href="/">Back to the overview</a> for the full map, or start again from <a href="/guide/01-getting-started">Chapter 1</a>.
+That closes the eleven chapters. <a href="/">Back to the overview</a> for the full map, or start again from <a href="/guide/01-getting-started">Chapter 1</a>.
 </div>

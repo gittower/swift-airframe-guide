@@ -76,7 +76,7 @@ A controller has exactly two mechanisms for responding to state, and conflating 
 <table>
 <thead><tr><th>Mechanism</th><th>Purpose</th></tr></thead>
 <tbody>
-<tr><td>`update()`</td><td><strong>Render.</strong> Every view change — labels, visibility, swapped content, layout — belongs here and nowhere else. Runs automatically whenever an `@Observable` property read inside it changes.</td></tr>
+<tr><td>`observations.track { }`</td><td><strong>Render.</strong> Every view change — labels, visibility, swapped content, layout — belongs in a tracked updater and nowhere else. Runs automatically whenever an `@Observable` (or `@Tracked`) property read inside it changes.</td></tr>
 <tr><td>`observations.observe { }`</td><td><strong>React.</strong> Side effects that are <em>not</em> a view change — triggering a reload when an input changes, responding to a notification. Never touches a view directly.</td></tr>
 </tbody>
 </table>
@@ -89,28 +89,28 @@ final class NoteDetailViewController: NSViewController {
 
     override func viewWillAppear() {
         super.viewWillAppear()
-        subscribe()      // wire reactive plumbing
-        trackState()      // start the render loop — calls update() on every relevant change
-        reload()           // initial load
+        activateObservation()
+        state.reload()      // initial load, and catch-up after inactivity
     }
 
     override func viewWillDisappear() {
         super.viewWillDisappear()
-        observations.cancelAll()
+        deactivateObservation()
     }
 
-    private func subscribe() {
-        observations.observe { self.state.noteID } perform: { self.reload() }
+    func observeState() {
+        observations.observe({ self.state.noteID }) { [weak self] in self?.state.reload() }
+        observations.track { [weak self] in self?.updateFields() }
     }
 
-    private func reload() { state.load() }
-
-    func update() {
+    private func updateFields() {
         titleField.stringValue = state.title
         bodyView.isHidden = state.isLoading
     }
 }
 ```
+
+Both mechanisms are declared in one place — `observeState()`, the complete inventory of everything the controller reacts to — and wired up by an activation lifecycle (`activateObservation()` / `deactivateObservation()`) rather than by hand. That lifecycle, plus a parent controller that activates a whole tree of children at once, gets its own chapter next: <a href="/guide/08-state-observing">Chapter 8</a>.
 
 Hosting a SwiftUI view inside that same controller works the same way — the Observation framework tracks any `@Observable` property read inside a view's `body`, so a hosted SwiftUI view stays reactive to exactly the state it reads.
 
@@ -131,5 +131,5 @@ A <strong>Screen</strong> (or the AppKit view controller playing that role) owns
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Menus — which are themselves just view components wired to Actions — get their own chapter: <a href="/guide/08-menus">Chapter 8</a>. Moving between screens without one view holding a reference to another is <a href="/guide/09-navigation">Chapter 9</a>.
+The activation lifecycle behind `observeState()`, `@Tracked`, and `StateObservingContainer` for a parent with subcontrollers get their own chapter next: <a href="/guide/08-state-observing">Chapter 8</a>. Menus — which are themselves just view components wired to Actions — follow after that: <a href="/guide/09-menus">Chapter 9</a>. Moving between screens without one view holding a reference to another is <a href="/guide/10-navigation">Chapter 10</a>.
 </div>

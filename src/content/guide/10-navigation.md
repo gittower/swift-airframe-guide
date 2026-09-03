@@ -1,7 +1,7 @@
 ---
 title: "Navigation"
 description: "Every chapter so far has been about one screen. This one is about the seam between screens — and why that seam is a state object owned by a parent, never a view holding a reference to another view."
-order: 9
+order: 10
 ---
 
 Every chapter so far has been about one screen. This one is about the seam between screens — and why that seam is a state object owned by a parent, never a view holding a reference to another view.
@@ -32,17 +32,31 @@ final class WorkspaceViewController: NSViewController {
         // …assemble sidebar + detail into the view hierarchy…
     }
 
-    func update() {
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        activateObservation()
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        deactivateObservation()
+    }
+
+    func observeState() {
+        observations.track { [weak self] in self?.pushSelection() }
+    }
+
+    private func pushSelection() {
         detail.notebookID = navigation.selectedNotebookID   // parent pushes the input down
     }
 }
 ```
 
-The sidebar never calls into the detail controller. It fires a closure; the parent updates its navigation state; `update()` — the render mechanism from <a href="/guide/07-views">Chapter 7</a> — pushes the new input into the detail controller, which reacts to its own `notebookID` changing exactly the way any input property does.
+The sidebar never calls into the detail controller. It fires a closure; the parent updates its navigation state; the tracked updater above — the render mechanism covered in <a href="/guide/08-state-observing">Chapter 8</a> — pushes the new input into the detail controller, which reacts to its own `notebookID` changing exactly the way any input property does.
 
 ## Where navigation sits relative to controllers and actions
 
-Navigation state is consumed no differently from any other state in this guide — render in `update()`, react to input changes via `observations.observe`. Swapping in the right child view controller for the current selection is the controller-level swap from <a href="/guide/07-views">Chapter 7</a>, not a special navigation mechanism. An Action is free to change the selection as one step of its own work — creating a notebook and then selecting it is a natural final step of `CreateNotebookAction.main()` — but the navigation state itself is not an Action and has no lifecycle of its own; it's ordinary scoped state, owned by whichever controller is the parent for this part of the screen.
+Navigation state is consumed no differently from any other state in this guide — render it in a tracked updater, react to input changes via `observations.observe`. Swapping in the right child view controller for the current selection is the controller-level swap from <a href="/guide/07-views">Chapter 7</a>, not a special navigation mechanism. An Action is free to change the selection as one step of its own work — creating a notebook and then selecting it is a natural final step of `CreateNotebookAction.main()` — but the navigation state itself is not an Action and has no lifecycle of its own; it's ordinary scoped state, owned by whichever controller is the parent for this part of the screen.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
@@ -57,5 +71,5 @@ Because the navigation state stores identifiers and not the objects themselves, 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Testing a navigation state object — a plain `@Observable` class with no AppKit dependency — follows the same rules as testing any other state object; see <a href="/guide/10-testing">Chapter 10</a>.
+Testing a navigation state object — a plain `@Observable` class with no AppKit dependency — follows the same rules as testing any other state object; see <a href="/guide/11-testing">Chapter 11</a>.
 </div>

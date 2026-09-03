@@ -1,7 +1,7 @@
 ---
 title: "Menus"
 description: "A menu isn't a special case bolted onto the architecture — it's the mutate path from Chapter 1 wearing an NSMenuItem. This chapter covers building menus, carrying typed data on them safely, and getting validation for free."
-order: 8
+order: 9
 ---
 
 A menu isn't a special case bolted onto the architecture — it's the mutate path from Chapter 1 wearing an NSMenuItem. This chapter covers building menus, carrying typed data on them safely, and getting validation for free.
@@ -76,5 +76,5 @@ Because the item's target is `nil`, enabling and disabling it is automatic once 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Moving between the screens a menu item might navigate to is <a href="/guide/09-navigation">Chapter 9</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/10-testing">Chapter 10</a>.
+Moving between the screens a menu item might navigate to is <a href="/guide/10-navigation">Chapter 10</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/11-testing">Chapter 11</a>.
 </div>
