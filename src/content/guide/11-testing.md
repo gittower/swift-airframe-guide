@@ -46,7 +46,7 @@ final class NoteManagerTests: TestCase {
         let client = StubSyncClient(response: response)
 
         try await NoteManager(client: client, store: .shared)
-            .pull(notebookID: notebook.id).value
+            .pull(notebookID: notebook.id)
 
         XCTAssertEqual(notebook.notes.count, 2)
     }

@@ -83,24 +83,33 @@ final class NoteManager {
         self.store = store
     }
 
-    @discardableResult
-    func pull(notebookID: NotebookID) -> Task<Void, Error> {
-        enqueue(PullNotesJob(notebookID: notebookID))
+    func pull(notebookID: NotebookID) async throws {
+        try await awaitCancellably(enqueue(PullNotesJob(notebookID: notebookID)))
     }
 
+    // Private plumbing — synchronous, hands back a raw `Task`. Never exposed past
+    // this point; every public method bridges it through `awaitCancellably` below.
     private func enqueue<J: BackgroundJob>(_ job: J) -> Task<J.Output, Error>
     where J.Context == SyncContext {
         let context = SyncContext(client: client, store: store)
         return runner.run { try await job.execute(context: context) }
     }
+
+    private func awaitCancellably<T: Sendable>(_ task: Task<T, Error>) async throws -> T {
+        try await withTaskCancellationHandler {
+            try await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
 }
 ```
 
-What happens at runtime when a caller does `try await NoteManager.shared.pull(notebookID: id).value`:
+`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/06-concurrency">Chapter 6</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly.
 
-Note what `pull` is <em>not</em>: it isn't `async`. Synchronous enqueue returning a `Task` is one of exactly two sanctioned signatures for an operation entry point — the caller holds the one cancellation handle from the moment the call returns, and enqueue order can't race. The shape rule, and why the `async`-returning-`Task` hybrid is banned, is in <a href="/guide/06-concurrency">Chapter 6</a>.
+What happens at runtime when a caller does `try await NoteManager.shared.pull(notebookID: id)`:
 
-1. The manager builds a fresh `SyncContext` and hands the job to the runner, which returns immediately with a `Task`.
+1. `pull` builds a fresh `SyncContext` and hands the job to `enqueue`, which returns immediately with a `Task` — then `awaitCancellably` suspends on that task. The caller's own `await` is the one thing waiting; nothing about the queue underneath is visible from outside the manager.
 1. The runner schedules the job behind whatever else is already queued for this manager, so a pull and a save on the same notebook never interleave.
 1. The job runs on the cooperative thread pool, fetches from the network, and asks the store to merge and persist the result.
 1. The store's write lands in the database; the database's own change tracking merges it back onto the main context automatically.
@@ -117,7 +126,7 @@ The same three-part skeleton — context, job, manager — is what makes cancell
 <thead><tr><th>Pattern</th><th>Job returns</th><th>Who applies</th></tr></thead>
 <tbody>
 <tr><td><strong>Store applies, database merges</strong></td><td><code>Void</code></td><td>The job writes through the store; the database's change tracking merges to the main context; the manager has nothing to apply. The pattern above — the default for persisted state.</td></tr>
-<tr><td><strong>Return data to the caller</strong></td><td>Typed data</td><td>The manager passes the <code>Task</code> straight through and the caller awaits <code>.value</code> — nothing touches model state at all.</td></tr>
+<tr><td><strong>Return data to the caller</strong></td><td>Typed data</td><td>The manager's <code>async</code> method returns the value directly — no <code>.value</code> to unwrap — and nothing touches model state at all.</td></tr>
 <tr><td><strong>Manager applies main-actor state</strong></td><td>Typed data</td><td>The manager writes the result into in-memory model state on the main thread.</td></tr>
 </tbody>
 </table>
@@ -127,15 +136,13 @@ The third pattern carries its own rule: the write goes through a <strong>dedicat
 
 ```swift
 // In NoteManager — apply logic is operation-specific, so this uses the runner directly
-func reloadTagIndex(for notebook: Notebook) -> Task<Void, Error> {
+func reloadTagIndex(for notebook: Notebook) async throws {
     let context = SyncContext(client: client, store: store)
-
-    return runner.run {
-        let tags = try await LoadTagIndexJob().execute(context: context)
-        await MainActor.run {
-            notebook.applyTagIndexUpdate(tags)
-        }
+    let task = runner.run {
+        try await LoadTagIndexJob().execute(context: context)
     }
+    let tags = try await awaitCancellably(task)
+    notebook.applyTagIndexUpdate(tags)   // already back on @MainActor — see below
 }
 
 // On Notebook — the one place this state mutates
@@ -146,6 +153,8 @@ func applyTagIndexUpdate(_ incoming: [TagCount]) {
     if !changes.isEmpty { postTagIndexDidChangeNotification(changes) }
 }
 ```
+
+Note what's absent: no `MainActor.run` hop. `runner.run`'s closure itself executes detached, off-main — but `reloadTagIndex` is an `async` method on an `@MainActor` class, so resuming after `awaitCancellably` lands back on `@MainActor` automatically. The apply call is just the next line.
 
 <div class="rule">
 <span class="rule-label">Sub-decision</span>

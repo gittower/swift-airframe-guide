@@ -50,7 +50,7 @@ struct SerialTaskRunner: Sendable {
 }
 ```
 
-Every piece earns its place: it's a `struct` so copies are cheap and every copy still coordinates through the same underlying lock — which is how a runner shared across several managers keeps their writes from interleaving. `Task.detached` is deliberate — a plain `Task { }` inherits the caller's actor, which called from a `@MainActor` manager would run the "background" work on main and defeat the entire point. Enqueue itself stays synchronous, callable directly from `@MainActor` code with no suspension at the call site.
+Every piece earns its place: it's a `struct` so copies are cheap and every copy still coordinates through the same underlying lock — which is how a runner shared across several managers keeps their writes from interleaving. `Task.detached` is deliberate — a plain `Task { }` inherits the caller's actor, which called from a `@MainActor` manager would run the "background" work on main and defeat the entire point. Enqueue itself stays synchronous, callable directly from `@MainActor` code with no suspension at the call site. That synchronous, `Task`-returning shape is correct <em>here</em> — this is the primitive. It's a different question whether a manager's own public methods should look the same; they don't, and the rest of this chapter is why.
 
 ## Structuring background work as data, not closures
 
@@ -119,16 +119,30 @@ The `try Task.checkCancellation()` immediately before the write is the load-bear
 
 ## Cancellation as part of a task's contract
 
-A caller doesn't need a cancellation token — the `Task` returned by a manager method <em>is</em> the handle, and Swift's structured concurrency propagates cancellation through every `await` underneath it automatically.
+A caller doesn't need a cancellation token — the `Task` it creates around an `async` call <em>is</em> the handle, and Swift's structured concurrency propagates cancellation through every `await` underneath it automatically.
 
-### Pick one shape — plain `async`, or synchronous enqueue
+### One shape for every public entry point: plain `async`
 
-For that handle to stay singular, an operation's entry point takes exactly one of two shapes:
+A manager's public surface — every method a controller, an Action, or another manager calls — is `async`, returning the actual result. `NoteManager.pull` from <a href="/guide/03-model-layer">Chapter 3</a> is the model: no raw `Task` return type, ever, at that boundary.
 
-1. <strong>Plain `async`, returning the actual result.</strong> The function completes when the work settles. The <em>caller</em> wraps it in a `Task` when it wants a cancellation handle.
-1. <strong>Synchronous enqueue, returning `Task<T, Error>`.</strong> The manager methods from <a href="/guide/03-model-layer">Chapter 3</a> — the synchronous entry is the point, because enqueue order can't race with anything, and callers `await .value` only when they need the result.
+```swift
+// ✅ Public API — plain async, returns the result
+func pull(notebookID: NotebookID) async throws { /* … */ }
 
-The hybrid — `func run(...) async -> Task<Void, Error>` — is banned. The caller has to await setup before it even receives a handle, so cancellation splits across two objects: the caller's own task covers the setup, the returned task covers the work, and neither alone cancels the whole operation. When an operation genuinely must await setup <em>and</em> run on the serial queue, keep shape 1 and bridge internally — enqueue, then await the runner's task under a cancellation handler, so the caller's task remains the one handle for setup, queue wait, and work:
+// ❌ Public API — synchronous, hands back a raw Task
+func pull(notebookID: NotebookID) -> Task<Void, Error> { /* … */ }
+
+// ❌ The hybrid — worst of both
+func pull(notebookID: NotebookID) async -> Task<Void, Error> { /* … */ }
+```
+
+Both banned forms fail for different reasons. The hybrid makes the caller await setup before it even receives a handle, splitting cancellation across two objects — the caller's own task for the setup, the returned task for the work — and neither alone cancels the whole operation. Plain synchronous `-> Task<...>` looks safer but fails the identical way the moment the method needs to `await` anything before it can return a handle, and in the meantime it leaks an implementation detail — there happens to be a queue under here — straight into the public API.
+
+<strong>The synchronous, `Task`-returning shape is correct in exactly one place: the runner or queue primitive itself</strong>, and a manager's own private `enqueue` helper wrapping it — `SerialTaskRunner.run` above, and `NoteManager.enqueue` from Chapter 3. Neither is ever public.
+
+### The bridge
+
+Enqueue synchronously against the primitive, then await the returned `Task` under a cancellation handler, so the caller's task remains the one thing that has to be cancelled:
 
 ```swift
 func rebuildSearchIndex() async {
@@ -145,7 +159,7 @@ func rebuildSearchIndex() async {
 }
 ```
 
-Cancelling the caller's task now cancels the runner task too — including while it's still waiting its turn in the queue, because the runner's `try Task.checkCancellation()` runs before the operation starts.
+Cancelling the caller's task now cancels the runner task too — including while it's still waiting its turn in the queue, because the runner's `try Task.checkCancellation()` runs before the operation starts. This is the standard shape for any manager method backed by a queue, not a special case for the setup-then-enqueue case shown here — `NoteManager.pull`'s own `awaitCancellably` helper is exactly this bridge, factored out once so every method in the class reuses it instead of repeating the boilerplate.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
@@ -154,7 +168,7 @@ A service that catches errors internally must re-throw `CancellationError` rathe
 
 </div>
 
-Only store the returned `Task` when cancellation is a real requirement — a view dismissed mid-load, a newer request superseding an older one. A quick fire-and-forget call needs nothing beyond `Task { try? await … }`. And when async work shells out to an external process rather than another `await` chain, cancellation still flows the same way in — it just terminates at a system signal instead of a thrown error, via `withTaskCancellationHandler`'s `onCancel`.
+Only store the caller's `Task` when cancellation is a real requirement — a view dismissed mid-load, a newer request superseding an older one. A quick fire-and-forget call needs nothing beyond `Task { try? await … }`. And when async work shells out to an external process rather than another `await` chain, cancellation still flows the same way in — it just terminates at a system signal instead of a thrown error, via `withTaskCancellationHandler`'s `onCancel`.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
