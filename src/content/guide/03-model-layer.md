@@ -106,6 +106,45 @@ What happens at runtime when a caller does `try await NoteManager.shared.pull(no
 
 The same three-part skeleton — context, job, manager — is what makes cancellation, testing, and multiple sync sources all fall out for free: jobs are plain `Sendable` structs with no shared mutable state, so they're trivial to construct and test in isolation, and cancelling the outer `Task` cascades through every `await` the job made. The runner and job protocol themselves get a full chapter — see <a href="/guide/06-concurrency">Chapter 6</a>.
 
+### What happens after the job returns
+
+`PullNotesJob` shows one of three patterns for how a job's result lands, and the choice is made per operation:
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pattern</th><th>Job returns</th><th>Who applies</th></tr></thead>
+<tbody>
+<tr><td><strong>Store applies, database merges</strong></td><td><code>Void</code></td><td>The job writes through the store; the database's change tracking merges to the main context; the manager has nothing to apply. The pattern above — the default for persisted state.</td></tr>
+<tr><td><strong>Return data to the caller</strong></td><td>Typed data</td><td>The manager passes the <code>Task</code> straight through and the caller awaits <code>.value</code> — nothing touches model state at all.</td></tr>
+<tr><td><strong>Manager applies main-actor state</strong></td><td>Typed data</td><td>The manager writes the result into in-memory model state on the main thread.</td></tr>
+</tbody>
+</table>
+</div>
+
+The third pattern carries its own rule: the write goes through a <strong>dedicated `@MainActor` apply method on the model object</strong> — never inline mutation buried in a runner closure. The mutation logic stays testable and co-located with the state it modifies, and there's exactly one place to look when asking "what can change this?"
+
+```swift
+// In NoteManager — apply logic is operation-specific, so this uses the runner directly
+func reloadTagIndex(for notebook: Notebook) -> Task<Void, Error> {
+    let context = SyncContext(client: client, store: store)
+
+    return runner.run {
+        let tags = try await LoadTagIndexJob().execute(context: context)
+        await MainActor.run {
+            notebook.applyTagIndexUpdate(tags)
+        }
+    }
+}
+
+// On Notebook — the one place this state mutates
+@MainActor
+func applyTagIndexUpdate(_ incoming: [TagCount]) {
+    let changes = tagIndex.changeset(against: incoming)
+    tagIndex.apply(changes)
+    if !changes.isEmpty { postTagIndexDidChangeNotification(changes) }
+}
+```
+
 <div class="rule">
 <span class="rule-label">Sub-decision</span>
 
