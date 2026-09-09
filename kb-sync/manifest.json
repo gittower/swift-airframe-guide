@@ -4,16 +4,16 @@
   "lastSync": "2026-09-09",
   "documents": {
     "manager-architecture": {
-      "updated_at": "2026-09-09T15:48:42.285+00:00",
-      "sha256": "4b0a0662195e9767416b76654843bac94f8a0a99a36afcf7d85f26bd5dcae40a",
+      "updated_at": "2026-09-09T17:25:53.678+00:00",
+      "sha256": "40fdc8e073d4e374f25ed0d941c57f4008af06e7b0d6661398929307b787addf",
       "chapters": [
         "03-model-layer",
         "06-concurrency"
       ]
     },
     "async-cancellation-patterns": {
-      "updated_at": "2026-09-09T15:47:47.202+00:00",
-      "sha256": "83f8d1727997798be9b393593add6f1fc4489fa3c88865e9cdf4ab045031c24b",
+      "updated_at": "2026-09-09T17:24:53.257+00:00",
+      "sha256": "41ac79a01f1fcd05dc921a91890c44cdd373ae1821f92a7d280c30879ebf3f6d",
       "chapters": [
         "06-concurrency"
       ]
@@ -123,21 +123,21 @@
       ]
     },
     "model-layer-organization": {
-      "updated_at": "2026-06-06T11:47:04.097+00:00",
-      "sha256": "61fec456beece965c863ed6efb235defbca25c1e70ce7e94d10c61a8729933ab",
+      "updated_at": "2026-09-09T17:29:00.987+00:00",
+      "sha256": "b6d63663542e04752a0d2c2aad1e3bc7f6181d93c08138ef29f835f244be0f07",
       "chapters": [
         "03-model-layer"
       ]
     },
     "repository-queue": {
-      "updated_at": "2026-06-06T11:44:59.011+00:00",
-      "sha256": "23a57e9b89f73b01cd7cd3f77c9f614ca00c1cc4e132fa2b7c43843bf8bc377a",
+      "updated_at": "2026-09-09T17:26:37.791+00:00",
+      "sha256": "d113939317c1e2b8fc2d4debfd0057befb693dcec74752c73c4843b0dc63b215",
       "chapters": [],
       "scope": "unmapped"
     },
     "serial-task-runner": {
-      "updated_at": "2026-06-06T11:16:24.81+00:00",
-      "sha256": "599a874f1d4010387538d391a68aed4817d8a1f8e12dc6d46daccdf03192c9f3",
+      "updated_at": "2026-09-09T17:27:10.865+00:00",
+      "sha256": "67ff57ccf51b3733be378e0ea845fbd496e6c58c8791570a50ab266ee33f69e9",
       "chapters": [
         "06-concurrency"
       ]
