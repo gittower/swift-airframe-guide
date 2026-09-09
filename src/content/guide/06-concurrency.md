@@ -80,7 +80,7 @@ struct PullNotesJob: BackgroundJob {
 }
 ```
 
-Each manager family declares its own `Sendable` context — `SyncContext` from <a href="/guide/03-model-layer">Chapter 3</a> — bundling exactly the services its jobs need. The manager's `enqueue` constrains on that context type, so a job built for one family is a compile error if handed to another manager's runner. For simpler cases with no runner involved — one or two inputs, nothing to compose — a plain `@MainActor` command struct gets the same input-freezing benefit without needing `Sendable` at all, because its properties never cross an actor boundary.
+Each manager family declares its own `Sendable` context — `SyncContext` from <a href="/guide/03-model-layer">Chapter 3</a> — bundling exactly the services its jobs need. The manager's `enqueue` constrains on that context type, so a job built for one family is a compile error if handed to another manager's runner. Runner sharing and context sharing go together: two managers share a runner because they operate on the same underlying resource, and that's the same reason their jobs share a context family — a manager from a different family gets its own runner along with its own context. For simpler cases with no runner involved — one or two inputs, nothing to compose — a plain `@MainActor` command struct gets the same input-freezing benefit without needing `Sendable` at all, because its properties never cross an actor boundary.
 
 ## Execution strategies: avoiding races by construction
 
@@ -120,6 +120,32 @@ The `try Task.checkCancellation()` immediately before the write is the load-bear
 ## Cancellation as part of a task's contract
 
 A caller doesn't need a cancellation token — the `Task` returned by a manager method <em>is</em> the handle, and Swift's structured concurrency propagates cancellation through every `await` underneath it automatically.
+
+### Pick one shape — plain `async`, or synchronous enqueue
+
+For that handle to stay singular, an operation's entry point takes exactly one of two shapes:
+
+1. <strong>Plain `async`, returning the actual result.</strong> The function completes when the work settles. The <em>caller</em> wraps it in a `Task` when it wants a cancellation handle.
+1. <strong>Synchronous enqueue, returning `Task<T, Error>`.</strong> The manager methods from <a href="/guide/03-model-layer">Chapter 3</a> — the synchronous entry is the point, because enqueue order can't race with anything, and callers `await .value` only when they need the result.
+
+The hybrid — `func run(...) async -> Task<Void, Error>` — is banned. The caller has to await setup before it even receives a handle, so cancellation splits across two objects: the caller's own task covers the setup, the returned task covers the work, and neither alone cancels the whole operation. When an operation genuinely must await setup <em>and</em> run on the serial queue, keep shape 1 and bridge internally — enqueue, then await the runner's task under a cancellation handler, so the caller's task remains the one handle for setup, queue wait, and work:
+
+```swift
+func rebuildSearchIndex() async {
+    await prepareIndexState()          // setup the caller legitimately awaits
+
+    let task = runner.run {
+        // the queued work
+    }
+    await withTaskCancellationHandler {
+        _ = try? await task.value
+    } onCancel: {
+        task.cancel()                  // tears down queued or in-flight work
+    }
+}
+```
+
+Cancelling the caller's task now cancels the runner task too — including while it's still waiting its turn in the queue, because the runner's `try Task.checkCancellation()` runs before the operation starts.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
