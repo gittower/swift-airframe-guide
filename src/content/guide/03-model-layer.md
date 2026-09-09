@@ -98,6 +98,8 @@ final class NoteManager {
 
 What happens at runtime when a caller does `try await NoteManager.shared.pull(notebookID: id).value`:
 
+Note what `pull` is <em>not</em>: it isn't `async`. Synchronous enqueue returning a `Task` is one of exactly two sanctioned signatures for an operation entry point — the caller holds the one cancellation handle from the moment the call returns, and enqueue order can't race. The shape rule, and why the `async`-returning-`Task` hybrid is banned, is in <a href="/guide/06-concurrency">Chapter 6</a>.
+
 1. The manager builds a fresh `SyncContext` and hands the job to the runner, which returns immediately with a `Task`.
 1. The runner schedules the job behind whatever else is already queued for this manager, so a pull and a save on the same notebook never interleave.
 1. The job runs on the cooperative thread pool, fetches from the network, and asks the store to merge and persist the result.
