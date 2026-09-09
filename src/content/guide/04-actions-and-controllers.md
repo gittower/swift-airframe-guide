@@ -95,6 +95,7 @@ No composite "activity" type wraps the two manager calls. Cancelling the outer t
 - A manager function that posts a user-visible notification or registers undo has drifted into Action territory — post the notification and register undo in the Action, after the manager call returns.
 - An Action that issues raw I/O instead of calling a manager function has drifted the other way — push that work down.
 - An Action that bypasses its manager to read or write state directly breaks the single-funnel rule from <a href="/guide/03-model-layer">Chapter 3</a>. Go through the manager, always.
+- A manager growing `isSyncRunning`-style in-flight flags is duplicating what the Action layer already knows — the central manager enumerates running Actions. Track in-flight state on a manager only when a consumer that isn't an Action genuinely needs to query it; parallel bookkeeping drifts.
 
 ## Action Controllers: the only AppKit-side bridge
 
