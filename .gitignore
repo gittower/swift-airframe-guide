@@ -17,6 +17,9 @@ pnpm-debug.log*
 .env
 .env.production
 
+# local KB snapshots — raw internal source docs, must never be committed (public repo)
+kb-sync/snapshots/
+
 # macOS-specific files
 .DS_Store
 

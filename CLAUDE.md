@@ -36,7 +36,21 @@ Decisions made with Alex (2026-09) that govern how the guide grows:
 - **A cookbook/recipes section is planned** as a second content collection: problem-shaped entries ("Observing state that never notifies") entered sideways via search or cross-link, no reading order. Recipes apply concepts; they link back into chapters for every concept they use and never re-explain them. Prefer "Cookbook"/"Recipes" over "Best Practices" as the name — the chapters *are* the best practices.
 - **The chapter-vs-cookbook boundary is likelihood, not difficulty.** A chapter covers its pattern plus every question a first implementation predictably raises (Chapter 8's seeding and `didSet` re-arm edge cases are the template — readers hit those immediately, so they stay in-chapter). The cookbook takes situational material most apps never hit (shared-toolbar-family dynamics, Objective-C owners of Swift protocol-extension APIs, no-change-signal observation).
 - **Keep the single numbered chapter spine and avoid renumbering.** Inserting a chapter renames every later file and touches hardcoded `/guide/NN-slug` cross-links across many chapters — do it deliberately, in one commit, with a grep for stale links. Introduce a frontmatter-based "parts" grouping only if the spine grows past ~13–14 chapters; depth growth should flow into recipes instead of new chapters where the likelihood rule allows.
-- **When a source KB doc changes, propagate to its chapter** (and vice versa — corrections agreed in conversation may need to land in the KB first, then flow here genericized). The two drift otherwise.
+- **When a source KB doc changes, propagate to its chapter** (and vice versa — corrections agreed in conversation may need to land in the KB first, then flow here genericized). The two drift otherwise. Detecting that drift is mechanical — see **KB sync tracking** below.
+
+## KB sync tracking
+
+`kb-sync/` makes "did the KB change since the guide last synced?" a diff instead of a guess:
+
+- **`kb-sync/manifest.json`** (committed) — one entry per `tower-mac-dev` document: `updated_at` as of the last sync, a `sha256` of the raw doc content at that time, and `chapters` (which guide chapters the doc feeds; `scope` marks docs that are `out-of-scope` for the guide, `cookbook-candidate` for the planned recipes section, or `unmapped` when undecided). An entry may carry `pendingChapterUpdate: true`, meaning the KB change was snapshotted but the chapter edit hasn't landed yet.
+- **`kb-sync/snapshots/tower-mac-dev/<slug>.md`** (gitignored, local-only) — the raw `get_document` output, saved verbatim. **Never commit these: the repo is public and the snapshots are Tower's internal docs.** They exist only so a changed doc can be content-diffed against its last-synced version.
+
+**Checking for updates** (the "did tower-kb change?" task):
+
+1. `list_knowledge` on `tower-mac-dev`; compare each doc's `updated_at` against the manifest. Newer timestamp (or a slug missing from the manifest) = drifted.
+2. For each drifted doc: `get_document`, write the raw output to the snapshot path, and `git diff --no-index` old vs. new (keep the old snapshot around until diffed). On a machine without local snapshots the diff is unavailable — fall back to reading the whole doc against its mapped chapters.
+3. The manifest's `chapters` field says which chapter(s) to propagate into; apply the genericization rule as always.
+4. After the chapter edits land, update the doc's manifest entry (`updated_at`, `sha256` via `shasum -a 256`, clear `pendingChapterUpdate`) and commit the manifest alongside or after the chapter commits. Snapshot files are refreshed in place and stay untracked.
 
 ### Formatting gotcha
 

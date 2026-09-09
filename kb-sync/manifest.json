@@ -1,0 +1,336 @@
+{
+  "domain": "tower-mac-dev",
+  "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
+  "lastSync": "2026-09-09",
+  "documents": {
+    "manager-architecture": {
+      "updated_at": "2026-09-09T15:48:42.285+00:00",
+      "sha256": "4b0a0662195e9767416b76654843bac94f8a0a99a36afcf7d85f26bd5dcae40a",
+      "chapters": [
+        "03-model-layer",
+        "06-concurrency"
+      ],
+      "pendingChapterUpdate": true
+    },
+    "async-cancellation-patterns": {
+      "updated_at": "2026-09-09T15:47:47.202+00:00",
+      "sha256": "83f8d1727997798be9b393593add6f1fc4489fa3c88865e9cdf4ab045031c24b",
+      "chapters": [
+        "06-concurrency"
+      ],
+      "pendingChapterUpdate": true
+    },
+    "object-wiring-shared-instances-and-configure": {
+      "updated_at": "2026-09-09T15:37:00.649+00:00",
+      "sha256": "78d0c868c7f25cf9d5673c9f26fe2f9f3cb273ebd58e8718d286a5dc10783260",
+      "chapters": [
+        "02-initializing"
+      ],
+      "pendingChapterUpdate": true
+    },
+    "view-state-management-stateobserving-protocol": {
+      "updated_at": "2026-09-03T08:34:23.157+00:00",
+      "sha256": "adcfc424fb3ed124817ec9bb468c13679e429aba18259f48075155cbe87163c6",
+      "chapters": [
+        "08-state-observing"
+      ]
+    },
+    "migrating-objective-c-observer-classes-to-combine-publishers": {
+      "updated_at": "2026-09-02T17:47:51.195+00:00",
+      "sha256": "dcd5b0182fb6c94526e249d26c3376966c3b6ceeed7198827e5985dfac7a9ca8",
+      "chapters": [],
+      "scope": "cookbook-candidate"
+    },
+    "view-state-management-observable-state-objects": {
+      "updated_at": "2026-09-02T17:47:15.416+00:00",
+      "sha256": "5ead18ea89c94be60f7d9831fc806e9790bf57ce5c2954de876aced3dc56c4db",
+      "chapters": [
+        "07-views",
+        "08-state-observing"
+      ]
+    },
+    "view-state-management-patterns-and-lifecycle": {
+      "updated_at": "2026-09-02T17:46:45.451+00:00",
+      "sha256": "a8c601b92c37318bc5423f8f7ab766416fa4c180d6cbf4f2d13a91563e4c9a6e",
+      "chapters": [
+        "07-views",
+        "08-state-observing"
+      ]
+    },
+    "toolbar-item-management-item-classes-and-the-badge-model": {
+      "updated_at": "2026-09-01T09:24:33.212+00:00",
+      "sha256": "6070dcdc9446c73637e8f69e498d0f4e246eb087b15d17b484eb2b1a1a4ab6e6",
+      "chapters": [],
+      "scope": "cookbook-candidate"
+    },
+    "git-version-compatibility-when-adding-git-commands-or-options": {
+      "updated_at": "2026-08-25T19:07:46.049+00:00",
+      "sha256": "02fcfc2119a0a4cdaf33e87fec003773848503ad80184b11c41eec3e6fb0df42",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "unit-testing-conventions": {
+      "updated_at": "2026-08-23T07:00:25.728+00:00",
+      "sha256": "4a0f8490428a373a2215eceb8a1d26879ace5773f67433afd8d825c49506444c",
+      "chapters": [
+        "11-testing"
+      ]
+    },
+    "what-s-new-feature-architecture-and-content-guidelines": {
+      "updated_at": "2026-07-27T09:19:39.059+00:00",
+      "sha256": "69e7f2873749ffeeeb674597d4db7248c8a0f9cfb74a23e72a84f1b9290ea831",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "swiftui-integration-strategy": {
+      "updated_at": "2026-07-08T15:06:14.864+00:00",
+      "sha256": "f01736df360733228982876d965583ff2db37b0b884e0672e9b54e43c6be7c36",
+      "chapters": [
+        "01-getting-started",
+        "07-views"
+      ]
+    },
+    "swift-test-base-class-subclass-testcase-and-use-userdefaults-shared": {
+      "updated_at": "2026-07-01T15:12:42.5+00:00",
+      "sha256": "334b81faf8b410ca353b91e64ed54a9058850303cb322e76e727b9dd8614ebe2",
+      "chapters": [
+        "11-testing"
+      ]
+    },
+    "actions-and-activities": {
+      "updated_at": "2026-06-28T13:41:59.999+00:00",
+      "sha256": "f02059e9a8c99a02bb9c3a16a9c2de3d817548ec337f2ddb584e680887fcbe2b",
+      "chapters": [
+        "04-actions-and-controllers"
+      ]
+    },
+    "manager-function-vs-action": {
+      "updated_at": "2026-06-28T13:41:05.373+00:00",
+      "sha256": "6d21d5693baa8277b2afc97edf08d7f101fc92b59d8ca1af62da950d2990c427",
+      "chapters": [
+        "04-actions-and-controllers"
+      ]
+    },
+    "actions-and-actioncontrollers": {
+      "updated_at": "2026-06-28T13:40:45.527+00:00",
+      "sha256": "862586025a8b553585bc08ef6532c0838c1b2dc7a5fb52cb173f01db9ddf645a",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "data-flow-patterns": {
+      "updated_at": "2026-06-09T20:37:01.047+00:00",
+      "sha256": "9d189bdbf15eae542738c3fab8affe08a53682f5249b51f5b1b67b159327f705",
+      "chapters": [
+        "03-model-layer",
+        "04-actions-and-controllers"
+      ]
+    },
+    "model-layer-organization": {
+      "updated_at": "2026-06-06T11:47:04.097+00:00",
+      "sha256": "61fec456beece965c863ed6efb235defbca25c1e70ce7e94d10c61a8729933ab",
+      "chapters": [
+        "03-model-layer"
+      ]
+    },
+    "repository-queue": {
+      "updated_at": "2026-06-06T11:44:59.011+00:00",
+      "sha256": "23a57e9b89f73b01cd7cd3f77c9f614ca00c1cc4e132fa2b7c43843bf8bc377a",
+      "chapters": [],
+      "scope": "unmapped"
+    },
+    "serial-task-runner": {
+      "updated_at": "2026-06-06T11:16:24.81+00:00",
+      "sha256": "599a874f1d4010387538d391a68aed4817d8a1f8e12dc6d46daccdf03192c9f3",
+      "chapters": [
+        "06-concurrency"
+      ]
+    },
+    "background-task-structs": {
+      "updated_at": "2026-06-06T11:13:11.18+00:00",
+      "sha256": "626a7b3097132c274e6d7eef9973da9449d0193a954609fc996ac074cab1fcfe",
+      "chapters": [
+        "06-concurrency"
+      ]
+    },
+    "swiftlint-pre-commit-hook": {
+      "updated_at": "2026-05-27T13:57:47.576+00:00",
+      "sha256": "b826d7cd1d4a3eb546f58dccb3a61fdb2875c2bbfc62b915ac61e995fbea02e0",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "model-state-cases-for-change-notification": {
+      "updated_at": "2026-05-27T06:40:53.131+00:00",
+      "sha256": "f1d172edfedd1cf550b3a99e4c5f7a46ec27fbf50d967c5b02d3cea1cae8c3a8",
+      "chapters": [
+        "03-model-layer"
+      ]
+    },
+    "architecture-overview": {
+      "updated_at": "2026-05-26T18:10:48.588+00:00",
+      "sha256": "73b1189c1799c4b2710373ee62428038f968097f3bdd2fa727766eacd1f86684",
+      "chapters": [
+        "01-getting-started"
+      ]
+    },
+    "background-controllers": {
+      "updated_at": "2026-05-26T18:10:29.383+00:00",
+      "sha256": "ef7baf93aa1d9f26608a6ab6360b3567db94b8fa5e641bac3ae4243ebac389f2",
+      "chapters": [
+        "04-actions-and-controllers"
+      ]
+    },
+    "versioning-policy": {
+      "updated_at": "2026-05-08T12:41:32.838+00:00",
+      "sha256": "e839a87f79c700642e4303b9908f13fdc23731bb80ea90622c5af5c4964ee557",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "creating-internal-test-builds-mac": {
+      "updated_at": "2026-05-08T12:41:02.673+00:00",
+      "sha256": "d2de004a0e17fc229d65d5a70d3470f30f5aed9f67dde60628cb16372d69d32a",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "test-driven-development-in-swift-apps": {
+      "updated_at": "2026-05-03T14:31:25.971+00:00",
+      "sha256": "c795aee71d46efe1c6496b228016162da4ba92d88cbc76745bcd96ca721e6154",
+      "chapters": [
+        "11-testing"
+      ]
+    },
+    "performance-tests-conventions-and-setup": {
+      "updated_at": "2026-04-29T11:51:10.024+00:00",
+      "sha256": "ddbde81406fe71235b063c720026df01655ed5e101866a2a1d2765c66a009aff",
+      "chapters": [],
+      "scope": "cookbook-candidate"
+    },
+    "rest-api-client-test-infrastructure-stuburlprotocol-and-fixture-builders": {
+      "updated_at": "2026-04-27T13:00:04.597+00:00",
+      "sha256": "c31bf745e2882e2cc5fd7625419bc39cc8207ade3fe6d2aac578fe90766dd958",
+      "chapters": [],
+      "scope": "cookbook-candidate"
+    },
+    "execution-strategies": {
+      "updated_at": "2026-04-26T15:30:51.607+00:00",
+      "sha256": "42bb834f1eb0fd445d99ec63dc8e65b79f246cd09182344ab18c45a26d88e4af",
+      "chapters": [
+        "06-concurrency"
+      ]
+    },
+    "http-client-library-guidelines": {
+      "updated_at": "2026-04-24T17:30:56.234+00:00",
+      "sha256": "51412f126fc1ff590233ed6ab78a7c0c3dfddbcdea6b6a2d134a6fdeda2d7f16",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "transporting-values-in-menu-items": {
+      "updated_at": "2026-03-24T14:21:04.507+00:00",
+      "sha256": "ab9c2d721c2cc41bfc1229be3c6b59eeb9a8498d0d626cda590b405f2387292a",
+      "chapters": [
+        "09-menus"
+      ]
+    },
+    "managing-menus": {
+      "updated_at": "2026-03-24T14:02:05.897+00:00",
+      "sha256": "4acda763ce2e3e54a8e275523c4eced463fd610fb54452fba9d7a7db60317ef8",
+      "chapters": [
+        "09-menus"
+      ]
+    },
+    "text-plugin-system-architecture": {
+      "updated_at": "2026-03-19T16:45:32.156+00:00",
+      "sha256": "8d1be62400c6d931f682ec283a9d62fffa38ab78423ac0898f5232e090feb6d5",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "programmatic-views-view-controller-scoping": {
+      "updated_at": "2026-03-13T07:04:03.482+00:00",
+      "sha256": "66d26f045280ff2813173d742c3fccfab3bfd8b17a7a5efd145b5ff2c39c2594",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "programmatic-views-view-controller-assembly": {
+      "updated_at": "2026-03-13T06:50:13.317+00:00",
+      "sha256": "beb1abf1148f9b2516125d1750a6a29f03ec78e208d5e240dd9092d3d8600095",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "nshostingcontroller-vs-nshostingview-choosing-the-right-approach": {
+      "updated_at": "2026-03-10T06:14:20.845+00:00",
+      "sha256": "7bef2e37a3e7a4263d2c455df27a79fbe4c40ddb734c7928d58475da36f299bd",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "programmatic-views-view-composition-and-swapping": {
+      "updated_at": "2026-03-08T19:34:20.864+00:00",
+      "sha256": "3379430e0e4f1812604e8af41014b2cd9767bc1ae2b36295756cdbae0a06ec18",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "programmatic-views-layout-constraints": {
+      "updated_at": "2026-03-08T19:33:22.944+00:00",
+      "sha256": "25fab3517b40bfcbcaa543c6a80d8775d36485454f8257b71c3829ff9c6358cd",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "programmatic-views-view-components": {
+      "updated_at": "2026-03-08T19:32:53.797+00:00",
+      "sha256": "2be5945e4d6726dc922d7282ff8ea0c1b9fa22bdf6299e99c97f5fef8f4e4177",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "programmatic-views-three-layer-architecture": {
+      "updated_at": "2026-03-08T19:32:25.276+00:00",
+      "sha256": "767fe9c146ba29537505bd647701b908fd64fb63e70962169f4a4deff0bc16f9",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "view-styling-guideline-replacing-viewstyles-with-local-definitions": {
+      "updated_at": "2026-03-08T19:15:49.612+00:00",
+      "sha256": "5ba978c0946ab8239f4f6595c2e0c94939788628ae0c114e22657ce2ed6b2eba",
+      "chapters": [],
+      "scope": "cookbook-candidate"
+    },
+    "towercore-model-layer": {
+      "updated_at": "2026-03-07T13:32:31.329+00:00",
+      "sha256": "5b68ec529e007571bf55fe90badf849e515e7f7e5b76f8e2f9f26a69fe0f070f",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "application-startup-process": {
+      "updated_at": "2026-03-07T12:28:29.699+00:00",
+      "sha256": "33a7c3d26420f3f0617dd9a0bcb3d822b5c3a135a08120fa53fd842e9cb3971a",
+      "chapters": [
+        "02-initializing"
+      ]
+    },
+    "action-validation-and-action-sender-validation": {
+      "updated_at": "2026-03-07T12:24:16.903+00:00",
+      "sha256": "70e491cff076b4c182abd7c1f903895847150be9f2ae17735bb3598a6917a877",
+      "chapters": [
+        "05-action-validation"
+      ]
+    },
+    "swiftui-composition-guidelines": {
+      "updated_at": "2026-03-07T12:14:24.377+00:00",
+      "sha256": "8c9ff4848a2ad1efd19e1bd7d01a13490da82d210a314b085816bf22c298ce08",
+      "chapters": [
+        "07-views"
+      ]
+    },
+    "swiftui-naming-conventions-screen-page-view": {
+      "updated_at": "2026-03-07T12:04:04.633+00:00",
+      "sha256": "e86a2040786176f53b35978b8ee62393ab4d894c7bba749a6baf273d74196838",
+      "chapters": [
+        "07-views"
+      ]
+    }
+  }
+}
