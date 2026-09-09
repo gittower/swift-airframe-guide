@@ -115,36 +115,47 @@ final class SyncQueue: OperationQueue {
 SyncQueue.sharedInstance.addOperation(uploadOperation)
 ```
 
-### Configurable shared instance
+### Configurable shared instance — the config is the global
 
-Some shared instances can't be built from nothing — they need a URL, a machine identity, product metadata known only at launch. The shape is a private setter, a one-time `configure(_:)` called from an initializer, and everything downstream reading the shared instance without ever mentioning how it was built.
+Some shared instances can't be built from nothing — they need a URL, a machine identity, product metadata known only at launch. The tempting shape is a root "service" object built at launch, holding the config and every component of the subsystem behind it. Resist it: make the <em>config itself</em> the configured global, and let each component be its own flat shared instance that reads it.
 
 ```swift
+public struct SyncConfig: Sendable {
+    // base URL, account identity, local sync directory …
+
+    public private(set) static var shared: SyncConfig!
+
+    /// Call once at launch, from an app initializer, before anything reads the stack.
+    public static func configure(_ config: SyncConfig) {
+        shared = config
+    }
+}
+
+@Observable @MainActor
+public final class SyncStore {
+    public static let shared = SyncStore()       // pure observable model — data only
+}
+
 @MainActor
-public final class SyncService {
-    public static private(set) var current: SyncService!
-
-    public let config: SyncConfig
-    public let store: SyncStore
-
-    public init(config: SyncConfig) {
-        self.config = config
-        self.store = SyncStore()
-    }
-
-    public static func configure(config: SyncConfig) {
-        current = SyncService(config: config)
-    }
+public final class SyncManager {
+    public static let shared = SyncManager()     // heavy mutator — reads SyncConfig.shared
 }
 ```
 
-Three details make this shape work:
+The details that make this shape work:
 
-- <strong>One config value, not a pile of injected dependencies.</strong> `SyncConfig` is a plain `Sendable` struct — base URL, account identity, nothing else. The app builds it once, at launch, from whatever product-level configuration it already has.
+- <strong>One config value, not a pile of injected dependencies.</strong> `SyncConfig` is a plain `Sendable` struct of values. When the subsystem lives in a package, the config can also carry closures for the questions only the host app can answer — an optional closure doubling as "capability absent" — so the package reads no other globals and hard-codes no paths, without needing a protocol to stay decoupled.
 - <strong>`configure` runs once, from an initializer</strong> — phase 1, before anything downstream can read the stack.
-- <strong>`current` is force-unwrapped on purpose.</strong> If sync is essential to the app, reaching it before `configure` ran is a launch-ordering bug. It should crash loudly in development, not limp along silently. Reach for an optional only when "not configured yet" is a real, handleable state — not a bug you want surfaced immediately.
+- <strong>`shared` is force-unwrapped on purpose.</strong> If sync is essential to the app, reaching it before `configure` ran is a launch-ordering bug. It should crash loudly in development, not limp along silently. Reach for an optional only when "not configured yet" is a real, handleable state — not a bug you want surfaced immediately.
+- <strong>No root object.</strong> A `SyncService.current` that merely holds `config`, `store`, and `manager` adds a layer without adding behavior — `SyncService.current.store` and `SyncStore.shared` both reach a global either way, so keep the flat, ergonomic accessor and drop the wrapper. Every component that would have hung off the root becomes its own shared instance reading the config directly.
+- <strong>Split by weight.</strong> The heavy mutator (`SyncManager` — network client, persistence, background work) and the pure observable model (`SyncStore` — data only) stay separate shared instances. Read-only consumers go to the store and never touch the manager.
+- <strong>Derived globals stay computed, not configured.</strong> Anything fully derivable from the config — a path layout built from the configured sync directory, say — is a computed property or factory over `SyncConfig.shared`. One configured global per module; everything else follows from it.
+
+### When "shared" is per-notebook, not per-app
+
+Some component families exist once per <em>key</em> rather than once per app — per notebook, per document, per account. The flat surface survives, keyed: `NoteStore.shared(for: notebook)`. Behind those accessors sits one internal context class per key — an implementation detail, never API — whose `private init` is the single place that notebook's component graph is decided: which stores share a serial runner because they write under the same directory, which manager owns its own queue. The components become long-lived per-key instances, which is exactly what lets a manager <em>own</em> a queue that must outlive any one operation. App-wide pieces stay plain shared statics; only the genuinely per-key components go through the context.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-`SyncService` reappears in <a href="/guide/03-model-layer">Chapter 3</a> as the background-sync half of a persisted, database-backed model. Background controllers — the long-lived objects <em>started</em> in phase 4 — are covered in <a href="/guide/04-actions-and-controllers">Chapter 4</a>.
+The manager/store split introduced here runs through <a href="/guide/03-model-layer">Chapter 3</a>, where the persisted, database-backed model shape is built on exactly that pair. Background controllers — the long-lived objects <em>started</em> in phase 4 — are covered in <a href="/guide/04-actions-and-controllers">Chapter 4</a>.
 </div>
