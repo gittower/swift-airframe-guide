@@ -9,24 +9,21 @@
       "chapters": [
         "03-model-layer",
         "06-concurrency"
-      ],
-      "pendingChapterUpdate": true
+      ]
     },
     "async-cancellation-patterns": {
       "updated_at": "2026-09-09T15:47:47.202+00:00",
       "sha256": "83f8d1727997798be9b393593add6f1fc4489fa3c88865e9cdf4ab045031c24b",
       "chapters": [
         "06-concurrency"
-      ],
-      "pendingChapterUpdate": true
+      ]
     },
     "object-wiring-shared-instances-and-configure": {
       "updated_at": "2026-09-09T15:37:00.649+00:00",
       "sha256": "78d0c868c7f25cf9d5673c9f26fe2f9f3cb273ebd58e8718d286a5dc10783260",
       "chapters": [
         "02-initializing"
-      ],
-      "pendingChapterUpdate": true
+      ]
     },
     "view-state-management-stateobserving-protocol": {
       "updated_at": "2026-09-03T08:34:23.157+00:00",
