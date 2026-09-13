@@ -1,11 +1,11 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-09-09",
+  "lastSync": "2026-09-13",
   "documents": {
     "manager-architecture": {
-      "updated_at": "2026-09-09T17:25:53.678+00:00",
-      "sha256": "40fdc8e073d4e374f25ed0d941c57f4008af06e7b0d6661398929307b787addf",
+      "updated_at": "2026-09-13T12:23:36.751+00:00",
+      "sha256": "4cd6139814e02d9ca9759205809955b1c021a65c9038d7f1a26dbb0ceb562a6e",
       "chapters": [
         "03-model-layer",
         "06-concurrency"
@@ -26,10 +26,18 @@
       ]
     },
     "view-state-management-stateobserving-protocol": {
-      "updated_at": "2026-09-03T08:34:23.157+00:00",
-      "sha256": "adcfc424fb3ed124817ec9bb468c13679e429aba18259f48075155cbe87163c6",
+      "updated_at": "2026-09-12T11:09:20.214+00:00",
+      "sha256": "df0b2c359f2c3cf29b296f529dbcd780cfa6488526fa9eca4a0bdaf6d228d931",
       "chapters": [
+        "07-views",
         "08-state-observing"
+      ]
+    },
+    "model-queries-static-accessors-via-model-queries-swift": {
+      "updated_at": "2026-09-13T12:23:57.83+00:00",
+      "sha256": "7de0af9f3d76a7584b2d69cb7f3a221a76317f229eb0c0fb06b6cf9b816d7515",
+      "chapters": [
+        "03-model-layer"
       ]
     },
     "migrating-objective-c-observer-classes-to-combine-publishers": {
@@ -95,8 +103,8 @@
       ]
     },
     "actions-and-activities": {
-      "updated_at": "2026-06-28T13:41:59.999+00:00",
-      "sha256": "f02059e9a8c99a02bb9c3a16a9c2de3d817548ec337f2ddb584e680887fcbe2b",
+      "updated_at": "2026-09-13T15:27:39.52+00:00",
+      "sha256": "c4d020dcc3ff79712a79d819baa8c612c0637d0e6594c33fc9eec09be5e8599e",
       "chapters": [
         "04-actions-and-controllers"
       ]
@@ -123,9 +131,10 @@
       ]
     },
     "model-layer-organization": {
-      "updated_at": "2026-09-09T17:29:00.987+00:00",
-      "sha256": "b6d63663542e04752a0d2c2aad1e3bc7f6181d93c08138ef29f835f244be0f07",
+      "updated_at": "2026-09-13T15:26:31.704+00:00",
+      "sha256": "9944a82afd4d4c7483bdaf6afb787a0fa79d10da38a7eafce3e9cda74346ad62",
       "chapters": [
+        "02-initializing",
         "03-model-layer"
       ]
     },
@@ -156,8 +165,8 @@
       "scope": "out-of-scope"
     },
     "model-state-cases-for-change-notification": {
-      "updated_at": "2026-05-27T06:40:53.131+00:00",
-      "sha256": "f1d172edfedd1cf550b3a99e4c5f7a46ec27fbf50d967c5b02d3cea1cae8c3a8",
+      "updated_at": "2026-09-13T15:26:52.75+00:00",
+      "sha256": "2f175ef15fc2300cb9c0e4c3c2b0e726b4e27bb6bcd0f8d20dcab74d4f0a6480",
       "chapters": [
         "03-model-layer"
       ]
