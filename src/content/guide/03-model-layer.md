@@ -106,11 +106,15 @@ struct PullNotesJob: BackgroundJob {
 ```swift
 @MainActor
 final class NoteManager {
+    static let shared = NoteManager(runner: SerialTaskRunner(), client: .shared, store: .shared)
+
     private let runner: SerialTaskRunner
     private let client: SyncClient
     private let store: NoteStore
 
-    init(runner: SerialTaskRunner, client: SyncClient, store: NoteStore) {
+    // Private — NoteManager builds its own dependencies once, at `shared`.
+    // Nothing outside ever constructs one; there's no seam to inject through.
+    private init(runner: SerialTaskRunner, client: SyncClient, store: NoteStore) {
         self.runner = runner
         self.client = client
         self.store = store
@@ -138,7 +142,7 @@ final class NoteManager {
 }
 ```
 
-`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/06-concurrency">Chapter 6</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly.
+`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/06-concurrency">Chapter 6</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly. `init` is private for the same reason `shared` is the only way to reach a `SyncStore` or `SyncManager` in <a href="/guide/02-initializing">Chapter 2</a>: this app doesn't wire dependencies through a DI container or an injected initializer — a manager builds its own collaborators once, at its own `shared`, and every caller reaches for that.
 
 What happens at runtime when a caller does `try await NoteManager.shared.pull(notebookID: id)`:
 

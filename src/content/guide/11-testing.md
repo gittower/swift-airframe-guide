@@ -43,15 +43,16 @@ final class NoteManagerTests: TestCase {
     func testPull_MergesRemoteNotes() async throws {
         let notebook = Notebook._notebook()
         let response = SyncFixture.notesResponse(count: 2)   // external shape
-        let client = StubSyncClient(response: response)
+        stub(.get, "/notebooks/\(notebook.id)/notes") { _ in .json(response) }
 
-        try await NoteManager(client: client, store: .shared)
-            .pull(notebookID: notebook.id)
+        try await NoteManager.shared.pull(notebookID: notebook.id)
 
         XCTAssertEqual(notebook.notes.count, 2)
     }
 }
 ```
+
+The test reaches `NoteManager` the same way production code does — `.shared`, never a constructor — because there's no injected-client seam to construct it with in the first place: `NoteManager`'s `init` is private, per <a href="/guide/03-model-layer">Chapter 3</a>. The stub sits at the HTTP boundary instead, intercepting the request `SyncClient` would otherwise send over the real network; `SyncClient` itself, request building, and response decoding all still run for real.
 
 Async work follows Chapter 6's own contract: prefer `async` test methods over bridging helpers, and where cancellation matters, assert it the same way production code checks it — that state was left untouched, not merely that an error was thrown.
 

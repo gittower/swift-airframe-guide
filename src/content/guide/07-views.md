@@ -80,9 +80,6 @@ final class TagFilterButtonController: NSObject, NSMenuDelegate {
     // The component — built and owned here, placed by the owner.
     let button = NSPopUpButton()
 
-    // Inputs — pushed in by the owner.
-    var noteManager: NoteManager?
-
     // Outcomes — reported back.
     var onSelectTag: ((Tag?) -> Void)?
 
@@ -98,13 +95,15 @@ final class TagFilterButtonController: NSObject, NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
-        guard let tags = noteManager?.allTags else { return }
+        let tags = NoteManager.shared.allTags
         menu.items = NSMenuItem.makeTagFilterItems(tags: tags) { [weak self] tag in
             self?.onSelectTag?(tag)
         }
     }
 }
 ```
+
+Note what's absent from the inputs: `NoteManager` itself. A shared instance is never threaded in as a property to push — that's the DI-container shape this app doesn't use, per <a href="/guide/02-initializing">Chapter 2</a>. The controller just reaches for `NoteManager.shared` wherever it needs it; only genuinely owner-specific context (a selected notebook, a scoped identifier) is a property to push in.
 
 Exposing the component as a property is one of two integration modes: a `make…()` method or a `let` component covers the common case where the controller creates the control, and an `attach(to:)` method covers a control that already exists — a toolbar item the window hands over, say. Either way the owner decides <em>where</em> the component goes; the component controller decides everything about how it behaves.
 
