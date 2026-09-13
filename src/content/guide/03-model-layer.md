@@ -17,6 +17,39 @@ That convergence is what makes the rest of the architecture possible:
 
 A manager always exists, even when it looks trivial. Sometimes it's a dedicated class; sometimes the model class acts as its own manager, when the mutation logic is simple enough that a wrapper would add nothing — a settings object's own setters, as in <a href="/guide/02-initializing">Chapter 2</a>, <em>are</em> the funnel.
 
+Reading runs the opposite direction from writing, and skips the manager entirely: a manager exists to fund the single mutation path, and has nothing to contribute to a plain read. Reads go through the model itself, as a set of static queries:
+
+```swift
+// Avoid — the manager has nothing to contribute to a read
+NoteManager.shared.note(id: id, in: notebook)
+
+// Prefer — the model reads itself
+Note.note(id: id, in: notebook)
+```
+
+Whatever the model needs to query — a database context, or a `*Store` for anything else (`NoteStore`) — stays an implementation detail behind the model, never something a caller reaches for directly. The store itself stays generic: `all()`, `find(id:)`, insert and remove — the small set of accessors every query builds on. Filtering logic lives one layer up, in a `Model+Queries.swift` extension, so the store never grows a bespoke method per filter:
+
+```swift
+// Note+Queries.swift
+extension Note {
+    static func note(id: NoteID, in notebook: Notebook) -> Note? {
+        notebook.notes.note(id: id)
+    }
+
+    static func notes(taggedWith tag: Tag, in notebook: Notebook) -> [Note] {
+        notebook.notes.all().filter { $0.tags.contains(tag) }
+    }
+
+    static func all(in notebook: Notebook) -> [Note] {
+        notebook.notes.all()
+    }
+}
+```
+
+Singular name and return type for a single lookup, plural for a collection; the first argument label names what's being filtered on (`taggedWith:`) rather than a generic `where:`, so the call site reads like the question being asked out loud.
+
+These queries always answer with current state — `Note.all(in: notebook)` recomputes from whatever `notebook.notes` holds right now, never a result cached from an earlier call. That's what makes it safe to just call the query again after a change notification fires, rather than reasoning about whether the old result is still good: nothing about the query itself can be stale. If a particular query is expensive enough to want caching, the cache lives on the store, kept live by the same funnel that writes through it — never as a memo hidden inside the query function, guessing when to invalidate itself.
+
 <div class="rule">
 <span class="rule-label">The rule</span>
 
@@ -132,6 +165,8 @@ The same three-part skeleton — context, job, manager — is what makes cancell
 </table>
 </div>
 
+The second pattern is bounded by transience: nothing about that returned value is stored anywhere the model can hand back out again. The moment some other consumer needs to ask for the same answer later — not just once, in response to this call — the data has become state, and state belongs in the model layer under one of the shapes from earlier in this chapter, read back through a query like the ones that opened it. A private cache tucked inside the manager to avoid re-fetching is the tell that this line got crossed without actually moving the data where it belongs.
+
 The third pattern carries its own rule: the write goes through a <strong>dedicated `@MainActor` apply method on the model object</strong> — never inline mutation buried in a runner closure. The mutation logic stays testable and co-located with the state it modifies, and there's exactly one place to look when asking "what can change this?"
 
 ```swift
@@ -159,24 +194,29 @@ Note what's absent: no `MainActor.run` hop. `runner.run`'s closure itself execut
 <div class="rule">
 <span class="rule-label">Sub-decision</span>
 
-Within this shape there's a genuine open choice: model entities as immutable structs that get replaced wholesale, or as `@Observable` classes that get mutated in place. Choose classes when identity across a mutation matters — a detail view holding a direct reference to a note should see an in-place edit without re-resolving it. Choose structs when Codable simplicity and value semantics matter more than identity — small entities nobody holds a long-lived reference to.
+Within this shape there's a genuine open choice: model entities as immutable structs that get replaced wholesale, or as plain reference classes that get mutated in place. Choose classes when identity across a mutation matters — a detail view holding a direct reference to a note should see an in-place edit without re-resolving it. Choose structs when Codable simplicity and value semantics matter more than identity — small entities nobody holds a long-lived reference to. Neither option is `@Observable` — identity preservation is about reference vs. value semantics, not reactivity; the notification below is what tells a consumer to re-read, either way.
 
 </div>
 
 ## Six cases for signalling a change
 
-However the state is shaped, it has to tell interested views when it changes. The signalling mechanism follows directly from one question: <strong>do you own the source as a plain Swift, main-thread object?</strong>
+However the state is shaped, it has to tell interested views when it changes. The load-bearing question isn't whether the source happens to be a plain Swift object — it's <strong>whether the state is model layer, or view/window layer</strong>.
 
 <div class="table-wrap">
 <table>
 <thead><tr><th>Source</th><th>Signal</th></tr></thead>
 <tbody>
-<tr><td>Shared app-wide state, scoped state, an in-memory domain manager, transient loaded data</td><td><code>@Observable</code> — consumers read a property, re-render when it changes.</td></tr>
-<tr><td>Database-backed model</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read.</td></tr>
+<tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/07-views">Chapter 7</a>.</td></tr>
+<tr><td>Flat, ambient, app-wide settings or state with no per-view projection to make — the one narrow exception</td><td><code>@Observable</code>, read directly, as in <a href="/guide/02-initializing">Chapter 2</a>.</td></tr>
+<tr><td>Any other model-layer state — in-memory domain data or database-backed</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read.</td></tr>
 <tr><td>Platform / framework events</td><td>Subscribe to the framework's own notification directly.</td></tr>
 </tbody>
 </table>
 </div>
+
+A model itself is <code>@Observable</code> only in that one narrow case — a value flat enough that every consumer wants it verbatim, with no shape or subset to decide on. Anything else stays off-limits: binding a view straight to a model couples the view's whole contract to the model (and is a non-starter for a database-backed model to begin with — its runtime-synthesized accessors leave nothing for the Observation macro to rewrite), and a view driven straight off model mutations reacts to every intermediate step of a multi-field change instead of rendering one settled state. The moment a settings-shaped value needs to be derived, combined, or filtered for a particular view, it has graduated to needing its own display object like everything else in the row above it.
+
+There's a mechanical reason underneath that design one, and it's what actually draws the line: `@Observable`'s guarantees only mean something for state that's exclusively touched on the main actor. A settings object like `SyncStore` from <a href="/guide/02-initializing">Chapter 2</a> qualifies because nothing ever writes to it from a background job — every other model-layer shape in this chapter, however trivial it looks today, has background work funneling through its manager, and that's disqualifying even when the model type itself carries a `@MainActor` annotation. The one other place this guide reaches for `@Observable` outside a view is the Action — see <a href="/guide/04-actions-and-controllers">Chapter 4</a> — for the identical reason: an Action is never constructed or touched off the main actor, full stop.
 
 When a notification-based source has more than one consumer that wants to observe it reactively, the recipe is to bridge it once: a single handler copies the value into an `@Observable` object that everyone else reads, rather than every consumer subscribing to the raw notification independently.
 
