@@ -114,6 +114,29 @@ Three kinds of statement can appear in `observeState()`:
 
 `observations.observe({ read }, perform:)` runs `read` immediately to register what to watch, then calls `perform` only on a later change — never on the first pass. `observations.track` runs its updater immediately and re-runs it whenever any observable property it read last time changes; multiple changes within one runloop turn coalesce into a single re-run, and delivery always lands one main-queue turn after the mutation that caused it.
 
+<div class="rule">
+<span class="rule-label">The rule</span>
+
+A bridge or react closure never calls a tracked updater directly — it only ever updates the state that updater reads. The same holds one level up: code outside <code>observeState()</code> that needs "the view to reload" never calls the updater from that call site — it updates whatever state the updater reads, and <code>track</code> re-renders on its own.
+
+</div>
+
+```swift
+// Avoid — the handler renders directly. It works, but the updater is now
+// reachable two ways, and it re-runs on every notification instead of only
+// when the state it renders actually changed.
+observations.observe(NotificationCenter.default.publisher(for: .noteDidChange)) { [weak self] _ in
+    self?.updateFields()
+}
+
+// Prefer — the handler updates state; track renders it.
+observations.observe(NotificationCenter.default.publisher(for: .noteDidChange)) { [weak self] _ in
+    self?.updateNoteState()
+}
+updateNoteState()
+observations.track { [weak self] in self?.updateFields() }
+```
+
 ## Under the hood
 
 The tracking half rides on the Observation framework (macOS 14+) — the same machinery behind SwiftUI's `body`. When `observations.track` runs an updater, every `@Observable`/`@Tracked` property read during that run is registered as a dependency; mutating any of them schedules a re-run, and the read set is re-gathered on every pass, so conditional reads stay correct. Delivery is always asynchronous — one main-queue turn after the mutation, with all changes in a turn coalesced into a single pass. Never write code that needs a handler to run synchronously with the change; when a one-turn deferral is exactly what a re-entrancy-sensitive AppKit API needs, this is it, for free. External signals enter through Combine: `observations.observe(publisher)` subscribes with delivery hopped to the main queue, including any value the publisher replays on subscription.

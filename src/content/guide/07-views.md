@@ -161,6 +161,13 @@ final class NoteDetailViewController: NSViewController {
 }
 ```
 
+<div class="rule">
+<span class="rule-label">The rule</span>
+
+An external event never calls <code>updateFields()</code> — or any other tracked updater — directly. It only ever updates the state that updater reads; the updater re-runs because <code>observations.track</code> noticed the state changed, not because something told it to run. Reaching for the updater directly from a notification handler or a delegate callback is the tell that state and rendering have blurred together: fix it by routing the event through a state property instead, even if that means adding one nothing-else-does-it property. This is what keeps rendering a pure function of current state — the same guarantee <a href="/guide/08-state-observing">Chapter 8</a> builds the whole activation lifecycle around.
+
+</div>
+
 Both mechanisms are declared in one place — `observeState()`, the complete inventory of everything the controller reacts to — and wired up by an activation lifecycle (`activateObservation()` / `deactivateObservation()`) rather than by hand. That lifecycle, plus a parent controller that activates a whole tree of children at once, gets its own chapter next: <a href="/guide/08-state-observing">Chapter 8</a>.
 
 Hosting a SwiftUI view inside that same controller works the same way — the Observation framework tracks any `@Observable` property read inside a view's `body`, so a hosted SwiftUI view stays reactive to exactly the state it reads.
