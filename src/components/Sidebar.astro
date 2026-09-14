@@ -8,6 +8,14 @@ const docs = (await getCollection('guide'))
 const base = import.meta.env.BASE_URL;
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 const homeHref = base;
+
+// Subchapters stay collapsed unless the reader is inside their chapter
+// (on the parent page or any of its subchapter pages).
+const currentDoc = docs.find((d) => currentPath === `${base}guide/${d.id}`.replace(/\/$/, ''));
+const activeOrder = currentDoc?.data.order;
+const visibleDocs = docs.filter(
+  (d) => d.data.subOrder === undefined || d.data.order === activeOrder
+);
 ---
 
 <aside class="sidebar">
@@ -40,12 +48,12 @@ const homeHref = base;
       </a>
     </li>
     {
-      docs.map((doc) => {
+      visibleDocs.map((doc) => {
         const href = `${base}guide/${doc.id}`;
         const isActive = currentPath === href.replace(/\/$/, '');
         const isSub = doc.data.subOrder !== undefined;
         const gate = isSub
-          ? `${String(doc.data.order).padStart(2, '0')}.${doc.data.subOrder}`
+          ? `G${String(doc.data.order).padStart(2, '0')}.${doc.data.subOrder}`
           : `G${String(doc.data.order).padStart(2, '0')}`;
         return (
           <li class:list={[{ sub: isSub }]}>
