@@ -67,7 +67,7 @@ Navigation state lives on the parent that routes between children — never insi
 
 ## Restoring navigation on relaunch
 
-Because the navigation state stores identifiers and not the objects themselves, restoring it after a relaunch is cheap: persist the selected ID — via window restoration's `NSCoder`, or a settings value from <a href="/guide/02-initializing">Chapter 2</a> for something lighter-weight than a whole window — and re-resolve it against whatever the Model layer has actually loaded once startup reaches phase 4. Restoring a stored <em>object</em> instead of an identifier is the mistake to avoid: it risks resurrecting a stale snapshot instead of asking the Model what's true now.
+Because the navigation state stores identifiers and not the objects themselves, restoring it after a relaunch is cheap: persist the selected ID — via window restoration's `NSCoder`, or a settings value from <a href="/guide/02-4-settings">Chapter 2.4</a> for something lighter-weight than a whole window — and re-resolve it against whatever the Model layer has actually loaded once startup reaches phase 4. Restoring a stored <em>object</em> instead of an identifier is the mistake to avoid: it risks resurrecting a stale snapshot instead of asking the Model what's true now.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>

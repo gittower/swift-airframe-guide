@@ -22,7 +22,7 @@
       "updated_at": "2026-09-09T15:37:00.649+00:00",
       "sha256": "78d0c868c7f25cf9d5673c9f26fe2f9f3cb273ebd58e8718d286a5dc10783260",
       "chapters": [
-        "02-initializing"
+        "02-5-object-wiring"
       ]
     },
     "view-state-management-stateobserving-protocol": {
@@ -134,7 +134,7 @@
       "updated_at": "2026-09-13T15:26:31.704+00:00",
       "sha256": "9944a82afd4d4c7483bdaf6afb787a0fa79d10da38a7eafce3e9cda74346ad62",
       "chapters": [
-        "02-initializing",
+        "02-4-settings",
         "05-model-layer"
       ]
     },
@@ -315,7 +315,9 @@
       "updated_at": "2026-03-07T12:28:29.699+00:00",
       "sha256": "33a7c3d26420f3f0617dd9a0bcb3d822b5c3a135a08120fa53fd842e9cb3971a",
       "chapters": [
-        "02-initializing"
+        "02-1-app-delegate",
+        "02-2-startup",
+        "02-3-window-restoration"
       ]
     },
     "action-validation-and-action-sender-validation": {

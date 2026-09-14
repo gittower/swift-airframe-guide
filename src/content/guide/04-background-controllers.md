@@ -19,7 +19,7 @@ protocol BackgroundController: AnyObject {
 }
 ```
 
-Conforming controllers start in phase 4 of launch — see <a href="/guide/02-initializing">Chapter 2</a> — never earlier: initializers must stay fast, and a controller may assume the subsystems below it are already configured.
+Conforming controllers start in phase 4 of launch — see <a href="/guide/02-2-startup">Chapter 2.2</a> — never earlier: initializers must stay fast, and a controller may assume the subsystems below it are already configured.
 
 Reach for one when work has no gesture behind it: refreshing data on an interval, reacting to system events that can happen at any time, maintaining state derived from model changes, cleaning up stale data periodically, recording events for telemetry. And know the three cases that look like one but aren't: a one-shot user-initiated operation is an Action — <a href="/guide/06-1-actions">Chapter 6.1</a>; work that needs progress reporting and user cancellation is a long-running Action — the Action <em>is</em> the live operation, per that same subchapter; window-scoped state belongs to a view state object — <a href="/guide/08-1-views">Chapter 8.1</a>.
 

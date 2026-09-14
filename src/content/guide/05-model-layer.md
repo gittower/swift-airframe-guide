@@ -15,7 +15,7 @@ That convergence is what makes the rest of the architecture possible:
 - It doesn't matter <em>where</em> a change came from. Ordering, validation, persistence, and notification all have exactly one place to live, so adding a new source of mutation never reopens those questions.
 - Views can stay naive. They read current state, render it, and react to change notifications — they never need to reason about who else might be writing at the same time.
 
-A manager always exists, even when it looks trivial. Sometimes it's a dedicated class; sometimes the model class acts as its own manager, when the mutation logic is simple enough that a wrapper would add nothing — a settings object's own setters, as in <a href="/guide/02-initializing">Chapter 2</a>, <em>are</em> the funnel.
+A manager always exists, even when it looks trivial. Sometimes it's a dedicated class; sometimes the model class acts as its own manager, when the mutation logic is simple enough that a wrapper would add nothing — a settings object's own setters, as in <a href="/guide/02-4-settings">Chapter 2.4</a>, <em>are</em> the funnel.
 
 Ordinary display reads skip the manager: query the model directly. A read that must wait for an ongoing write to finish belongs to a coordinated workflow instead; it can go through a manager as a read job, as shown in <a href="/guide/07-concurrency">Chapter 7</a>. For plain lookups, the model exposes static queries:
 
@@ -69,7 +69,7 @@ Not every piece of state needs the same machinery. Six axes decide the shape: do
 <tr><td><strong>Persisted, main-thread only</strong></td><td>Yes</td><td>None</td><td>User-edited records with no external sync — small, infrequent, main-thread writes are enough.</td></tr>
 <tr><td><strong>Structured + async sources</strong></td><td>Yes (flat files)</td><td>Yes, mixed sources</td><td>Multiple asynchronous writers — a user and a background pipeline both append to the same collection.</td></tr>
 <tr><td><strong>In-memory, replaced wholesale</strong></td><td>No</td><td>Load only</td><td>Data reloaded fresh each session, not user-editable in place.</td></tr>
-<tr><td><strong>Preference-backed settings</strong></td><td>Yes (key-value)</td><td>None</td><td>User preferences — see <a href="/guide/02-initializing">Chapter 2</a>.</td></tr>
+<tr><td><strong>Preference-backed settings</strong></td><td>Yes (key-value)</td><td>None</td><td>User preferences — see <a href="/guide/02-4-settings">Chapter 2.4</a>.</td></tr>
 <tr><td><strong>In-memory app state</strong></td><td>No</td><td>None</td><td>Transient flags with no persistence and no cross-source coordination.</td></tr>
 </tbody>
 </table>
@@ -155,7 +155,7 @@ final class NoteManager {
 }
 ```
 
-`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/07-concurrency">Chapter 7</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly. `init` is private for the same reason `shared` is the only way to reach a `SyncStore` or `SyncManager` in <a href="/guide/02-initializing">Chapter 2</a>: this app doesn't wire dependencies through a DI container or an injected initializer — a manager builds its own collaborators once, at its own `shared`, and every caller reaches for that.
+`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/07-concurrency">Chapter 7</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly. `init` is private for the same reason `shared` is the only way to reach a `SyncStore` or `SyncManager` in <a href="/guide/02-5-object-wiring">Chapter 2.5</a>: this app doesn't wire dependencies through a DI container or an injected initializer — a manager builds its own collaborators once, at its own `shared`, and every caller reaches for that.
 
 What happens at runtime when a caller does `try await NoteManager.shared.pull(notebookID: id)`:
 
@@ -222,7 +222,7 @@ However the state is shaped, it has to tell interested views when it changes. Th
 <thead><tr><th>Source</th><th>Signal</th></tr></thead>
 <tbody>
 <tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/08-1-views">Chapter 8.1</a>.</td></tr>
-<tr><td>Flat, ambient, app-wide settings or state with no per-view projection to make — the one narrow exception</td><td><code>@Observable</code>, read directly, as in <a href="/guide/02-initializing">Chapter 2</a>.</td></tr>
+<tr><td>Flat, ambient, app-wide settings or state with no per-view projection to make — the one narrow exception</td><td><code>@Observable</code>, read directly, as in <a href="/guide/02-4-settings">Chapter 2.4</a>.</td></tr>
 <tr><td>Any other model-layer state — in-memory domain data or database-backed</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read.</td></tr>
 <tr><td>Platform / framework events</td><td>Subscribe to the framework's own notification directly.</td></tr>
 </tbody>
@@ -231,7 +231,7 @@ However the state is shaped, it has to tell interested views when it changes. Th
 
 A model itself is <code>@Observable</code> only in that one narrow case — a value flat enough that every consumer wants it verbatim, with no shape or subset to decide on. Anything else stays off-limits: binding a view straight to a model couples the view's whole contract to the model (and is a non-starter for a database-backed model to begin with — its runtime-synthesized accessors leave nothing for the Observation macro to rewrite), and a view driven straight off model mutations reacts to every intermediate step of a multi-field change instead of rendering one settled state. The moment a settings-shaped value needs to be derived, combined, or filtered for a particular view, it has graduated to needing its own display object like everything else in the row above it.
 
-There's a mechanical reason underneath that design one, and it's what actually draws the line: `@Observable`'s guarantees only mean something for state that's exclusively touched on the main actor. A settings object like `SyncStore` from <a href="/guide/02-initializing">Chapter 2</a> qualifies because nothing ever writes to it from a background job — every other model-layer shape in this chapter, however trivial it looks today, has background work funneling through its manager, and that's disqualifying even when the model type itself carries a `@MainActor` annotation. The one other place this guide reaches for `@Observable` outside a view is the Action — see <a href="/guide/06-1-actions">Chapter 6.1</a> — for the identical reason: an Action is never constructed or touched off the main actor, full stop.
+There's a mechanical reason underneath that design one, and it's what actually draws the line: `@Observable`'s guarantees only mean something for state that's exclusively touched on the main actor. A settings object like `EditorSettings` from <a href="/guide/02-4-settings">Chapter 2.4</a> qualifies because nothing ever writes to it from a background job — every other model-layer shape in this chapter, however trivial it looks today, has background work funneling through its manager, and that's disqualifying even when the model type itself carries a `@MainActor` annotation. The one other place this guide reaches for `@Observable` outside a view is the Action — see <a href="/guide/06-1-actions">Chapter 6.1</a> — for the identical reason: an Action is never constructed or touched off the main actor, full stop.
 
 When a notification-based source has more than one consumer that wants to observe it reactively, the recipe is to bridge it once: a single handler copies the value into an `@Observable` object that everyone else reads, rather than every consumer subscribing to the raw notification independently.
 
