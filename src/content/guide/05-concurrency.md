@@ -1,7 +1,7 @@
 ---
 title: "Concurrency"
 description: "Build manager operations with background jobs, declare which work can overlap, and report progress without moving application state off the main actor."
-order: 6
+order: 5
 ---
 
 Managers expose plain `async` operations. Inside a manager, jobs describe the work, runners order it, and progress events keep the UI informed. This chapter extends the notebook example from <a href="/guide/03-model-layer">Chapter 3</a> using those APIs. The framework supplies their execution and delivery machinery.
@@ -399,5 +399,5 @@ Only store the caller's `Task` when cancellation is a real requirement — a vie
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/07-views">Chapter 7</a>. Testing async, job-based code through its application behavior is <a href="/guide/11-testing">Chapter 11</a>.
+How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/06-views">Chapter 6</a>. Testing async, job-based code through its application behavior is <a href="/guide/10-testing">Chapter 10</a>.
 </div>

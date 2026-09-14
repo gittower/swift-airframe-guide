@@ -157,5 +157,5 @@ Some component families exist once per <em>key</em> rather than once per app —
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The manager/store split introduced here runs through <a href="/guide/03-model-layer">Chapter 3</a>, where the persisted, database-backed model shape is built on exactly that pair. Background controllers — the long-lived objects <em>started</em> in phase 4 — are covered in <a href="/guide/04-actions-and-controllers">Chapter 4</a>.
+The manager/store split introduced here runs through <a href="/guide/03-model-layer">Chapter 3</a>, where the persisted, database-backed model shape is built on exactly that pair. Background controllers — the long-lived objects <em>started</em> in phase 4 — are covered in <a href="/guide/04-2-action-controllers">Chapter 4.2</a>.
 </div>

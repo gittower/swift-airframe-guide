@@ -2,9 +2,12 @@
 import { getCollection } from 'astro:content';
 import ShellLayout from '../layouts/ShellLayout.astro';
 
-const docs = (await getCollection('guide'))
+const allDocs = (await getCollection('guide'))
   .filter((d) => !d.data.draft)
-  .sort((a, b) => a.data.order - b.data.order);
+  .sort((a, b) => a.data.order - b.data.order || (a.data.subOrder ?? 0) - (b.data.subOrder ?? 0));
+
+const docs = allDocs.filter((d) => d.data.subOrder === undefined);
+const base = import.meta.env.BASE_URL;
 ---
 
 <ShellLayout
@@ -27,13 +30,32 @@ const docs = (await getCollection('guide'))
 
   <div class="toc-grid">
     {
-      docs.map((doc) => (
-        <a class="toc-card" href={`${import.meta.env.BASE_URL}guide/${doc.id}`}>
-          <span class="gate">G{String(doc.data.order).padStart(2, '0')}</span>
-          <h3>{doc.data.title}</h3>
-          <p>{doc.data.description}</p>
-        </a>
-      ))
+      docs.map((doc) => {
+        const children = allDocs.filter(
+          (d) => d.data.order === doc.data.order && d.data.subOrder !== undefined
+        );
+        return (
+          <div class="toc-card">
+            <a class="toc-card-link" href={`${base}guide/${doc.id}`}>
+              <span class="gate">G{String(doc.data.order).padStart(2, '0')}</span>
+              <h3>{doc.data.title}</h3>
+              <p>{doc.data.description}</p>
+            </a>
+            {children.length > 0 && (
+              <ul class="toc-card-subs">
+                {children.map((child) => (
+                  <li>
+                    <a href={`${base}guide/${child.id}`}>
+                      {String(child.data.order).padStart(2, '0')}.{child.data.subOrder}{' '}
+                      {child.data.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })
     }
   </div>
 </ShellLayout>
@@ -87,6 +109,7 @@ const docs = (await getCollection('guide'))
   }
 
   .toc-card {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -94,7 +117,6 @@ const docs = (await getCollection('guide'))
     background: var(--bg-panel);
     border-radius: 12px;
     box-shadow: var(--shadow);
-    text-decoration: none;
     color: var(--ink);
     border: 1px solid var(--line);
     transition:
@@ -105,6 +127,21 @@ const docs = (await getCollection('guide'))
   .toc-card:hover {
     transform: translateY(-2px);
     border-color: var(--accent);
+  }
+
+  .toc-card-link {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .toc-card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
   }
 
   .toc-card .gate {
@@ -128,6 +165,29 @@ const docs = (await getCollection('guide'))
     margin: 0;
     font-size: 0.92rem;
     color: var(--ink-soft);
+  }
+
+  .toc-card-subs {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 4px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+
+  .toc-card-subs a {
+    font-family: var(--font-mono), var(--font-mono-fallback);
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+  }
+
+  .toc-card-subs a:hover {
+    color: var(--accent-ink);
+    text-decoration: underline;
   }
 
   @media (max-width: 900px) {

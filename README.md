@@ -46,6 +46,21 @@ order: 11
 
 The sidebar, the overview grid, and prev/next navigation all derive from `order` automatically — nothing else needs to be updated by hand.
 
+## Adding a subchapter
+
+A subchapter is a piece of a chapter that's grown too big to stay inline but doesn't rename the chapter spine. Name it `NN-M-slug.md` — the same `NN` as its parent chapter, plus a `M` sub-index — and give it both `order` (matching the parent) and `subOrder` (the sub-index) in frontmatter:
+
+```yaml
+---
+title: "Subchapter Title"
+description: "One sentence."
+order: 4
+subOrder: 2
+---
+```
+
+A document is treated as a subchapter purely by the presence of `subOrder`. Subchapters sort into the linear sequence right after their parent (`4 → 4.1 → 4.2 → 4.3 → 5`), render with a `04.2`-style eyebrow instead of a `G04` gate pill, and don't get their own card on the overview grid — they're listed under their parent chapter's card instead, and the parent chapter itself renders an auto-generated "In this chapter" strip linking to each of its subchapters.
+
 ## Hosting
 
 Deployed to GitHub Pages as a project site under the `gittower` org:

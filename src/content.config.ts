@@ -8,6 +8,7 @@ const guideCollection = defineCollection({
     title: z.string(),
     description: z.string(),
     order: z.number().int(),
+    subOrder: z.number().int().optional(),
     draft: z.boolean().default(false),
   }),
 });

@@ -1,21 +1,64 @@
 ---
 import ShellLayout from './ShellLayout.astro';
 
+interface ChildDoc {
+  href: string;
+  title: string;
+  order: number;
+  subOrder?: number;
+}
+
 interface Props {
   title: string;
   description: string;
   order: number;
+  subOrder?: number;
+  parentTitle?: string | null;
+  children?: ChildDoc[];
   prevDoc?: { href: string; title: string } | null;
   nextDoc?: { href: string; title: string } | null;
 }
 
-const { title, description, order, prevDoc = null, nextDoc = null } = Astro.props;
+const {
+  title,
+  description,
+  order,
+  subOrder,
+  parentTitle = null,
+  children = [],
+  prevDoc = null,
+  nextDoc = null,
+} = Astro.props;
+
+const isSub = subOrder !== undefined;
+const gate = isSub ? `${String(order).padStart(2, '0')}.${subOrder}` : String(order).padStart(2, '0');
+const chapterLabel = isSub ? `${order}.${subOrder}` : String(order);
 ---
 
 <ShellLayout title={title} description={description}>
   <article class="page">
-    <p class="eyebrow">Chapter {order} &nbsp;·&nbsp; Gate {String(order).padStart(2, '0')}</p>
+    <p class="eyebrow">
+      Chapter {chapterLabel} &nbsp;·&nbsp; Gate {gate}
+      {isSub && parentTitle && <>&nbsp;·&nbsp; {parentTitle}</>}
+    </p>
     <h1>{title}</h1>
+
+    {
+      children.length > 0 && (
+        <nav class="subchapter-strip" aria-label="In this chapter">
+          <span class="subchapter-label">In this chapter</span>
+          <ul>
+            {children.map((child) => (
+              <li>
+                <a href={child.href}>
+                  {String(child.order).padStart(2, '0')}.{child.subOrder} {child.title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )
+    }
 
     <div class="prose">
       <slot />
@@ -68,6 +111,50 @@ const { title, description, order, prevDoc = null, nextDoc = null } = Astro.prop
     letter-spacing: -0.005em;
     margin: 10px 0 34px;
     text-wrap: balance;
+  }
+
+  .subchapter-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 34px;
+  }
+
+  .subchapter-label {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+  }
+
+  .subchapter-strip ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .subchapter-strip a {
+    display: inline-block;
+    font-family: var(--font-mono), var(--font-mono-fallback);
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--pill-ink);
+    background: var(--pill-bg);
+    padding: 5px 12px;
+    border-radius: 999px;
+    transition: background-color 0.15s ease;
+  }
+
+  .subchapter-strip a:hover {
+    background: var(--accent);
+    color: #06131f;
   }
 
   .chapter-foot {

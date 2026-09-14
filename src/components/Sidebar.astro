@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 
 const docs = (await getCollection('guide'))
   .filter((d) => !d.data.draft)
-  .sort((a, b) => a.data.order - b.data.order);
+  .sort((a, b) => a.data.order - b.data.order || (a.data.subOrder ?? 0) - (b.data.subOrder ?? 0));
 
 const base = import.meta.env.BASE_URL;
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
@@ -43,10 +43,19 @@ const homeHref = base;
       docs.map((doc) => {
         const href = `${base}guide/${doc.id}`;
         const isActive = currentPath === href.replace(/\/$/, '');
+        const isSub = doc.data.subOrder !== undefined;
+        const gate = isSub
+          ? `${String(doc.data.order).padStart(2, '0')}.${doc.data.subOrder}`
+          : `G${String(doc.data.order).padStart(2, '0')}`;
         return (
-          <li>
-            <a class="navlink" href={href} aria-current={isActive ? 'page' : undefined}>
-              <span class="gate">G{String(doc.data.order).padStart(2, '0')}</span>
+          <li class:list={[{ sub: isSub }]}>
+            <a
+              class="navlink"
+              class:list={[{ sub: isSub }]}
+              href={href}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <span class="gate">{gate}</span>
               {doc.data.title}
             </a>
           </li>
@@ -124,6 +133,14 @@ const homeHref = base;
     border-bottom: 1px solid var(--sidebar-line);
   }
 
+  .flightplan li.sub {
+    border-bottom: none;
+  }
+
+  .flightplan li.sub + li:not(.sub) {
+    border-top: 1px solid var(--sidebar-line);
+  }
+
   .navlink {
     display: flex;
     align-items: baseline;
@@ -136,6 +153,13 @@ const homeHref = base;
     font-weight: 600;
     border-radius: 6px;
     transition: background-color 0.15s ease;
+  }
+
+  .navlink.sub {
+    padding-left: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--sidebar-ink-dim);
   }
 
   .navlink:hover {

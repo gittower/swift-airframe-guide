@@ -4,13 +4,24 @@ import GuideLayout from '../../layouts/GuideLayout.astro';
 
 export async function getStaticPaths() {
   const docs = (await getCollection('guide')).filter((d) => !d.data.draft);
-  const sorted = docs.sort((a, b) => a.data.order - b.data.order);
+  const sorted = docs.sort(
+    (a, b) => a.data.order - b.data.order || (a.data.subOrder ?? 0) - (b.data.subOrder ?? 0)
+  );
 
   const base = import.meta.env.BASE_URL;
 
   return sorted.map((doc, index) => {
     const next = sorted[index + 1];
     const prev = sorted[index - 1];
+
+    const isSub = doc.data.subOrder !== undefined;
+    const parentDoc = isSub
+      ? sorted.find((d) => d.data.order === doc.data.order && d.data.subOrder === undefined)
+      : undefined;
+    const children = !isSub
+      ? sorted.filter((d) => d.data.order === doc.data.order && d.data.subOrder !== undefined)
+      : [];
+
     return {
       params: { slug: doc.id },
       props: {
@@ -19,12 +30,19 @@ export async function getStaticPaths() {
         prevDoc: prev
           ? { href: `${base}guide/${prev.id}`, title: prev.data.title }
           : { href: base, title: 'Overview' },
+        parentTitle: parentDoc?.data.title ?? null,
+        children: children.map((child) => ({
+          href: `${base}guide/${child.id}`,
+          title: child.data.title,
+          order: child.data.order,
+          subOrder: child.data.subOrder,
+        })),
       },
     };
   });
 }
 
-const { doc, nextDoc, prevDoc } = Astro.props;
+const { doc, nextDoc, prevDoc, parentTitle, children } = Astro.props;
 const { Content } = await render(doc);
 ---
 
@@ -32,6 +50,9 @@ const { Content } = await render(doc);
   title={doc.data.title}
   description={doc.data.description}
   order={doc.data.order}
+  subOrder={doc.data.subOrder}
+  parentTitle={parentTitle}
+  children={children}
   prevDoc={prevDoc}
   nextDoc={nextDoc}
 >
