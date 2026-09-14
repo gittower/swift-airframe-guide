@@ -1,90 +1,298 @@
 ---
 title: "Concurrency"
-description: "Every layer above Packages is @MainActor-isolated, per Chapter 1. This chapter covers what runs on the other side of every await: how background work gets structured, ordered, and cancelled without letting re-entrancy corrupt the state it eventually writes back to."
+description: "Build manager operations with background jobs, declare which work can overlap, and report progress without moving application state off the main actor."
 order: 6
 ---
 
-Every layer above Packages is @MainActor-isolated, per Chapter 1. This chapter covers what runs on the other side of every await: how background work gets structured, ordered, and cancelled without letting re-entrancy corrupt the state it eventually writes back to.
+Managers expose plain `async` operations. Inside a manager, jobs describe the work, runners order it, and progress events keep the UI informed. This chapter extends the notebook example from <a href="/guide/03-model-layer">Chapter 3</a> using those APIs. The framework supplies their execution and delivery machinery.
 
-## Queues, runners, actors — when to reach for which
+## Choosing a runner
 
-`@MainActor` alone is enough for one-at-a-time access to state with no suspension in between. The gap it leaves is a <strong>transaction across an `await`</strong> — two calls to the same method, overlapping, where the second must wait for the first to fully finish rather than interleaving with it. A custom actor looks like the fix, but it isn't: calling an actor's methods is itself asynchronous, which forces every call site — including simple reads — to suspend, and an actor's own re-entrancy means a second call can still interleave inside an `await`. Neither problem shows up with a plain struct wrapping a lock.
+`@MainActor` protects synchronous access to application state, but another call can run while a method is suspended at an `await`. If a save must finish before the next edit loads its starting state, submit the whole operation through a runner.
+
+Use `SerialTaskRunner` when all operations share one resource and must run one at a time. Use `GroupedTaskRunner` when independent resources can proceed together, or when reads of the same resource may overlap. Managers coordinating access to the same resources must share the same runner instance.
+
+## Writing a job
+
+Conform to `BackgroundJob`, capture intent in immutable properties, and implement `perform(context:)`. When the operation changes model state, implement `handleResult(_:context:)` for persistence and publication on the main actor. Call the supplied `execute(context:resultContext:)` from the manager's runner closure; app jobs do not implement it.
+
+Here is an edit that preserves changes made by an earlier queued job:
 
 ```swift
-struct SerialTaskRunner: Sendable {
-    private let state = State()
+struct RenameNoteJob: BackgroundJob {
+    let notebookID: NotebookID
+    let noteID: NoteID
+    let title: String
 
-    private final class State: @unchecked Sendable {
-        let lock = NSLock()
-        var previous: Task<Void, Never>?
-    }
-
-    @discardableResult
-    func run<T: Sendable>(
-        _ operation: @Sendable @escaping () async throws -> T
-    ) -> Task<T, Error> {
-        state.lock.lock()
-        let prev = state.previous
-        state.lock.unlock()
-
-        let task = Task.detached {
-            _ = await prev?.value             // wait for predecessor
-            try Task.checkCancellation()      // bail if cancelled while queued
-            return try await operation()
+    nonisolated func perform(context: SyncWorkContext) async throws -> Note {
+        // Load the current record when this job runs, not when it is submitted.
+        guard var note = try await context.storage.note(
+            id: noteID, in: notebookID
+        ) else {
+            throw NoteError.notFound
         }
-
-        state.lock.lock()
-        state.previous = Task.detached { _ = try? await task.value }
-        state.lock.unlock()
-
-        return task
+        try Task.checkCancellation()
+        note.title = title
+        return note
     }
 
-    func cancelAll() {
-        state.lock.lock()
-        let prev = state.previous
-        state.previous = nil
-        state.lock.unlock()
-        prev?.cancel()
+    @MainActor func handleResult(
+        _ result: Result<Note, Error>, context: SyncResultContext
+    ) async throws {
+        let note = try result.get()
+        try await context.store.merge([note], into: notebookID)
+        context.publishNotesDidChange(notebookID)
     }
 }
 ```
 
-Every piece earns its place: it's a `struct` so copies are cheap and every copy still coordinates through the same underlying lock — which is how a runner shared across several managers keeps their writes from interleaving. `Task.detached` is deliberate — a plain `Task { }` inherits the caller's actor, which called from a `@MainActor` manager would run the "background" work on main and defeat the entire point. Enqueue itself stays synchronous, callable directly from `@MainActor` code with no suspension at the call site. That synchronous, `Task`-returning shape is correct <em>here</em> — this is the primitive. It's a different question whether a manager's own public methods should look the same; they don't, and the rest of this chapter is why.
+`Note` here is a `Sendable` value, not a managed object passed between database contexts. `SyncWorkContext` and `SyncResultContext` are the app-defined contexts from Chapter 3: the worker gets background-safe libraries and storage; the result handler gets the store and main-actor publication operations.
 
-## Structuring background work as data, not closures
+Capture the requested title and independent configuration before submission. Fetch and validate the current note inside `perform`, after earlier conflicting jobs have finished. Capturing an entire editable note at submission could overwrite an earlier job's changes; checking existence at execution also prevents a delayed edit from recreating a deleted note.
 
-A closure captures whatever is in scope, which makes it easy to accidentally grab a mutable reference and silently break isolation. A job struct forces every input to be declared as a stored property at init — `Sendable` conformance makes the compiler enforce it, not code review.
+The complete operation includes `handleResult`: the next conflicting job waits until persistence, notifications, and activity updates finish. Keep these steps in the handler, and await any work they start. Do not move the save after the manager's `awaitCancellable` call or launch an unawaited task to finish it later. A result handler receives failures too; it can settle progress state and rethrow. A job that only returns data can omit the handler.
+
+## Letting independent work overlap
+
+Add `TaskAccess` when a job uses a grouped runner. The app defines resource identities and chooses one access mode for all of a job's groups:
 
 ```swift
-// ❌ Closure — quietly captures the manager's mutable state
-runner.run {
-    let notes = try await client.fetchNotes(in: notebookID)
-    self.store.apply(notes)             // compiles, breaks isolation silently
+enum NoteJobGroup: Hashable, Sendable {
+    case notebook(NotebookID)
+    case note(NoteID)
 }
 
-// ✅ Struct — every input declared, Sendable enforces it
-protocol BackgroundJob: Sendable {
-    associatedtype Context: Sendable
-    associatedtype Output: Sendable
-    func execute(context: Context) async throws -> Output
+extension RenameNoteJob: TaskAccess {
+    var groups: Set<NoteJobGroup> {
+        [.notebook(notebookID), .note(noteID)]
+    }
+    var access: TaskAccessMode { .write }
 }
 
-struct PullNotesJob: BackgroundJob {
-    let notebookID: NotebookID           // frozen at init — let, not var
+// PullNotesJob is defined in Chapter 3.
+extension PullNotesJob: TaskAccess {
+    var groups: Set<NoteJobGroup> { [.notebook(notebookID)] }
+    var access: TaskAccessMode { .write }
+}
 
-    func execute(context: SyncContext) async throws {
+struct ExportNotebookJob: BackgroundJob, TaskAccess {
+    typealias ResultContext = SyncResultContext
+    let notebookID: NotebookID
+    var groups: Set<NoteJobGroup> { [.notebook(notebookID)] }
+    let access: TaskAccessMode = .read
+
+    nonisolated func perform(context: SyncWorkContext) async throws -> Data {
+        try await context.storage.exportNotebook(id: notebookID)
+    }
+    // No model changes: the default result handler is sufficient.
+}
+```
+
+Two jobs conflict when their groups overlap and at least one is a writer. In this example:
+
+- Two exports of the same notebook can run together.
+- A rename or pull waits for earlier exports and writes on that notebook. Later exports wait for that write, even while it is queued.
+- Work on another notebook can proceed independently.
+
+Declaring the notebook group on every rename also serializes edits to different notes in that notebook. Choose this when edits must exclude a collection-wide sync. Group names have no implicit hierarchy: a job declaring only `.note(id)` does not conflict with a job declaring only `.notebook(id)`. Include every resource whose access needs coordination. If the operation writes any declared resource, use `.write`.
+
+To adopt this in Chapter 3's manager, change its runner property and construction to `GroupedTaskRunner<NoteJobGroup>`, then replace its enqueue helper with:
+
+```swift
+private func enqueue<J: BackgroundJob & TaskAccess>(
+    _ job: J,
+    cancelling groups: Set<NoteJobGroup> = []
+) throws -> Task<J.Output, Error>
+where J.Context == SyncWorkContext,
+      J.ResultContext == SyncResultContext,
+      J.Group == NoteJobGroup {
+    try Task.checkCancellation()
+    let work = SyncWorkContext(client: client, storage: store.storage)
+    let result = SyncResultContext(store: store, publishNotesDidChange: { id in
+        Note.notifications.postDidChange(in: id)
+    })
+    return runner.run(
+        groups: job.groups, access: job.access, cancelling: groups
+    ) {
+        try await job.execute(context: work, resultContext: result)
+    }
+}
+
+func rename(noteID: NoteID, in notebookID: NotebookID, to title: String) async throws {
+    _ = try await awaitCancellable(enqueue(
+        RenameNoteJob(notebookID: notebookID, noteID: noteID, title: title)
+    ))
+}
+```
+
+`ExportNotebookJob` names its `ResultContext` to use this helper, even though it does not use that context; without the type alias, a job with no result handler defaults to `Void`. The context and group constraints catch accidental submissions from another job family.
+
+Do not enqueue and await another conflicting job from inside `perform` or `handleResult`: that job would wait for the operation awaiting it. Compose related steps inside one job using its work context.
+
+### Deleting a note with ongoing work
+
+Make deletion a writer for the notebook and note, and request cancellation through the same enqueue call:
+
+```swift
+struct DeleteNoteJob: BackgroundJob, TaskAccess {
+    let notebookID: NotebookID
+    let noteID: NoteID
+    var groups: Set<NoteJobGroup> {
+        [.notebook(notebookID), .note(noteID)]
+    }
+    let access: TaskAccessMode = .write
+
+    nonisolated func perform(context: SyncWorkContext) async throws {
+        try Task.checkCancellation()
+        try await context.storage.deleteNote(id: noteID, in: notebookID)
+    }
+
+    @MainActor func handleResult(
+        _ result: Result<Void, Error>, context: SyncResultContext
+    ) throws {
+        try result.get()
+        context.publishNotesDidChange(notebookID)
+    }
+}
+
+// In NoteManager:
+func delete(noteID: NoteID, in notebookID: NotebookID) async throws {
+    try await awaitCancellable(enqueue(
+        DeleteNoteJob(notebookID: notebookID, noteID: noteID),
+        cancelling: [.note(noteID)]
+    ))
+}
+```
+
+This cancels existing work declaring that note group and waits for conflicting work to finish before deleting. It also waits for notebook-wide work, such as a pull, without cancelling that broader operation. Later conflicting jobs wait for deletion, then validate that their target still exists. Make deletion remove associated progress state in its result handler if the app keeps any.
+
+The cancellation groups must be a subset of the delete job's groups, and the job must be a writer. Use this combined submission for deletion rather than a separate cancel-then-delete sequence that leaves room for new work between the two calls.
+
+## Adding live progress
+
+Conform directly to `ProgressReportingJob` when a job needs progress. Implement the `perform(context:progress:)` overload and `handleProgress(_:context:)`; keep the same result handler pattern. The framework supplies the ordinary `perform(context:)` overload for calls that do not need live progress.
+
+For a pull with progress, extend Chapter 3's `SyncResultContext` with an `activities: SyncActivities` property and pass the manager's shared activity collection when constructing that context in `enqueue`. This app-defined collection holds stable progress state keyed by notebook. The manager ensures the activity exists before enqueueing; the job updates it once work starts.
+
+```swift
+struct PullNotesWithProgressJob: ProgressReportingJob, TaskAccess {
+    let notebookID: NotebookID
+    var groups: Set<NoteJobGroup> { [.notebook(notebookID)] }
+    let access: TaskAccessMode = .write
+
+    enum Progress: Sendable {
+        case started
+        case downloaded(noteCount: Int)
+    }
+
+    nonisolated func perform(
+        context: SyncWorkContext, progress: JobProgressReporter<Progress>
+    ) async throws -> [Note] {
+        progress.report(.started)
         let notes = try await context.client.fetchNotes(in: notebookID)
-        try await context.store.merge(notes, into: notebookID)
+        try Task.checkCancellation()
+        progress.report(.downloaded(noteCount: notes.count))
+        return notes
+    }
+
+    @MainActor func handleProgress(
+        _ progress: Progress, context: SyncResultContext
+    ) {
+        guard let activity = context.activities.activity(for: notebookID) else { return }
+        switch progress {
+        case .started: activity.begin()
+        case .downloaded(let count): activity.updateStage("Saving \(count) notes")
+        }
+    }
+
+    @MainActor func handleResult(
+        _ result: Result<[Note], Error>, context: SyncResultContext
+    ) async throws {
+        let activity = context.activities.activity(for: notebookID)
+        do {
+            try await context.store.merge(result.get(), into: notebookID)
+            context.publishNotesDidChange(notebookID)
+            activity?.finish(.idle)
+        } catch {
+            activity?.finish(error is CancellationError
+                ? .cancelled : .failed(message: error.localizedDescription))
+            throw error
+        }
     }
 }
 ```
 
-Each manager family declares its own `Sendable` context — `SyncContext` from <a href="/guide/03-model-layer">Chapter 3</a> — bundling exactly the services its jobs need. The manager's `enqueue` constrains on that context type, so a job built for one family is a compile error if handed to another manager's runner. Runner sharing and context sharing go together: two managers share a runner because they operate on the same underlying resource, and that's the same reason their jobs share a context family — a manager from a different family gets its own runner along with its own context. For simpler cases with no runner involved — one or two inputs, nothing to compose — a plain `@MainActor` command struct gets the same input-freezing benefit without needing `Sendable` at all, because its properties never cross an actor boundary.
+The worker only calls `progress.report`. Events reach `handleProgress` on the main actor in reported order, and accepted progress is delivered before `handleResult`, including on failure or cancellation. Late callbacks after work ends cannot update a completed operation. Preserve the source's logical order when forwarding library callbacks; do not start a separate `Task` for each event.
+
+A downloaded count describes progress, not a successful save. Publish success only after persistence succeeds, and settle the activity on error as well. Views observe the shared activity through the app's state-observation pattern; opening or closing a view does not own the underlying operation. The activity is progress state, while the calling Action or background controller owns execution and cancellation.
+
+### Controlling frequent updates
+
+For streaming output, choose a delivery interval and merge only events that are safe to combine. These are optional members on the job; by default the interval is zero and events are not coalesced.
+
+For example, a `DraftSummaryJob: ProgressReportingJob` that streams a notebook summary can declare:
+
+```swift
+enum Progress: Sendable, Equatable {
+    case started
+    case text(String)
+    case stage(String)
+}
+
+static let progressDeliveryInterval: Duration = .milliseconds(50)
+
+nonisolated static func coalesceProgress(
+    _ previous: Progress, _ next: Progress
+) -> Progress? {
+    guard case .text(let first) = previous,
+          case .text(let second) = next else { return nil }
+    return .text(first + second)
+}
+```
+
+The interval batches delivery; it does not discard events. The coalescer combines adjacent pending text deltas in order: `"Hello"` followed by `" world"` becomes `"Hello world"`. Returning `nil` preserves both events, so a stage change or saved-record acknowledgement remains a boundary. The coalescer must be a pure value transformation with no UI or other side effects. Append raw text in `handleProgress`; transform it for display after accumulation so chunk boundaries cannot alter the content.
+
+### Progress for one caller
+
+A preview sheet generating a draft has a different lifetime from shared sync. Give each invocation its own result context with a main-actor callback:
+
+```swift
+@MainActor
+struct DraftResultContext: Sendable {
+    let onProgress: (@MainActor @Sendable (DraftSummaryJob.Progress) -> Void)?
+}
+
+// In DraftSummaryJob:
+@MainActor func handleProgress(_ progress: Progress, context: DraftResultContext) {
+    context.onProgress?(progress)
+}
+```
+
+The manager's public method still returns the actual draft:
+
+```swift
+func draftSummary(
+    notebookID: NotebookID,
+    progress: (@MainActor @Sendable (DraftSummaryJob.Progress) -> Void)? = nil
+) async throws -> String {
+    try Task.checkCancellation()
+    let job = DraftSummaryJob(notebookID: notebookID)
+    let work = SyncWorkContext(client: client, storage: store.storage)
+    let result = DraftResultContext(onProgress: progress)
+    let task = runner.run(job) {
+        try await job.execute(context: work, resultContext: result)
+    }
+    return try await awaitCancellable(task)
+}
+```
+
+Here `DraftSummaryJob` also conforms to `TaskAccess`, declares the notebook group with `.read`, returns a transient `String`, and forwards its summarization client's events through the reporter. Adopting and saving the draft is a separate operation.
+
+Create the result context locally for each request; never store the latest callback on the shared manager. The sheet owns the calling task and cancels it on dismissal or replacement. Guard both its progress callback and its final UI assignment with the current request identity, because already accepted progress can still arrive while cancellation finishes.
 
 ## Execution strategies: avoiding races by construction
 
-The runner above solves ordering. It doesn't decide what "correct" means when the same operation is triggered twice before the first finishes — that's a separate choice, made per call site.
+The runner solves ordering. It doesn't decide what "correct" means when the same operation is triggered twice before the first finishes — that's a separate choice, made per call site.
 
 <div class="table-wrap">
 <table>
@@ -115,11 +323,11 @@ final class NoteSearchController {
 }
 ```
 
-The `try Task.checkCancellation()` immediately before the write is the load-bearing line in every strategy above — a superseded task must never overwrite what its replacement writes.
+For replaceable UI loads, check cancellation immediately before assigning the result so a superseded request cannot overwrite its replacement. Durable writes have a different contract, described below.
 
 ## Cancellation as part of a task's contract
 
-A caller doesn't need a cancellation token — the `Task` it creates around an `async` call <em>is</em> the handle, and Swift's structured concurrency propagates cancellation through every `await` underneath it automatically.
+A caller uses the `Task` it creates around an `async` call as its cancellation handle. The manager's cancellation bridge forwards cancellation to the runner's task; awaiting an unstructured task's value alone does not do that. Workers and external libraries must still cooperate with cancellation.
 
 ### One shape for every public entry point: plain `async`
 
@@ -138,33 +346,52 @@ func pull(notebookID: NotebookID) async -> Task<Void, Error> { /* … */ }
 
 Both banned forms fail for different reasons. The hybrid makes the caller await setup before it even receives a handle, splitting cancellation across two objects — the caller's own task for the setup, the returned task for the work — and neither alone cancels the whole operation. Plain synchronous `-> Task<...>` looks safer but fails the identical way the moment the method needs to `await` anything before it can return a handle, and in the meantime it leaks an implementation detail — there happens to be a queue under here — straight into the public API.
 
-<strong>The synchronous, `Task`-returning shape is correct in exactly one place: the runner or queue primitive itself</strong>, and a manager's own private `enqueue` helper wrapping it — `SerialTaskRunner.run` above, and `NoteManager.enqueue` from Chapter 3. Neither is ever public.
+The runner returns a `Task`, as does the manager's private `enqueue` helper. The manager wraps both behind its `async` operations, so callers never handle the runner task directly.
 
-### The bridge
+### Wiring cancellation once
 
-Enqueue synchronously against the primitive, then await the returned `Task` under a cancellation handler, so the caller's task remains the one thing that has to be cancelled:
+Use Chapter 3's `awaitCancellable` helper around every enqueued operation. It awaits the runner task under a cancellation handler and forwards the caller's cancellation. Check cancellation before submission too, especially after asynchronous setup such as loading configuration.
 
 ```swift
-func rebuildSearchIndex() async {
-    await prepareIndexState()          // setup the caller legitimately awaits
+// In a @MainActor preview controller:
+private var loadingTask: Task<Void, Error>?
+private var requestID: UUID?
 
-    let task = runner.run {
-        // the queued work
+func loadSummary(for notebookID: NotebookID) {
+    loadingTask?.cancel()
+    let id = UUID()
+    requestID = id
+    state.preview = ""
+    loadingTask = Task {
+        let summary = try await NoteManager.shared.draftSummary(
+            notebookID: notebookID,
+            progress: { [weak self] event in
+                guard let self, self.requestID == id else { return }
+                switch event {
+                case .started: self.state.stage = "Generating"
+                case .text(let text): self.state.preview += text
+                case .stage(let text): self.state.stage = text
+                }
+            }
+        )
+        try Task.checkCancellation()
+        guard requestID == id else { return }
+        state.summary = summary
     }
-    await withTaskCancellationHandler {
-        _ = try? await task.value
-    } onCancel: {
-        task.cancel()                  // tears down queued or in-flight work
-    }
+}
+
+func dismiss() {
+    requestID = nil
+    loadingTask?.cancel()
 }
 ```
 
-Cancelling the caller's task now cancels the runner task too — including while it's still waiting its turn in the queue, because the runner's `try Task.checkCancellation()` runs before the operation starts. This is the standard shape for any manager method backed by a queue, not a special case for the setup-then-enqueue case shown here — `NoteManager.pull`'s own `awaitCancellably` helper is exactly this bridge, factored out once so every method in the class reuses it instead of repeating the boilerplate.
+A cancelled queued job does not start its worker. Running cancellation is cooperative, and conflicting successors still wait for the job's result handling and cleanup to finish.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-A service that catches errors internally must re-throw `CancellationError` rather than mapping it into a domain error — otherwise the caller's `cancel()` has no observable effect. And per the manager pattern in <a href="/guide/03-model-layer">Chapter 3</a>, state is only ever written <em>after</em> the background work returns successfully — a cancelled job throws before that point, so main-actor state is untouched by construction. Cancellation is atomic for free; nothing extra has to be written to guarantee it.
+A service that catches errors internally must re-throw `CancellationError` rather than mapping it into a domain error — otherwise the caller's `cancel()` has no observable effect. Cancellation is not rollback: a job may already have made a durable write when cancellation arrives. Its result handler must settle activity and publish any committed partial state accurately, but it must never publish success for a failed save or let an old execution overwrite a successor. Finish that settlement before returning from `handleResult`. Check cancellation before starting a write when it is still safe to stop; once a write has committed, publish that change even if cancellation arrived meanwhile.
 
 </div>
 
@@ -172,5 +399,5 @@ Only store the caller's `Task` when cancellation is a real requirement — a vie
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/07-views">Chapter 7</a>. Testing async, job-based code without mocking the runner is <a href="/guide/11-testing">Chapter 11</a>.
+How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/07-views">Chapter 7</a>. Testing async, job-based code through its application behavior is <a href="/guide/11-testing">Chapter 11</a>.
 </div>

@@ -17,7 +17,7 @@ That convergence is what makes the rest of the architecture possible:
 
 A manager always exists, even when it looks trivial. Sometimes it's a dedicated class; sometimes the model class acts as its own manager, when the mutation logic is simple enough that a wrapper would add nothing — a settings object's own setters, as in <a href="/guide/02-initializing">Chapter 2</a>, <em>are</em> the funnel.
 
-Reading runs the opposite direction from writing, and skips the manager entirely: a manager exists to fund the single mutation path, and has nothing to contribute to a plain read. Reads go through the model itself, as a set of static queries:
+Ordinary display reads skip the manager: query the model directly. A read that must wait for an ongoing write to finish belongs to a coordinated workflow instead; it can go through a manager as a read job, as shown in <a href="/guide/06-concurrency">Chapter 6</a>. For plain lookups, the model exposes static queries:
 
 ```swift
 // Avoid — the manager has nothing to contribute to a read
@@ -53,7 +53,7 @@ These queries always answer with current state — `Note.all(in: notebook)` reco
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-The Model layer is always <strong>entered</strong> from the main thread. When work has to cross onto a background thread, it goes one of three ways: as a `Sendable` value snapshot the background work can't affect the main thread through; as a stable identifier a background context re-fetches its own copy from; or as a request the background work makes <em>of</em> the main thread via `await`, never touching main-actor state directly. The background work always returns a value; the manager is what applies it, on the main thread.
+The Model layer is always <strong>entered</strong> on the main actor. Jobs carry `Sendable` intent and stable identifiers; their work context supplies background-safe dependencies and storage access. Their result handler applies main-actor state and publishes completed writes. Workers never reach back into a manager or view. Progress follows the same boundary through typed events, covered in <a href="/guide/06-concurrency">Chapter 6</a>.
 
 </div>
 
@@ -79,26 +79,35 @@ Two deep dives below cover the two ends of that spectrum — a synced, database-
 
 ## Deep dive: synced, database-backed state
 
-Take the notebook app's `Note` type: it's edited locally, synced from a server in the background, and must survive a relaunch. The shape has three parts — a small <strong>context struct</strong> bundling what background jobs need, one <strong>job</strong> per operation, and a <strong>manager</strong> that owns a serial runner and turns public calls into enqueued jobs.
+Take the notebook app's `Note` type: it's edited locally, synced from a server in the background, and must survive a relaunch. The shape has three parts — narrow <strong>work and result contexts</strong>, one <strong>job</strong> per operation, and a <strong>manager</strong> that owns a serial runner and turns public calls into enqueued jobs.
 
 ```swift
-// The dependencies every job in this family needs. Sendable so it
-// can cross from the main actor into background work.
-struct SyncContext: Sendable {
+// Only background-safe dependencies cross into `perform`.
+struct SyncWorkContext: Sendable {
     let client: SyncClient
-    let store: NoteStore
+    let storage: NoteStorage
 }
 ```
 
 ```swift
-// One job, one operation. Inputs are `let` — frozen at init,
-// immune to being mutated mid-flight.
+@MainActor
+struct SyncResultContext: Sendable {
+    let store: NoteStore
+    let publishNotesDidChange: @MainActor @Sendable (NotebookID) -> Void
+}
+
+// One job, one operation. Intent is `let` — frozen at submission.
 struct PullNotesJob: BackgroundJob {
     let notebookID: NotebookID
 
-    func execute(context: SyncContext) async throws {
-        let remote = try await context.client.fetchNotes(in: notebookID)
-        try await context.store.merge(remote, into: notebookID)   // writes + notifies
+    nonisolated func perform(context: SyncWorkContext) async throws -> [Note] {
+        try await context.client.fetchNotes(in: notebookID)
+    }
+
+    @MainActor
+    func handleResult(_ result: Result<[Note], Error>, context: SyncResultContext) async throws {
+        try await context.store.merge(result.get(), into: notebookID)
+        context.publishNotesDidChange(notebookID)
     }
 }
 ```
@@ -121,18 +130,22 @@ final class NoteManager {
     }
 
     func pull(notebookID: NotebookID) async throws {
-        try await awaitCancellably(enqueue(PullNotesJob(notebookID: notebookID)))
+        _ = try await awaitCancellable(enqueue(PullNotesJob(notebookID: notebookID)))
     }
 
     // Private plumbing — synchronous, hands back a raw `Task`. Never exposed past
-    // this point; every public method bridges it through `awaitCancellably` below.
-    private func enqueue<J: BackgroundJob>(_ job: J) -> Task<J.Output, Error>
-    where J.Context == SyncContext {
-        let context = SyncContext(client: client, store: store)
-        return runner.run { try await job.execute(context: context) }
+    // this point; every public method bridges it through `awaitCancellable` below.
+    private func enqueue<J: BackgroundJob>(_ job: J) throws -> Task<J.Output, Error>
+    where J.Context == SyncWorkContext, J.ResultContext == SyncResultContext {
+        try Task.checkCancellation()
+        let work = SyncWorkContext(client: client, storage: store.storage)
+        let result = SyncResultContext(store: store, publishNotesDidChange: { id in
+            Note.notifications.postDidChange(in: id)
+        })
+        return runner.run { try await job.execute(context: work, resultContext: result) }
     }
 
-    private func awaitCancellably<T: Sendable>(_ task: Task<T, Error>) async throws -> T {
+    private func awaitCancellable<T: Sendable>(_ task: Task<T, Error>) async throws -> T {
         try await withTaskCancellationHandler {
             try await task.value
         } onCancel: {
@@ -146,42 +159,40 @@ final class NoteManager {
 
 What happens at runtime when a caller does `try await NoteManager.shared.pull(notebookID: id)`:
 
-1. `pull` builds a fresh `SyncContext` and hands the job to `enqueue`, which returns immediately with a `Task` — then `awaitCancellably` suspends on that task. The caller's own `await` is the one thing waiting; nothing about the queue underneath is visible from outside the manager.
+1. `pull` hands the job to `enqueue`, which builds its contexts and returns immediately with a `Task` — then `awaitCancellable` suspends on that task. The caller's own `await` is the one thing waiting; nothing about the queue underneath is visible from outside the manager.
 1. The runner schedules the job behind whatever else is already queued for this manager, so a pull and a save on the same notebook never interleave.
-1. The job runs on the cooperative thread pool, fetches from the network, and asks the store to merge and persist the result.
+1. The job runs on the cooperative thread pool, fetches from the network, and returns its result. Its final handler resumes on the main actor to merge, persist, and publish the change.
 1. The store's write lands in the database; the database's own change tracking merges it back onto the main context automatically.
-1. The store posts a change notification on the main thread. Presentation, still on the read path from <a href="/guide/01-getting-started">Chapter 1</a>, refreshes without knowing a sync ever happened.
+1. Presentation, still on the read path from <a href="/guide/01-getting-started">Chapter 1</a>, refreshes from that main-actor notification without knowing a sync ever happened.
 
-The same three-part skeleton — context, job, manager — is what makes cancellation, testing, and multiple sync sources all fall out for free: jobs are plain `Sendable` structs with no shared mutable state, so they're trivial to construct and test in isolation, and cancelling the outer `Task` cascades through every `await` the job made. The runner and job protocol themselves get a full chapter — see <a href="/guide/06-concurrency">Chapter 6</a>.
+The same three-part skeleton supports multiple sync sources and independently testable jobs. The cancellation bridge forwards the caller's cancellation to queued work; the job and its dependencies must cooperate with it. Keep persistence and publication inside `handleResult`, so the next conflicting job cannot start before they finish. <a href="/guide/06-concurrency">Chapter 6</a> extends this example with grouped scheduling and live progress.
 
 ### What happens after the job returns
 
-`PullNotesJob` shows one of three patterns for how a job's result lands, and the choice is made per operation:
+`PullNotesJob` shows one of three patterns for how a job's result lands, and the choice is made per operation. A main-actor result handler can await storage that performs the actual I/O in the background; it does not make database work run synchronously on the UI thread.
 
 <div class="table-wrap">
 <table>
 <thead><tr><th>Pattern</th><th>Job returns</th><th>Who applies</th></tr></thead>
 <tbody>
-<tr><td><strong>Store applies, database merges</strong></td><td><code>Void</code></td><td>The job writes through the store; the database's change tracking merges to the main context; the manager has nothing to apply. The pattern above — the default for persisted state.</td></tr>
+<tr><td><strong>Result handler persists, database merges</strong></td><td>Typed data</td><td>The job's main-actor result handler writes through the store, then publishes only after the save succeeds. The pattern above — the default for persisted state.</td></tr>
 <tr><td><strong>Return data to the caller</strong></td><td>Typed data</td><td>The manager's <code>async</code> method returns the value directly — no <code>.value</code> to unwrap — and nothing touches model state at all.</td></tr>
-<tr><td><strong>Manager applies main-actor state</strong></td><td>Typed data</td><td>The manager writes the result into in-memory model state on the main thread.</td></tr>
+<tr><td><strong>Result handler applies main-actor state</strong></td><td>Typed data</td><td>The job's dedicated result handler writes the result into in-memory model state on the main thread.</td></tr>
 </tbody>
 </table>
 </div>
 
+Some operations also need intermediate persistence in `perform`, such as saving a user's prompt before generating a summary. Report a saved acknowledgement only after that write succeeds, and publish the committed change even if generation later fails or is cancelled. The final result handler still owns completion and any remaining writes; cancellation does not undo earlier saves.
+
 The second pattern is bounded by transience: nothing about that returned value is stored anywhere the model can hand back out again. The moment some other consumer needs to ask for the same answer later — not just once, in response to this call — the data has become state, and state belongs in the model layer under one of the shapes from earlier in this chapter, read back through a query like the ones that opened it. A private cache tucked inside the manager to avoid re-fetching is the tell that this line got crossed without actually moving the data where it belongs.
 
-The third pattern carries its own rule: the write goes through a <strong>dedicated `@MainActor` apply method on the model object</strong> — never inline mutation buried in a runner closure. The mutation logic stays testable and co-located with the state it modifies, and there's exactly one place to look when asking "what can change this?"
+The third pattern carries its own rule: the result handler calls a <strong>dedicated `@MainActor` apply method on the model object</strong> — never inline mutation buried in a runner closure. The mutation logic stays testable and co-located with the state it modifies, and there's exactly one place to look when asking "what can change this?"
 
 ```swift
-// In NoteManager — apply logic is operation-specific, so this uses the runner directly
-func reloadTagIndex(for notebook: Notebook) async throws {
-    let context = SyncContext(client: client, store: store)
-    let task = runner.run {
-        try await LoadTagIndexJob().execute(context: context)
-    }
-    let tags = try await awaitCancellably(task)
-    notebook.applyTagIndexUpdate(tags)   // already back on @MainActor — see below
+// In LoadTagIndexJob's @MainActor result handler:
+@MainActor
+func handleResult(_ result: Result<[TagCount], Error>, context: TagIndexResultContext) throws {
+    try context.notebook.applyTagIndexUpdate(result.get())
 }
 
 // On Notebook — the one place this state mutates
@@ -193,7 +204,7 @@ func applyTagIndexUpdate(_ incoming: [TagCount]) {
 }
 ```
 
-Note what's absent: no `MainActor.run` hop. `runner.run`'s closure itself executes detached, off-main — but `reloadTagIndex` is an `async` method on an `@MainActor` class, so resuming after `awaitCancellably` lands back on `@MainActor` automatically. The apply call is just the next line.
+Here `TagIndexResultContext` is a main-actor context containing the target `notebook`. The apply method runs inside `handleResult`; no extra actor hop or manager callback is needed.
 
 <div class="rule">
 <span class="rule-label">Sub-decision</span>

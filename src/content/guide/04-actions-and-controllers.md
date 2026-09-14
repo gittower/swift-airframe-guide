@@ -8,7 +8,7 @@ Not every write deserves ceremony. This chapter covers the Action as the unit of
 
 ## An Action is the thing in flight
 
-An Action is `@Observable` and `@MainActor`, and it carries its own lifecycle — `title`, `status`, progress, and a `cancel()` that means it. There's no separate "activity" type representing the live operation, because the Action <em>is</em> the live operation: it spawns its own task in `main()` and stays alive until that task finishes.
+An Action is `@Observable` and `@MainActor`, and it carries its own lifecycle — `title`, `status`, progress, and a `cancel()` that means it. The Action represents the live user operation: it spawns its own task in `main()` and stays alive until that task finishes. A manager job may also update shared activity state for a notebook, as shown in <a href="/guide/06-concurrency">Chapter 6</a>; that state lets multiple views observe progress without taking over execution or cancellation from the Action.
 
 ```swift
 @Observable @MainActor
