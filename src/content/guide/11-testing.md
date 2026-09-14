@@ -54,7 +54,32 @@ final class NoteManagerTests: TestCase {
 
 The test reaches `NoteManager` the same way production code does — `.shared`, never a constructor — because there's no injected-client seam to construct it with in the first place: `NoteManager`'s `init` is private, per <a href="/guide/03-model-layer">Chapter 3</a>. The stub sits at the HTTP boundary instead, intercepting the request `SyncClient` would otherwise send over the real network; `SyncClient` itself, request building, and response decoding all still run for real.
 
-Async work follows Chapter 6's own contract: prefer `async` test methods over bridging helpers, and where cancellation matters, assert it the same way production code checks it — that state was left untouched, not merely that an error was thrown.
+Async work follows Chapter 6's own contract: prefer `async` test methods over bridging helpers, and where cancellation matters, assert the terminal persisted and published state — not merely that an error was thrown. Cancellation may arrive after a durable write, so the expected outcome can be an accurately settled partial result rather than an untouched store.
+
+## Testing jobs and progress
+
+Exercise real jobs and manager entry points with temporary storage and narrow doubles at external process or network boundaries. Use a deliberate gate in the test double to hold an operation while submitting the next one; avoid timing assertions based on sleeps. Test the application's group declarations and resulting behavior:
+
+- Queue a rename behind a note update, then verify both changes survive. This catches a job capturing its editable baseline too early.
+- Export while a save is pending and verify the export sees the completed save. Also verify work on a different notebook can proceed.
+- Delete a note during ongoing work, then submit a delayed edit. Verify the edit reports the missing note and cannot recreate it.
+- Emit progress and then fail or cancel. Verify accepted progress precedes the final activity state, and a late callback cannot revive it.
+- Fail persistence after a successful download. Verify the activity reports failure and no successful-save notification is published. If an earlier step already saved data, verify that committed change is published accurately.
+- Start two draft requests with separate progress callbacks. Verify each caller receives only its own events, and a dismissed or replaced caller ignores stale updates.
+
+For a worker-only test, call `job.perform(context: work)`; progress-reporting jobs inherit that overload with reporting disabled, and it does not run result handling. To test progress and persistence together, use the manager entry point or `job.execute(context: work, resultContext: result)`. Assert the final accumulated text and meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
+
+The app's coalescing rule is also a small, directly testable value operation:
+
+```swift
+// DraftSummaryJob.Progress is Equatable in this example.
+XCTAssertEqual(
+    DraftSummaryJob.coalesceProgress(.text("Hello"), .text(" world")),
+    .text("Hello world")
+)
+XCTAssertNil(DraftSummaryJob.coalesceProgress(.text("Hello"), .stage("Saving")))
+XCTAssertNil(DraftSummaryJob.coalesceProgress(.started, .text("Hello")))
+```
 
 ## Where performance testing fits
 
