@@ -30,9 +30,9 @@ const visibleDocs = docs.filter(
       ></path>
       <path d="M16 19 L37 4" stroke="currentColor" stroke-width="2.4"></path>
     </svg>
-    <span class="brand-word">Airframe</span>
+    <span class="brand-word">Swift Airframe</span>
   </a>
-  <p class="brand-tag">Swift Airframe · for macOS</p>
+  <p class="brand-tag">macOS Application Framework</p>
 
   <p class="nav-label">Flight plan</p>
   <ol class="flightplan">
@@ -76,6 +76,11 @@ const visibleDocs = docs.filter(
     A guide to building native Swift apps on one architecture: unidirectional data flow, a single
     write path, and a strict rule about where each kind of code is allowed to live.
   </p>
+
+  <a class="tower-credit" href="https://www.git-tower.com" target="_blank" rel="noopener">
+    <span class="tower-credit-label">Built by the Tower team</span>
+    <img src={`${base}tower-logo-white.svg`} alt="Tower" width="98" height="20" />
+  </a>
 </aside>
 
 <style>
@@ -107,17 +112,17 @@ const visibleDocs = docs.filter(
   .brand-word {
     font-family: var(--font-display), var(--font-display-fallback);
     font-weight: 800;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     letter-spacing: 0.01em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .brand-tag {
     font-family: var(--font-display), var(--font-display-fallback);
     font-size: 0.72rem;
     color: var(--sidebar-ink-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     margin: 2px 0 30px 38px;
   }
 
@@ -202,6 +207,36 @@ const visibleDocs = docs.filter(
     line-height: 1.6;
     padding-top: 14px;
     border-top: 1px solid var(--sidebar-line);
+  }
+
+  .tower-credit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--sidebar-line);
+    text-decoration: none;
+    opacity: 0.75;
+    transition: opacity 0.15s ease;
+  }
+
+  .tower-credit:hover {
+    opacity: 1;
+  }
+
+  .tower-credit-label {
+    font-family: var(--font-display), var(--font-display-fallback);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--sidebar-ink-dim);
+  }
+
+  .tower-credit img {
+    display: block;
+    width: 98px;
+    height: auto;
   }
 
   @media (max-width: 900px) {

@@ -8,7 +8,10 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
-const pageTitle = title === 'Swift Airframe' ? title : `${title} · Swift Airframe`;
+const pageTitle =
+  title === 'Swift Airframe'
+    ? 'Swift Airframe · macOS Application Framework'
+    : `${title} · Swift Airframe`;
 ---
 
 <!doctype html>
