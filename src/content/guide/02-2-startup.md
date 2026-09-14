@@ -1,11 +1,11 @@
 ---
 title: "Startup"
-description: "Launch is the one moment in an app's life where the ordinary rules bend: nothing has state yet, nothing can be presumed configured, and getting the order wrong fails silently until it doesn't. This subchapter covers the four phases of startup and the gate that decides when the app counts as ready."
+description: "Launch is the one moment in an app's life where the ordinary rules bend: nothing has state yet, nothing can be presumed configured, and getting the order wrong fails silently until it doesn't. This subchapter covers the four phases of startup, the initializer chain that runs first, and the gate that decides when the app counts as ready."
 order: 2
 subOrder: 2
 ---
 
-Launch is the one moment in an app's life where the ordinary rules bend: nothing has state yet, nothing can be presumed configured, and getting the order wrong fails silently until it doesn't. This subchapter covers the four phases of startup and the gate that decides when the app counts as ready.
+Launch is the one moment in an app's life where the ordinary rules bend: nothing has state yet, nothing can be presumed configured, and getting the order wrong fails silently until it doesn't. This subchapter covers the four phases of startup, the initializer chain that runs first, and the gate that decides when the app counts as ready.
 
 ## Four phases, in order
 
@@ -30,7 +30,76 @@ Initializers only call into the Model layer. They never start a controller and n
 
 </div>
 
-Each initializer is a small class conforming to a shared protocol, run in a fixed order by the app controller during phase 1. This is where the `configure(_:)` calls from <a href="/guide/02-5-object-wiring">Object Wiring</a> happen — one initializer per subsystem, so the launch-ordering decisions live in one visible sequence instead of being scattered across lazy accessors.
+## The initializer chain
+
+Phase 1 has a concrete shape: a fixed sequence of small types, one per subsystem, each conforming to one protocol. This is where the `configure(_:)` calls from <a href="/guide/02-5-object-wiring">Object Wiring</a> happen — one initializer per subsystem, so the launch-ordering decisions live in one visible sequence instead of being scattered across lazy accessors.
+
+```swift
+protocol AppInitializing {
+    /// Configure one subsystem so everything downstream can assume it's ready.
+    /// Fast, Model layer only — see the rule above.
+    func initialize()
+
+    /// Tear the subsystem down at quit. Called in reverse order.
+    func uninitialize()
+}
+
+extension AppInitializing {
+    func uninitialize() { }    // most subsystems need no teardown
+}
+```
+
+The app controller owns the sequence and runs it in phase 1 — the `AppController.shared.initialize()` call forwarded by <a href="/guide/02-1-app-delegate">The App Delegate</a>:
+
+```swift
+@MainActor
+final class AppController {
+    static let shared = AppController()
+
+    // The order *is* the dependency documentation: settings before anything
+    // that reads a default, persistence before anything that touches the
+    // database, sync after both.
+    private let initializers: [any AppInitializing] = [
+        SettingsInitializer(),      // register default values for every preference key
+        PersistenceInitializer(),   // open the note database
+        SyncInitializer(),          // SyncConfig.configure(...)
+        LibraryInitializer(),       // resolve the notebook library's saved locations
+        UpdatesInitializer(),       // point the update checker at its feed
+    ]
+
+    func initialize() {
+        for initializer in initializers {
+            initializer.initialize()
+        }
+    }
+
+    func willTerminate() {
+        for initializer in initializers.reversed() {
+            initializer.uninitialize()
+        }
+    }
+}
+```
+
+Each initializer is a handful of lines. A typical one is exactly the `configure(_:)` call from <a href="/guide/02-5-object-wiring">Object Wiring</a>, carrying the values only the app target knows:
+
+```swift
+struct SyncInitializer: AppInitializing {
+    func initialize() {
+        SyncConfig.configure(SyncConfig(
+            baseURL: AppInfo.syncBaseURL,
+            clientIdentity: AppInfo.clientIdentity,
+            syncDirectory: FileLocations.syncDirectory
+        ))
+    }
+}
+```
+
+What keeps the chain healthy:
+
+- <strong>One subsystem per initializer.</strong> `PersistenceInitializer` sets up persistence and nothing else. When a new subsystem arrives it gets a new entry, the array grows by one line, and the whole launch order stays readable at a glance.
+- <strong>Configuration, not work.</strong> An initializer makes a subsystem <em>usable</em> — registers defaults, opens a store, sets a config. It never does the subsystem's job: no reloads, no network calls, no scanning the library. That work belongs to the controllers started in phase 4, which are written assuming this configuration already happened.
+- <strong>`uninitialize` is the mirror, rarely needed.</strong> It runs in reverse order during the termination handshake, and most initializers keep the empty default. It earns its keep for the few subsystems with real shutdown obligations — flushing a store, ending a sync session cleanly.
 
 ## The readiness gate
 
