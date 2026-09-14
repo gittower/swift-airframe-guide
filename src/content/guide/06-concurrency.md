@@ -1,10 +1,10 @@
 ---
 title: "Concurrency"
 description: "Build manager operations with background jobs, declare which work can overlap, and report progress without moving application state off the main actor."
-order: 5
+order: 6
 ---
 
-Managers expose plain `async` operations. Inside a manager, jobs describe the work, runners order it, and progress events keep the UI informed. This chapter extends the notebook example from <a href="/guide/03-model-layer">Chapter 3</a> using those APIs. The framework supplies their execution and delivery machinery.
+Managers expose plain `async` operations. Inside a manager, jobs describe the work, runners order it, and progress events keep the UI informed. This chapter extends the notebook example from <a href="/guide/04-model-layer">Chapter 4</a> using those APIs. The framework supplies their execution and delivery machinery.
 
 ## Choosing a runner
 
@@ -46,7 +46,7 @@ struct RenameNoteJob: BackgroundJob {
 }
 ```
 
-`Note` here is a `Sendable` value, not a managed object passed between database contexts. `SyncWorkContext` and `SyncResultContext` are the app-defined contexts from Chapter 3: the worker gets background-safe libraries and storage; the result handler gets the store and main-actor publication operations.
+`Note` here is a `Sendable` value, not a managed object passed between database contexts. `SyncWorkContext` and `SyncResultContext` are the app-defined contexts from Chapter 4: the worker gets background-safe libraries and storage; the result handler gets the store and main-actor publication operations.
 
 Capture the requested title and independent configuration before submission. Fetch and validate the current note inside `perform`, after earlier conflicting jobs have finished. Capturing an entire editable note at submission could overwrite an earlier job's changes; checking existence at execution also prevents a delayed edit from recreating a deleted note.
 
@@ -69,7 +69,7 @@ extension RenameNoteJob: TaskAccess {
     var access: TaskAccessMode { .write }
 }
 
-// PullNotesJob is defined in Chapter 3.
+// PullNotesJob is defined in Chapter 4.
 extension PullNotesJob: TaskAccess {
     var groups: Set<NoteJobGroup> { [.notebook(notebookID)] }
     var access: TaskAccessMode { .write }
@@ -96,7 +96,7 @@ Two jobs conflict when their groups overlap and at least one is a writer. In thi
 
 Declaring the notebook group on every rename also serializes edits to different notes in that notebook. Choose this when edits must exclude a collection-wide sync. Group names have no implicit hierarchy: a job declaring only `.note(id)` does not conflict with a job declaring only `.notebook(id)`. Include every resource whose access needs coordination. If the operation writes any declared resource, use `.write`.
 
-To adopt this in Chapter 3's manager, change its runner property and construction to `GroupedTaskRunner<NoteJobGroup>`, then replace its enqueue helper with:
+To adopt this in Chapter 4's manager, change its runner property and construction to `GroupedTaskRunner<NoteJobGroup>`, then replace its enqueue helper with:
 
 ```swift
 private func enqueue<J: BackgroundJob & TaskAccess>(
@@ -172,7 +172,7 @@ The cancellation groups must be a subset of the delete job's groups, and the job
 
 Conform directly to `ProgressReportingJob` when a job needs progress. Implement the `perform(context:progress:)` overload and `handleProgress(_:context:)`; keep the same result handler pattern. The framework supplies the ordinary `perform(context:)` overload for calls that do not need live progress.
 
-For a pull with progress, extend Chapter 3's `SyncResultContext` with an `activities: SyncActivities` property and pass the manager's shared activity collection when constructing that context in `enqueue`. This app-defined collection holds stable progress state keyed by notebook. The manager ensures the activity exists before enqueueing; the job updates it once work starts.
+For a pull with progress, extend Chapter 4's `SyncResultContext` with an `activities: SyncActivities` property and pass the manager's shared activity collection when constructing that context in `enqueue`. This app-defined collection holds stable progress state keyed by notebook. The manager ensures the activity exists before enqueueing; the job updates it once work starts.
 
 ```swift
 struct PullNotesWithProgressJob: ProgressReportingJob, TaskAccess {
@@ -331,7 +331,7 @@ A caller uses the `Task` it creates around an `async` call as its cancellation h
 
 ### One shape for every public entry point: plain `async`
 
-A manager's public surface — every method a controller, an Action, or another manager calls — is `async`, returning the actual result. `NoteManager.pull` from <a href="/guide/03-model-layer">Chapter 3</a> is the model: no raw `Task` return type, ever, at that boundary.
+A manager's public surface — every method a controller, an Action, or another manager calls — is `async`, returning the actual result. `NoteManager.pull` from <a href="/guide/04-model-layer">Chapter 4</a> is the model: no raw `Task` return type, ever, at that boundary.
 
 ```swift
 // ✅ Public API — plain async, returns the result
@@ -350,7 +350,7 @@ The runner returns a `Task`, as does the manager's private `enqueue` helper. The
 
 ### Wiring cancellation once
 
-Use Chapter 3's `awaitCancellable` helper around every enqueued operation. It awaits the runner task under a cancellation handler and forwards the caller's cancellation. Check cancellation before submission too, especially after asynchronous setup such as loading configuration.
+Use Chapter 4's `awaitCancellable` helper around every enqueued operation. It awaits the runner task under a cancellation handler and forwards the caller's cancellation. Check cancellation before submission too, especially after asynchronous setup such as loading configuration.
 
 ```swift
 // In a @MainActor preview controller:
@@ -399,5 +399,5 @@ Only store the caller's `Task` when cancellation is a real requirement — a vie
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/06-views">Chapter 6</a>. Testing async, job-based code through its application behavior is <a href="/guide/10-testing">Chapter 10</a>.
+How a view's own state object owns and cancels its loading `Task` — the consumer side of everything in this chapter — is <a href="/guide/07-1-views">Chapter 7.1</a>. Testing async, job-based code through its application behavior is <a href="/guide/09-testing">Chapter 9</a>.
 </div>

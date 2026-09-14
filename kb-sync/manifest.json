@@ -7,15 +7,15 @@
       "updated_at": "2026-09-13T12:23:36.751+00:00",
       "sha256": "4cd6139814e02d9ca9759205809955b1c021a65c9038d7f1a26dbb0ceb562a6e",
       "chapters": [
-        "03-model-layer",
-        "05-concurrency"
+        "04-model-layer",
+        "06-concurrency"
       ]
     },
     "async-cancellation-patterns": {
       "updated_at": "2026-09-09T17:24:53.257+00:00",
       "sha256": "41ac79a01f1fcd05dc921a91890c44cdd373ae1821f92a7d280c30879ebf3f6d",
       "chapters": [
-        "05-concurrency"
+        "06-concurrency"
       ]
     },
     "object-wiring-shared-instances-and-configure": {
@@ -29,15 +29,15 @@
       "updated_at": "2026-09-12T11:09:20.214+00:00",
       "sha256": "df0b2c359f2c3cf29b296f529dbcd780cfa6488526fa9eca4a0bdaf6d228d931",
       "chapters": [
-        "06-views",
-        "07-state-observing"
+        "07-1-views",
+        "07-2-state-observing"
       ]
     },
     "model-queries-static-accessors-via-model-queries-swift": {
       "updated_at": "2026-09-13T12:23:57.83+00:00",
       "sha256": "7de0af9f3d76a7584b2d69cb7f3a221a76317f229eb0c0fb06b6cf9b816d7515",
       "chapters": [
-        "03-model-layer"
+        "04-model-layer"
       ]
     },
     "migrating-objective-c-observer-classes-to-combine-publishers": {
@@ -50,16 +50,16 @@
       "updated_at": "2026-09-02T17:47:15.416+00:00",
       "sha256": "5ead18ea89c94be60f7d9831fc806e9790bf57ce5c2954de876aced3dc56c4db",
       "chapters": [
-        "06-views",
-        "07-state-observing"
+        "07-1-views",
+        "07-2-state-observing"
       ]
     },
     "view-state-management-patterns-and-lifecycle": {
       "updated_at": "2026-09-02T17:46:45.451+00:00",
       "sha256": "a8c601b92c37318bc5423f8f7ab766416fa4c180d6cbf4f2d13a91563e4c9a6e",
       "chapters": [
-        "06-views",
-        "07-state-observing"
+        "07-1-views",
+        "07-2-state-observing"
       ]
     },
     "toolbar-item-management-item-classes-and-the-badge-model": {
@@ -78,7 +78,7 @@
       "updated_at": "2026-08-23T07:00:25.728+00:00",
       "sha256": "4a0f8490428a373a2215eceb8a1d26879ace5773f67433afd8d825c49506444c",
       "chapters": [
-        "10-testing"
+        "09-testing"
       ]
     },
     "what-s-new-feature-architecture-and-content-guidelines": {
@@ -92,28 +92,28 @@
       "sha256": "f01736df360733228982876d965583ff2db37b0b884e0672e9b54e43c6be7c36",
       "chapters": [
         "01-getting-started",
-        "06-views"
+        "07-1-views"
       ]
     },
     "swift-test-base-class-subclass-testcase-and-use-userdefaults-shared": {
       "updated_at": "2026-07-01T15:12:42.5+00:00",
       "sha256": "334b81faf8b410ca353b91e64ed54a9058850303cb322e76e727b9dd8614ebe2",
       "chapters": [
-        "10-testing"
+        "09-testing"
       ]
     },
     "actions-and-activities": {
       "updated_at": "2026-09-13T15:27:39.52+00:00",
       "sha256": "c4d020dcc3ff79712a79d819baa8c612c0637d0e6594c33fc9eec09be5e8599e",
       "chapters": [
-        "04-1-actions"
+        "05-1-actions"
       ]
     },
     "manager-function-vs-action": {
       "updated_at": "2026-06-28T13:41:05.373+00:00",
       "sha256": "6d21d5693baa8277b2afc97edf08d7f101fc92b59d8ca1af62da950d2990c427",
       "chapters": [
-        "04-1-actions"
+        "05-1-actions"
       ]
     },
     "actions-and-actioncontrollers": {
@@ -126,8 +126,8 @@
       "updated_at": "2026-06-09T20:37:01.047+00:00",
       "sha256": "9d189bdbf15eae542738c3fab8affe08a53682f5249b51f5b1b67b159327f705",
       "chapters": [
-        "03-model-layer",
-        "04-actions-and-controllers"
+        "04-model-layer",
+        "05-actions-and-controllers"
       ]
     },
     "model-layer-organization": {
@@ -135,7 +135,7 @@
       "sha256": "9944a82afd4d4c7483bdaf6afb787a0fa79d10da38a7eafce3e9cda74346ad62",
       "chapters": [
         "02-initializing",
-        "03-model-layer"
+        "04-model-layer"
       ]
     },
     "repository-queue": {
@@ -148,14 +148,14 @@
       "updated_at": "2026-09-09T17:27:10.865+00:00",
       "sha256": "67ff57ccf51b3733be378e0ea845fbd496e6c58c8791570a50ab266ee33f69e9",
       "chapters": [
-        "05-concurrency"
+        "06-concurrency"
       ]
     },
     "background-task-structs": {
       "updated_at": "2026-06-06T11:13:11.18+00:00",
       "sha256": "626a7b3097132c274e6d7eef9973da9449d0193a954609fc996ac074cab1fcfe",
       "chapters": [
-        "05-concurrency"
+        "06-concurrency"
       ]
     },
     "swiftlint-pre-commit-hook": {
@@ -168,7 +168,7 @@
       "updated_at": "2026-09-13T15:26:52.75+00:00",
       "sha256": "2f175ef15fc2300cb9c0e4c3c2b0e726b4e27bb6bcd0f8d20dcab74d4f0a6480",
       "chapters": [
-        "03-model-layer"
+        "04-model-layer"
       ]
     },
     "architecture-overview": {
@@ -182,7 +182,7 @@
       "updated_at": "2026-05-26T18:10:29.383+00:00",
       "sha256": "ef7baf93aa1d9f26608a6ab6360b3567db94b8fa5e641bac3ae4243ebac389f2",
       "chapters": [
-        "04-2-action-controllers"
+        "03-background-controllers"
       ]
     },
     "versioning-policy": {
@@ -201,7 +201,7 @@
       "updated_at": "2026-05-03T14:31:25.971+00:00",
       "sha256": "c795aee71d46efe1c6496b228016162da4ba92d88cbc76745bcd96ca721e6154",
       "chapters": [
-        "10-testing"
+        "09-testing"
       ]
     },
     "performance-tests-conventions-and-setup": {
@@ -220,7 +220,7 @@
       "updated_at": "2026-04-26T15:30:51.607+00:00",
       "sha256": "42bb834f1eb0fd445d99ec63dc8e65b79f246cd09182344ab18c45a26d88e4af",
       "chapters": [
-        "05-concurrency"
+        "06-concurrency"
       ]
     },
     "http-client-library-guidelines": {
@@ -233,14 +233,14 @@
       "updated_at": "2026-03-24T14:21:04.507+00:00",
       "sha256": "ab9c2d721c2cc41bfc1229be3c6b59eeb9a8498d0d626cda590b405f2387292a",
       "chapters": [
-        "08-menus"
+        "07-3-menus"
       ]
     },
     "managing-menus": {
       "updated_at": "2026-03-24T14:02:05.897+00:00",
       "sha256": "4acda763ce2e3e54a8e275523c4eced463fd610fb54452fba9d7a7db60317ef8",
       "chapters": [
-        "08-menus"
+        "07-3-menus"
       ]
     },
     "text-plugin-system-architecture": {
@@ -253,49 +253,49 @@
       "updated_at": "2026-03-13T07:04:03.482+00:00",
       "sha256": "66d26f045280ff2813173d742c3fccfab3bfd8b17a7a5efd145b5ff2c39c2594",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-view-controller-assembly": {
       "updated_at": "2026-03-13T06:50:13.317+00:00",
       "sha256": "beb1abf1148f9b2516125d1750a6a29f03ec78e208d5e240dd9092d3d8600095",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "nshostingcontroller-vs-nshostingview-choosing-the-right-approach": {
       "updated_at": "2026-03-10T06:14:20.845+00:00",
       "sha256": "7bef2e37a3e7a4263d2c455df27a79fbe4c40ddb734c7928d58475da36f299bd",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-view-composition-and-swapping": {
       "updated_at": "2026-03-08T19:34:20.864+00:00",
       "sha256": "3379430e0e4f1812604e8af41014b2cd9767bc1ae2b36295756cdbae0a06ec18",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-layout-constraints": {
       "updated_at": "2026-03-08T19:33:22.944+00:00",
       "sha256": "25fab3517b40bfcbcaa543c6a80d8775d36485454f8257b71c3829ff9c6358cd",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-view-components": {
       "updated_at": "2026-03-08T19:32:53.797+00:00",
       "sha256": "2be5945e4d6726dc922d7282ff8ea0c1b9fa22bdf6299e99c97f5fef8f4e4177",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-three-layer-architecture": {
       "updated_at": "2026-03-08T19:32:25.276+00:00",
       "sha256": "767fe9c146ba29537505bd647701b908fd64fb63e70962169f4a4deff0bc16f9",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "view-styling-guideline-replacing-viewstyles-with-local-definitions": {
@@ -321,21 +321,21 @@
       "updated_at": "2026-03-07T12:24:16.903+00:00",
       "sha256": "70e491cff076b4c182abd7c1f903895847150be9f2ae17735bb3598a6917a877",
       "chapters": [
-        "04-3-action-validation"
+        "05-3-action-validation"
       ]
     },
     "swiftui-composition-guidelines": {
       "updated_at": "2026-03-07T12:14:24.377+00:00",
       "sha256": "8c9ff4848a2ad1efd19e1bd7d01a13490da82d210a314b085816bf22c298ce08",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     },
     "swiftui-naming-conventions-screen-page-view": {
       "updated_at": "2026-03-07T12:04:04.633+00:00",
       "sha256": "e86a2040786176f53b35978b8ee62393ab4d894c7bba749a6baf273d74196838",
       "chapters": [
-        "06-views"
+        "07-1-views"
       ]
     }
   }

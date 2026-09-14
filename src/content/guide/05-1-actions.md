@@ -1,7 +1,7 @@
 ---
 title: "Actions"
 description: "The Action is the unit of user intent — a live operation with its own lifecycle, progress, and cancellation. This subchapter covers what an Action carries, when a gesture earns one instead of a plain manager call, and the line between an Action and a manager function it calls into."
-order: 4
+order: 5
 subOrder: 1
 ---
 
@@ -9,7 +9,7 @@ The Action is the unit of user intent — a live operation with its own lifecycl
 
 ## An Action is the thing in flight
 
-An Action is `@Observable` and `@MainActor`, and it carries its own lifecycle — `title`, `status`, progress, and a `cancel()` that means it. The Action represents the live user operation: it spawns its own task in `main()` and stays alive until that task finishes. A manager job may also update shared activity state for a notebook, as shown in <a href="/guide/05-concurrency">Chapter 5</a>; that state lets multiple views observe progress without taking over execution or cancellation from the Action.
+An Action is `@Observable` and `@MainActor`, and it carries its own lifecycle — `title`, `status`, progress, and a `cancel()` that means it. The Action represents the live user operation: it spawns its own task in `main()` and stays alive until that task finishes. A manager job may also update shared activity state for a notebook, as shown in <a href="/guide/06-concurrency">Chapter 6</a>; that state lets multiple views observe progress without taking over execution or cancellation from the Action.
 
 ```swift
 @Observable @MainActor
@@ -39,7 +39,7 @@ enum ActionStatus {
 
 Because state and only state needs to be reactive — not the imperative `cancel()` or `main()` calls themselves — `@Observable` is the cheapest way to let several independent UI surfaces (a progress window, an activity list, a status badge) bind to the same live value without any subscription ceremony.
 
-This is the same narrow exception <a href="/guide/03-model-layer">Chapter 3</a> makes for a settings object, for the same reason: an Action is never constructed or written to off the main actor, so `@Observable`'s guarantees are true of it and not just declared. Every model-layer type that has background work behind it — which is most of them, even the ones marked `@MainActor` — doesn't get the same pass, because that background work is exactly what `@Observable` can't honestly track.
+This is the same narrow exception <a href="/guide/04-model-layer">Chapter 4</a> makes for a settings object, for the same reason: an Action is never constructed or written to off the main actor, so `@Observable`'s guarantees are true of it and not just declared. Every model-layer type that has background work behind it — which is most of them, even the ones marked `@MainActor` — doesn't get the same pass, because that background work is exactly what `@Observable` can't honestly track.
 
 ### Conflicts are declared, not checked ad hoc
 
@@ -97,10 +97,10 @@ No composite "activity" type wraps the two manager calls. Cancelling the outer t
 
 - A manager function that posts a user-visible notification or registers undo has drifted into Action territory — post the notification and register undo in the Action, after the manager call returns.
 - An Action that issues raw I/O instead of calling a manager function has drifted the other way — push that work down.
-- An Action that bypasses its manager to read or write state directly breaks the single-funnel rule from <a href="/guide/03-model-layer">Chapter 3</a>. Go through the manager, always.
+- An Action that bypasses its manager to read or write state directly breaks the single-funnel rule from <a href="/guide/04-model-layer">Chapter 4</a>. Go through the manager, always.
 - A manager growing `isSyncRunning`-style in-flight flags is duplicating what the Action layer already knows — the central manager enumerates running Actions. Track in-flight state on a manager only when a consumer that isn't an Action genuinely needs to query it; parallel bookkeeping drifts.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Action Controllers — the only coordination-layer type allowed to touch AppKit, and the background controllers that run with no gesture behind them at all — are next: <a href="/guide/04-2-action-controllers">Chapter 4.2, Action Controllers</a>.
+Action Controllers — the only coordination-layer type allowed to touch AppKit — are next: <a href="/guide/05-2-action-controllers">Chapter 5.2, Action Controllers</a>.
 </div>

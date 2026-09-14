@@ -85,7 +85,7 @@ struct PreferencesView: View {
 }
 ```
 
-Settings get their own full treatment as one shape in the Model layer's pattern catalog — see <a href="/guide/03-model-layer">Chapter 3</a>.
+Settings get their own full treatment as one shape in the Model layer's pattern catalog — see <a href="/guide/04-model-layer">Chapter 4</a>.
 
 ## Object wiring: construct what you own, reach for shared when you don't
 
@@ -148,7 +148,7 @@ The details that make this shape work:
 - <strong>`configure` runs once, from an initializer</strong> — phase 1, before anything downstream can read the stack.
 - <strong>`shared` is force-unwrapped on purpose.</strong> If sync is essential to the app, reaching it before `configure` ran is a launch-ordering bug. It should crash loudly in development, not limp along silently. Reach for an optional only when "not configured yet" is a real, handleable state — not a bug you want surfaced immediately.
 - <strong>No root object.</strong> A `SyncService.current` that merely holds `config`, `store`, and `manager` adds a layer without adding behavior — `SyncService.current.store` and `SyncStore.shared` both reach a global either way, so keep the flat, ergonomic accessor and drop the wrapper. Every component that would have hung off the root becomes its own shared instance reading the config directly.
-- <strong>Split by weight.</strong> The heavy mutator (`SyncManager` — network client, persistence, background work) and the pure model (`SyncStore` — data only) stay separate shared instances. Read-only consumers go to the store and never touch the manager. Neither is `@Observable` — see <a href="/guide/03-model-layer">Chapter 3</a>; the manager posts a notification after a write, and whatever view needs to react builds its own display object from it.
+- <strong>Split by weight.</strong> The heavy mutator (`SyncManager` — network client, persistence, background work) and the pure model (`SyncStore` — data only) stay separate shared instances. Read-only consumers go to the store and never touch the manager. Neither is `@Observable` — see <a href="/guide/04-model-layer">Chapter 4</a>; the manager posts a notification after a write, and whatever view needs to react builds its own display object from it.
 - <strong>Derived globals stay computed, not configured.</strong> Anything fully derivable from the config — a path layout built from the configured sync directory, say — is a computed property or factory over `SyncConfig.shared`. One configured global per module; everything else follows from it.
 
 ### When "shared" is per-notebook, not per-app
@@ -157,5 +157,5 @@ Some component families exist once per <em>key</em> rather than once per app —
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The manager/store split introduced here runs through <a href="/guide/03-model-layer">Chapter 3</a>, where the persisted, database-backed model shape is built on exactly that pair. Background controllers — the long-lived objects <em>started</em> in phase 4 — are covered in <a href="/guide/04-2-action-controllers">Chapter 4.2</a>.
+The manager/store split introduced here runs through <a href="/guide/04-model-layer">Chapter 4</a>, where the persisted, database-backed model shape is built on exactly that pair. Background controllers — the long-lived objects <em>started</em> in phase 4 — are covered next: <a href="/guide/03-background-controllers">Chapter 3</a>.
 </div>

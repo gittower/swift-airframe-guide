@@ -1,10 +1,11 @@
 ---
 title: "Views"
-description: "SwiftUI renders. AppKit controls. This chapter states that split precisely, covers the three-layer shape every piece of UI follows, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale."
-order: 6
+description: "SwiftUI renders. AppKit controls. This subchapter states that split precisely, covers the three-layer shape every piece of UI follows, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale."
+order: 7
+subOrder: 1
 ---
 
-SwiftUI renders. AppKit controls. This chapter states that split precisely, covers the three-layer shape every piece of UI follows, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale.
+SwiftUI renders. AppKit controls. This subchapter states that split precisely, covers the three-layer shape every piece of UI follows, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale.
 
 ## The stance
 
@@ -72,7 +73,7 @@ Rule of thumb: if the controller would have to change what properties it sets or
 
 Sometimes the behavior around a <em>single</em> component outgrows the view controller hosting it: a popover button whose menu is generated from current state, a toolbar item whose badge tracks activity, a segmented control with non-trivial mode logic. The component itself must stay dumb — that's the three-layer split — but the coordination has to live somewhere, and folding it into the view controller is how a controller quietly picks up a second concern.
 
-The extraction point is a <strong>view component controller</strong>: a plain `NSObject`, not an `NSViewController`, that owns one component and everything behavioral about it. It builds the component (or attaches to an existing one), acts as its target and delegate, holds whatever state the interaction needs, and reports outcomes to its owner through closures — or dispatches nil-targeted actions through the responder chain, picking up <a href="/guide/04-3-action-validation">Chapter 4.3</a>'s validation for free. The owning view controller just places the component in its layout, pushes inputs in, and reacts:
+The extraction point is a <strong>view component controller</strong>: a plain `NSObject`, not an `NSViewController`, that owns one component and everything behavioral about it. It builds the component (or attaches to an existing one), acts as its target and delegate, holds whatever state the interaction needs, and reports outcomes to its owner through closures — or dispatches nil-targeted actions through the responder chain, picking up <a href="/guide/05-3-action-validation">Chapter 5.3</a>'s validation for free. The owning view controller just places the component in its layout, pushes inputs in, and reacts:
 
 ```swift
 @StateObserving
@@ -107,7 +108,7 @@ Note what's absent from the inputs: `NoteManager` itself. A shared instance is n
 
 Exposing the component as a property is one of two integration modes: a `make…()` method or a `let` component covers the common case where the controller creates the control, and an `attach(to:)` method covers a control that already exists — a toolbar item the window hands over, say. Either way the owner decides <em>where</em> the component goes; the component controller decides everything about how it behaves.
 
-Not being an `NSViewController` is the point, not a shortcut. There's no view hierarchy to own and no containment lifecycle to participate in, so an `NSViewController` would be ceremony around an object that is really just coordination. What a component controller <em>does</em> share with any other controller is observation: it conforms to `StateObserving` when it reacts to state, its owner activates it on the owner's own scope — or lists it in `childStateObservers` and lets a container do it — exactly as <a href="/guide/07-state-observing">Chapter 7</a> describes.
+Not being an `NSViewController` is the point, not a shortcut. There's no view hierarchy to own and no containment lifecycle to participate in, so an `NSViewController` would be ceremony around an object that is really just coordination. What a component controller <em>does</em> share with any other controller is observation: it conforms to `StateObserving` when it reacts to state, its owner activates it on the owner's own scope — or lists it in `childStateObservers` and lets a container do it — exactly as <a href="/guide/07-2-state-observing">Chapter 7.2</a> describes.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
@@ -116,7 +117,7 @@ A view component controller owns exactly one component and the behavior around i
 
 </div>
 
-The most common specialization is the menu controller — a component controller whose component is a menu (or a button-plus-menu pair) — which gets its own treatment in <a href="/guide/08-menus">Chapter 8</a>.
+The most common specialization is the menu controller — a component controller whose component is a menu (or a button-plus-menu pair) — which gets its own treatment in <a href="/guide/07-3-menus">Chapter 7.3</a>.
 
 ## Observable state objects: the seam between model and a dumb view
 
@@ -163,11 +164,11 @@ final class NoteDetailViewController: NSViewController {
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-An external event never calls <code>updateFields()</code> — or any other tracked updater — directly. It only ever updates the state that updater reads; the updater re-runs because <code>observations.track</code> noticed the state changed, not because something told it to run. Reaching for the updater directly from a notification handler or a delegate callback is the tell that state and rendering have blurred together: fix it by routing the event through a state property instead, even if that means adding one nothing-else-does-it property. This is what keeps rendering a pure function of current state — the same guarantee <a href="/guide/07-state-observing">Chapter 7</a> builds the whole activation lifecycle around.
+An external event never calls <code>updateFields()</code> — or any other tracked updater — directly. It only ever updates the state that updater reads; the updater re-runs because <code>observations.track</code> noticed the state changed, not because something told it to run. Reaching for the updater directly from a notification handler or a delegate callback is the tell that state and rendering have blurred together: fix it by routing the event through a state property instead, even if that means adding one nothing-else-does-it property. This is what keeps rendering a pure function of current state — the same guarantee <a href="/guide/07-2-state-observing">Chapter 7.2</a> builds the whole activation lifecycle around.
 
 </div>
 
-Both mechanisms are declared in one place — `observeState()`, the complete inventory of everything the controller reacts to — and wired up by an activation lifecycle (`activateObservation()` / `deactivateObservation()`) rather than by hand. That lifecycle, plus a parent controller that activates a whole tree of children at once, gets its own chapter next: <a href="/guide/07-state-observing">Chapter 7</a>.
+Both mechanisms are declared in one place — `observeState()`, the complete inventory of everything the controller reacts to — and wired up by an activation lifecycle (`activateObservation()` / `deactivateObservation()`) rather than by hand. That lifecycle, plus a parent controller that activates a whole tree of children at once, gets its own chapter next: <a href="/guide/07-2-state-observing">Chapter 7.2</a>.
 
 Hosting a SwiftUI view inside that same controller works the same way — the Observation framework tracks any `@Observable` property read inside a view's `body`, so a hosted SwiftUI view stays reactive to exactly the state it reads.
 
@@ -188,5 +189,5 @@ A <strong>Screen</strong> (or the AppKit view controller playing that role) owns
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The activation lifecycle behind `observeState()`, `@Tracked`, and `StateObservingContainer` for a parent with subcontrollers get their own chapter next: <a href="/guide/07-state-observing">Chapter 7</a>. Menus — which are themselves just view components wired to Actions — follow after that: <a href="/guide/08-menus">Chapter 8</a>. Moving between screens without one view holding a reference to another is <a href="/guide/09-navigation">Chapter 9</a>.
+The activation lifecycle behind `observeState()`, `@Tracked`, and `StateObservingContainer` for a parent with subcontrollers get their own chapter next: <a href="/guide/07-2-state-observing">Chapter 7.2</a>. Menus — which are themselves just view components wired to Actions — follow after that: <a href="/guide/07-3-menus">Chapter 7.3</a>. Moving between screens without one view holding a reference to another is <a href="/guide/08-navigation">Chapter 8</a>.
 </div>

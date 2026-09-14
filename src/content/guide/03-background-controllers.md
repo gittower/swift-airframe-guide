@@ -1,19 +1,12 @@
 ---
-title: "Action Controllers"
-description: "Action Controllers and background controllers are the two places outside the Action itself where the coordination layer does its work — one bridging a user gesture to AppKit, the other running with no gesture behind it at all. This subchapter covers both."
-order: 4
-subOrder: 2
+title: "Background Controllers"
+description: "Not every write in this guide happens because a user asked for it. This chapter covers the background controller — the long-lived, Foundation-only object that keeps the app current with no gesture behind it at all: periodic refreshes, reactions to system events, state derived continuously from the Model."
+order: 3
 ---
 
-Action Controllers and background controllers are the two places outside the Action itself where the coordination layer does its work — one bridging a user gesture to AppKit, the other running with no gesture behind it at all. This subchapter covers both.
+Not every write in this guide happens because a user asked for it. This chapter covers the background controller — the long-lived, Foundation-only object that keeps the app current with no gesture behind it at all: periodic refreshes, reactions to system events, state derived continuously from the Model.
 
-## Action Controllers: the only AppKit-side bridge
-
-An Action Controller is the one coordination-layer type allowed to touch AppKit — it presents a dialog, collects the user's input, builds an Action from it, and dispatches it. Everything downstream of that dispatch, per the boundary in <a href="/guide/01-getting-started">Chapter 1</a>, is Foundation-only again.
-
-A common shape opens a result window immediately, before the Action has finished: a loading view binds to `action.status`, and once it flips to `.completed`, the controller fetches the result from the domain manager and swaps the content in. Results live on the manager, not on the Action itself — the Action stays focused on lifecycle, and a background-triggered run of the same work (no Action wrapper at all) can produce and cache a result the same way.
-
-## Background controllers
+## What a background controller is
 
 Some work isn't triggered by a gesture at all — a periodic refresh, a reaction to the system waking from sleep, a value derived continuously from the Model. That's a background controller: a long-lived, app- or document-lifetime object, Foundation-only, that never shows UI and is never invoked as part of a user gesture.
 
@@ -26,7 +19,7 @@ protocol BackgroundController: AnyObject {
 
 Conforming controllers start in phase 4 of launch — see <a href="/guide/02-initializing">Chapter 2</a> — never earlier: initializers must stay fast, and a controller may assume the subsystems below it are already configured.
 
-Reach for one when work has no gesture behind it: refreshing data on an interval, reacting to system events that can happen at any time, maintaining state derived from model changes, cleaning up stale data periodically, recording events for telemetry. And know the three cases that look like one but aren't: a one-shot user-initiated operation is an Action — <a href="/guide/04-1-actions">Chapter 4.1</a>; work that needs progress reporting and user cancellation is a long-running Action — the Action <em>is</em> the live operation, per that same subchapter; window-scoped state belongs to a view state object — <a href="/guide/06-views">Chapter 6</a>.
+Reach for one when work has no gesture behind it: refreshing data on an interval, reacting to system events that can happen at any time, maintaining state derived from model changes, cleaning up stale data periodically, recording events for telemetry. And know the three cases that look like one but aren't: a one-shot user-initiated operation is an Action — <a href="/guide/05-1-actions">Chapter 5.1</a>; work that needs progress reporting and user cancellation is a long-running Action — the Action <em>is</em> the live operation, per that same subchapter; window-scoped state belongs to a view state object — <a href="/guide/07-1-views">Chapter 7.1</a>.
 
 <div class="table-wrap">
 <table>
@@ -102,7 +95,7 @@ An event-driven controller is the same skeleton with a subscription in place of 
 <table>
 <thead><tr><th>Channel</th><th>When</th></tr></thead>
 <tbody>
-<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and state objects consume it by tracking — <a href="/guide/07-state-observing">Chapter 7</a>.</td></tr>
+<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and state objects consume it by tracking — <a href="/guide/07-2-state-observing">Chapter 7.2</a>.</td></tr>
 <tr><td>A posted notification</td><td>Broad fan-out to consumers that don't hold a reference.</td></tr>
 <tr><td>A write into a manager</td><td>The controller's whole job is refreshing data the manager already owns.</td></tr>
 </tbody>
@@ -120,5 +113,5 @@ A background controller may read from managers and trigger reloads on them, and 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Validators — the precondition checks Action Controllers use to enable or disable UI, referenced above — get their own subchapter next: <a href="/guide/04-3-action-validation">Chapter 4.3, Action Validation</a>. The serial runner and job structs used throughout Actions and Action Controllers are covered properly in <a href="/guide/05-concurrency">Chapter 5, Concurrency</a>.
+The Model layer these controllers read from and write into — the write funnel every manager enforces — is next: <a href="/guide/04-model-layer">Chapter 4, The Model Layer</a>.
 </div>
