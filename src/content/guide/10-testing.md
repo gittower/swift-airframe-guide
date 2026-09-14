@@ -1,7 +1,7 @@
 ---
 title: "Testing"
 description: "Not everything earns a test. This closing chapter is about testing at the altitude where regressions actually happen, skipping the layers that structurally can't fail on their own, and reaching for real collaborators instead of mocks almost everywhere."
-order: 9
+order: 10
 ---
 
 Not everything earns a test. This closing chapter is about testing at the altitude where regressions actually happen, skipping the layers that structurally can't fail on their own, and reaching for real collaborators instead of mocks almost everywhere.
@@ -14,7 +14,7 @@ The Foundation/AppKit boundary from <a href="/guide/01-getting-started">Chapter 
 <table>
 <thead><tr><th>Layer</th><th>Test?</th><th>Why</th></tr></thead>
 <tbody>
-<tr><td>Models &amp; managers</td><td><span class="pill">Yes</span></td><td>The write funnel from Chapter 4 — real decisions, real regressions.</td></tr>
+<tr><td>Models &amp; managers</td><td><span class="pill">Yes</span></td><td>The write funnel from Chapter 5 — real decisions, real regressions.</td></tr>
 <tr><td>Action Validators</td><td><span class="pill">Yes</span></td><td>Pure precondition logic, Foundation-only.</td></tr>
 <tr><td>View State Controllers</td><td><span class="pill">Yes</span></td><td>Foundation-only data shaping — the one testable controller kind.</td></tr>
 <tr><td>Actions</td><td><span class="pill">Only if multi-step</span></td><td>A single model call needs no test beyond the manager's own.</td></tr>
@@ -52,9 +52,9 @@ final class NoteManagerTests: TestCase {
 }
 ```
 
-The test reaches `NoteManager` the same way production code does — `.shared`, never a constructor — because there's no injected-client seam to construct it with in the first place: `NoteManager`'s `init` is private, per <a href="/guide/04-model-layer">Chapter 4</a>. The stub sits at the HTTP boundary instead, intercepting the request `SyncClient` would otherwise send over the real network; `SyncClient` itself, request building, and response decoding all still run for real.
+The test reaches `NoteManager` the same way production code does — `.shared`, never a constructor — because there's no injected-client seam to construct it with in the first place: `NoteManager`'s `init` is private, per <a href="/guide/05-model-layer">Chapter 5</a>. The stub sits at the HTTP boundary instead, intercepting the request `SyncClient` would otherwise send over the real network; `SyncClient` itself, request building, and response decoding all still run for real.
 
-Async work follows Chapter 6's own contract: prefer `async` test methods over bridging helpers, and where cancellation matters, assert the terminal persisted and published state — not merely that an error was thrown. Cancellation may arrive after a durable write, so the expected outcome can be an accurately settled partial result rather than an untouched store.
+Async work follows Chapter 7's own contract: prefer `async` test methods over bridging helpers, and where cancellation matters, assert the terminal persisted and published state — not merely that an error was thrown. Cancellation may arrive after a durable write, so the expected outcome can be an accurately settled partial result rather than an untouched store.
 
 ## Testing jobs and progress
 
@@ -87,5 +87,5 @@ Performance tests live in their own test plan, run separately from the default s
 
 <div class="seealso">
 <strong>End of the guide</strong>
-That closes the nine chapters. <a href="/">Back to the overview</a> for the full map, or start again from <a href="/guide/01-getting-started">Chapter 1</a>.
+That closes the ten chapters. <a href="/">Back to the overview</a> for the full map, or start again from <a href="/guide/01-getting-started">Chapter 1</a>.
 </div>

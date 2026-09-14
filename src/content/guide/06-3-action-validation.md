@@ -1,7 +1,7 @@
 ---
 title: "Action Validation"
 description: "An Action existing and an Action being allowed to run right now are different questions. This subchapter covers the two-layer system that answers the second one, and wires the answer into menus, toolbars, and the responder chain without ever asking a view to make the decision."
-order: 5
+order: 6
 subOrder: 3
 ---
 
@@ -74,5 +74,5 @@ If a validator needs a piece of data that isn't on the UI element that triggered
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-How a menu item carries `notebookValue` — a typed, safe accessor over `representedObject` — is <a href="/guide/07-3-menus">Chapter 7.3</a>. Testing validators directly, without constructing an Action or a controller, is <a href="/guide/09-testing">Chapter 9</a>.
+How a menu item carries `notebookValue` — a typed, safe accessor over `representedObject` — is <a href="/guide/08-4-menus">Chapter 8.4</a>. Testing validators directly, without constructing an Action or a controller, is <a href="/guide/10-testing">Chapter 10</a>.
 </div>

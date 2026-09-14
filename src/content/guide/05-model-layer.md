@@ -1,7 +1,7 @@
 ---
 title: "The Model Layer"
 description: "The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter explains why that funnel matters, where the main thread fits, and how to pick the right shape for a given piece of state."
-order: 4
+order: 5
 ---
 
 The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter explains why that funnel matters, where the main thread fits, and how to pick the right shape for a given piece of state.
@@ -17,7 +17,7 @@ That convergence is what makes the rest of the architecture possible:
 
 A manager always exists, even when it looks trivial. Sometimes it's a dedicated class; sometimes the model class acts as its own manager, when the mutation logic is simple enough that a wrapper would add nothing — a settings object's own setters, as in <a href="/guide/02-initializing">Chapter 2</a>, <em>are</em> the funnel.
 
-Ordinary display reads skip the manager: query the model directly. A read that must wait for an ongoing write to finish belongs to a coordinated workflow instead; it can go through a manager as a read job, as shown in <a href="/guide/06-concurrency">Chapter 6</a>. For plain lookups, the model exposes static queries:
+Ordinary display reads skip the manager: query the model directly. A read that must wait for an ongoing write to finish belongs to a coordinated workflow instead; it can go through a manager as a read job, as shown in <a href="/guide/07-concurrency">Chapter 7</a>. For plain lookups, the model exposes static queries:
 
 ```swift
 // Avoid — the manager has nothing to contribute to a read
@@ -53,7 +53,7 @@ These queries always answer with current state — `Note.all(in: notebook)` reco
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-The Model layer is always <strong>entered</strong> on the main actor. Jobs carry `Sendable` intent and stable identifiers; their work context supplies background-safe dependencies and storage access. Their result handler applies main-actor state and publishes completed writes. Workers never reach back into a manager or view. Progress follows the same boundary through typed events, covered in <a href="/guide/06-concurrency">Chapter 6</a>.
+The Model layer is always <strong>entered</strong> on the main actor. Jobs carry `Sendable` intent and stable identifiers; their work context supplies background-safe dependencies and storage access. Their result handler applies main-actor state and publishes completed writes. Workers never reach back into a manager or view. Progress follows the same boundary through typed events, covered in <a href="/guide/07-concurrency">Chapter 7</a>.
 
 </div>
 
@@ -155,7 +155,7 @@ final class NoteManager {
 }
 ```
 
-`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/06-concurrency">Chapter 6</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly. `init` is private for the same reason `shared` is the only way to reach a `SyncStore` or `SyncManager` in <a href="/guide/02-initializing">Chapter 2</a>: this app doesn't wire dependencies through a DI container or an injected initializer — a manager builds its own collaborators once, at its own `shared`, and every caller reaches for that.
+`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/07-concurrency">Chapter 7</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly. `init` is private for the same reason `shared` is the only way to reach a `SyncStore` or `SyncManager` in <a href="/guide/02-initializing">Chapter 2</a>: this app doesn't wire dependencies through a DI container or an injected initializer — a manager builds its own collaborators once, at its own `shared`, and every caller reaches for that.
 
 What happens at runtime when a caller does `try await NoteManager.shared.pull(notebookID: id)`:
 
@@ -165,7 +165,7 @@ What happens at runtime when a caller does `try await NoteManager.shared.pull(no
 1. The store's write lands in the database; the database's own change tracking merges it back onto the main context automatically.
 1. Presentation, still on the read path from <a href="/guide/01-getting-started">Chapter 1</a>, refreshes from that main-actor notification without knowing a sync ever happened.
 
-The same three-part skeleton supports multiple sync sources and independently testable jobs. The cancellation bridge forwards the caller's cancellation to queued work; the job and its dependencies must cooperate with it. Keep persistence and publication inside `handleResult`, so the next conflicting job cannot start before they finish. <a href="/guide/06-concurrency">Chapter 6</a> extends this example with grouped scheduling and live progress.
+The same three-part skeleton supports multiple sync sources and independently testable jobs. The cancellation bridge forwards the caller's cancellation to queued work; the job and its dependencies must cooperate with it. Keep persistence and publication inside `handleResult`, so the next conflicting job cannot start before they finish. <a href="/guide/07-concurrency">Chapter 7</a> extends this example with grouped scheduling and live progress.
 
 ### What happens after the job returns
 
@@ -221,7 +221,7 @@ However the state is shaped, it has to tell interested views when it changes. Th
 <table>
 <thead><tr><th>Source</th><th>Signal</th></tr></thead>
 <tbody>
-<tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/07-1-views">Chapter 7.1</a>.</td></tr>
+<tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/08-1-views">Chapter 8.1</a>.</td></tr>
 <tr><td>Flat, ambient, app-wide settings or state with no per-view projection to make — the one narrow exception</td><td><code>@Observable</code>, read directly, as in <a href="/guide/02-initializing">Chapter 2</a>.</td></tr>
 <tr><td>Any other model-layer state — in-memory domain data or database-backed</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read.</td></tr>
 <tr><td>Platform / framework events</td><td>Subscribe to the framework's own notification directly.</td></tr>
@@ -231,11 +231,11 @@ However the state is shaped, it has to tell interested views when it changes. Th
 
 A model itself is <code>@Observable</code> only in that one narrow case — a value flat enough that every consumer wants it verbatim, with no shape or subset to decide on. Anything else stays off-limits: binding a view straight to a model couples the view's whole contract to the model (and is a non-starter for a database-backed model to begin with — its runtime-synthesized accessors leave nothing for the Observation macro to rewrite), and a view driven straight off model mutations reacts to every intermediate step of a multi-field change instead of rendering one settled state. The moment a settings-shaped value needs to be derived, combined, or filtered for a particular view, it has graduated to needing its own display object like everything else in the row above it.
 
-There's a mechanical reason underneath that design one, and it's what actually draws the line: `@Observable`'s guarantees only mean something for state that's exclusively touched on the main actor. A settings object like `SyncStore` from <a href="/guide/02-initializing">Chapter 2</a> qualifies because nothing ever writes to it from a background job — every other model-layer shape in this chapter, however trivial it looks today, has background work funneling through its manager, and that's disqualifying even when the model type itself carries a `@MainActor` annotation. The one other place this guide reaches for `@Observable` outside a view is the Action — see <a href="/guide/05-1-actions">Chapter 5.1</a> — for the identical reason: an Action is never constructed or touched off the main actor, full stop.
+There's a mechanical reason underneath that design one, and it's what actually draws the line: `@Observable`'s guarantees only mean something for state that's exclusively touched on the main actor. A settings object like `SyncStore` from <a href="/guide/02-initializing">Chapter 2</a> qualifies because nothing ever writes to it from a background job — every other model-layer shape in this chapter, however trivial it looks today, has background work funneling through its manager, and that's disqualifying even when the model type itself carries a `@MainActor` annotation. The one other place this guide reaches for `@Observable` outside a view is the Action — see <a href="/guide/06-1-actions">Chapter 6.1</a> — for the identical reason: an Action is never constructed or touched off the main actor, full stop.
 
 When a notification-based source has more than one consumer that wants to observe it reactively, the recipe is to bridge it once: a single handler copies the value into an `@Observable` object that everyone else reads, rather than every consumer subscribing to the raw notification independently.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-View-side consumption of all three signals — the `observations.track` / `observations.observe` mechanics — is <a href="/guide/07-1-views">Chapter 7.1</a>, with the full activation lifecycle in <a href="/guide/07-2-state-observing">Chapter 7.2</a>. What actually calls into the manager, and how a write earns the overhead of a full Action, is <a href="/guide/05-1-actions">Chapter 5.1</a>, next.
+View-side consumption of all three signals — the `observations.track` / `observations.observe` mechanics — is <a href="/guide/08-1-views">Chapter 8.1</a>, with the full activation lifecycle in <a href="/guide/08-3-state-observing">Chapter 8.3</a>. What actually calls into the manager, and how a write earns the overhead of a full Action, is <a href="/guide/06-1-actions">Chapter 6.1</a>, next.
 </div>

@@ -54,12 +54,12 @@ A subchapter is a piece of a chapter that's grown too big to stay inline but doe
 ---
 title: "Subchapter Title"
 description: "One sentence."
-order: 5
+order: 6
 subOrder: 2
 ---
 ```
 
-A document is treated as a subchapter purely by the presence of `subOrder`. Subchapters sort into the linear sequence right after their parent (`5 → 5.1 → 5.2 → 5.3 → 6`), render with a `05.2`-style eyebrow instead of a `G05` gate pill, and don't get their own card on the overview grid — they're listed under their parent chapter's card instead, and the parent chapter itself renders an auto-generated "In this chapter" strip linking to each of its subchapters.
+A document is treated as a subchapter purely by the presence of `subOrder`. Subchapters sort into the linear sequence right after their parent (`6 → 6.1 → 6.2 → 6.3 → 7`), render with a `06.2`-style eyebrow instead of a `G06` gate pill, and don't get their own card on the overview grid — they're listed under their parent chapter's card instead, and the parent chapter itself renders an auto-generated "In this chapter" strip linking to each of its subchapters.
 
 ## Hosting
 

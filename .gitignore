@@ -20,6 +20,9 @@ pnpm-debug.log*
 # local KB snapshots — raw internal source docs, must never be committed (public repo)
 kb-sync/snapshots/
 
+# scratch drafts of Tower-internal source material — must never be committed (public repo)
+drafts/
+
 # macOS-specific files
 .DS_Store
 
