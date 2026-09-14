@@ -166,7 +166,7 @@ Every one of those layers can be described in a sentence, and none of them do th
 Data only moves through the stack two ways: a <strong>read path</strong>, from Presentation down through a View State Controller to the Model, and a <strong>mutate path</strong>, from Presentation through an Action Controller into an Action and Validator, down to the Model. Both paths converge on the same layer and the Model closes the loop by notifying Presentation when something changes — nothing above it has to ask.
 
 <figure class="diagram">
-<svg viewBox="0 0 760 480" role="img" aria-label="Diagram of the Airframe layering: Presentation reads through a View State Controller and mutates through an Action Controller and Action, both converging on the Model, which delegates to Packages and Libraries below and notifies Presentation directly above.">
+<svg viewBox="0 0 760 480" role="img" aria-label="Diagram of the Airframe layering: Presentation reads through a View State Controller and mutates through an Action Controller and Action, both converging on the Model, which delegates to Packages and Libraries below and notifies Presentation directly above. Brackets on the right map the boxes onto classic MVC: Presentation is the View layer; Action Controllers, View State Controllers, Actions and Validators form the Controller layer; the Model box is the Model layer.">
 <defs>
 <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
@@ -175,55 +175,49 @@ Data only moves through the stack two ways: a <strong>read path</strong>, from P
 <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
 </marker>
 </defs>
-
 <rect x="90" y="20" width="580" height="55" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
 <text x="380" y="43" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="15">Presentation</text>
 <text x="380" y="61" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" opacity="0.7">Views &amp; View Controllers · AppKit</text>
-
 <rect x="430" y="108" width="240" height="48" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
 <text x="550" y="130" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">Action Controller</text>
 <text x="550" y="146" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">dialogs, input · AppKit</text>
-
 <line x1="60" y1="180" x2="700" y2="180" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 5" opacity="0.6"/>
 <text x="700" y="174" text-anchor="end" font-family="var(--font-mono)" font-size="10" opacity="0.65">Foundation-only below — testable without the app running</text>
-
 <rect x="90" y="195" width="270" height="55" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
 <text x="225" y="219" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">View State Controller</text>
 <text x="225" y="236" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">shapes data for display</text>
-
 <rect x="430" y="195" width="240" height="55" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
 <text x="550" y="219" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">Action + Validator</text>
 <text x="550" y="236" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">executes, checks preconditions</text>
-
 <rect x="90" y="298" width="580" height="55" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
 <text x="380" y="321" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="15">Model</text>
 <text x="380" y="339" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" opacity="0.7">domain state · source of truth</text>
-
 <rect x="90" y="400" width="580" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
 <text x="380" y="429" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">Packages &amp; Libraries</text>
-
 <line x1="210" y1="75" x2="210" y2="193" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
 <text x="218" y="98" font-family="var(--font-mono)" font-size="10.5">reads</text>
-
 <line x1="550" y1="75" x2="550" y2="106" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
 <text x="558" y="94" font-family="var(--font-mono)" font-size="10.5">mutates</text>
-
 <line x1="550" y1="156" x2="550" y2="193" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
 <text x="558" y="177" font-family="var(--font-mono)" font-size="10.5">dispatches</text>
-
 <line x1="225" y1="250" x2="225" y2="296" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
 <text x="233" y="278" font-family="var(--font-mono)" font-size="10.5">loads</text>
-
 <line x1="550" y1="250" x2="550" y2="296" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
 <text x="558" y="278" font-family="var(--font-mono)" font-size="10.5">writes</text>
-
 <line x1="380" y1="353" x2="380" y2="398" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
 <text x="388" y="380" font-family="var(--font-mono)" font-size="10.5">delegates</text>
-
 <path d="M90,317 C38,317 38,47 90,47" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#arrAccent)"/>
 <text x="30" y="182" transform="rotate(-90 30 182)" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent)">notifies</text>
+<g opacity="0.75">
+<path d="M712,22 h-6 v51 h6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+<text x="726" y="48" transform="rotate(-90 726 48)" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="12">View</text>
+<path d="M712,110 h-6 v138 h6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+<text x="726" y="179" transform="rotate(-90 726 179)" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="12">Controller</text>
+<path d="M712,300 h-6 v51 h6" fill="none" stroke="currentColor" stroke-width="1.2"/>
+<text x="726" y="326" transform="rotate(-90 726 326)" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="12">Model</text>
+</g>
 </svg>
-<figcaption>The read path and mutate path converge on the Model. The Model closes the loop itself, broadcasting a change notification straight back to Presentation — no controller above it has to ask whether something changed.</figcaption>
+<figcaption>The read path and mutate path converge on the Model. The Model closes the loop itself, broadcasting a change notification straight back to Presentation — no controller above it has to ask whether something changed. The brackets on the right map Airframe's layers onto classic Cocoa MVC: view controllers sit in the View layer, and the Controller layer is everything between Presentation and the Model.</figcaption>
 </figure>
 
 <div class="rule">
