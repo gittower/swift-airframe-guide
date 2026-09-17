@@ -71,5 +71,5 @@ Because the navigation state stores identifiers and not the objects themselves, 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Testing a navigation state object — a plain `@Observable` class with no AppKit dependency — follows the same rules as testing any other state object; see <a href="/guide/10-testing">Chapter 10</a>.
+Testing a navigation state object — a plain `@Observable` class with no AppKit dependency — follows the same rules as testing any other state object; see <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
 </div>

@@ -77,5 +77,5 @@ Because the item's target is `nil`, enabling and disabling it is automatic once 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Moving between the screens a menu item might navigate to is <a href="/guide/09-navigation">Chapter 9</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/10-testing">Chapter 10</a>.
+Moving between the screens a menu item might navigate to is <a href="/guide/09-navigation">Chapter 9</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
 </div>

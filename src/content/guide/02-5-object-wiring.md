@@ -14,7 +14,7 @@ That's a position, not an omission. An injected dependency is a seam: a point wh
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-Inject only what varies in production. A dependency whose only second implementation is a test mock isn't a real variation point — it's an internal detail wearing a protocol, and the mock proves the mock. Start concrete; add a seam when a second real implementation arrives, not in case one might. Tests get their seams at the external boundaries instead — the HTTP layer, the store underneath — which is <a href="/guide/10-testing">Chapter 10</a>'s subject.
+Inject only what varies in production. A dependency whose only second implementation is a test mock isn't a real variation point — it's an internal detail wearing a protocol, and the mock proves the mock. Start concrete; add a seam when a second real implementation arrives, not in case one might. Tests get their seams at the external boundaries instead — the HTTP layer, the store underneath — which is <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a>'s subject.
 
 </div>
 
@@ -48,7 +48,7 @@ SyncQueue.sharedInstance.addOperation(uploadOperation)
 
 "Shared" here means what it means throughout Cocoa — `UserDefaults.standard`, `FileManager.default`, `NotificationCenter.default`. The accessor names the one instance that matters at runtime; it doesn't seal the type. `UserDefaults(suiteName:)` sits right next to `.standard`, and a test that needs a scratch instance constructs one. That still-callable initializer is the built-in test seam — the reason none of these types ever needs to be injected — and it's the pattern to follow for shared types where an independent instance is coherent: a queue, a store, a formatter get `static let shared` <em>and</em> an ordinary initializer.
 
-The exception is deliberate, not accidental: a manager's `init` is private (<a href="/guide/05-model-layer">Chapter 5</a>) because a second instance wouldn't be a test convenience — it would be a second write funnel, and the one-funnel guarantee is the manager's entire point. Tests reach a manager the same way production does, through `.shared`, with the seam pushed down to the boundary underneath it (<a href="/guide/10-testing">Chapter 10</a>). Both shapes are the same decision read off the type's semantics: keep the initializer callable when a second instance is valid, close it when a second instance is a bug.
+The exception is deliberate, not accidental: a manager's `init` is private (<a href="/guide/05-model-layer">Chapter 5</a>) because a second instance wouldn't be a test convenience — it would be a second write funnel, and the one-funnel guarantee is the manager's entire point. Tests reach a manager the same way production does, through `.shared`, with the seam pushed down to the boundary underneath it (<a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>). Both shapes are the same decision read off the type's semantics: keep the initializer callable when a second instance is valid, close it when a second instance is a bug.
 
 ## Configurable shared instance — the config is the global
 

@@ -1,259 +1,56 @@
 ---
 title: "Testing"
-description: "Not everything earns a test. This closing chapter is about testing at the altitude where regressions actually happen, skipping the layers that structurally can't fail on their own, and reaching for real collaborators instead of mocks almost everywhere."
+description: "Not everything earns a test, and the tests that do earn their place are read top to bottom in one file. This closing chapter introduces the guide's testing discipline — why it tests at all, which tests it writes, how a suite is laid out, how test data is built, how a test class is shaped, and how each layer of the architecture is exercised — and lays out how the six subchapters relate before each goes deeper."
 order: 10
 ---
 
-Not everything earns a test. This closing chapter is about testing at the altitude where regressions actually happen, skipping the layers that structurally can't fail on their own, and reaching for real collaborators instead of mocks almost everywhere.
+Not everything earns a test, and the tests that do earn their place are read top to bottom in one file. This closing chapter introduces the guide's testing discipline — why it tests at all, which tests it writes, how a suite is laid out, how test data is built, how a test class is shaped, and how each layer of the architecture is exercised — and lays out how the six subchapters relate before each goes deeper.
 
-## Why so few tests: three myths
+## Why test at all
 
-Every test you write is code you maintain. Before writing one, it's worth clearing away three common misconceptions that lead to test suites that feel burdensome rather than protective.
+Testing is essential, and it's hard to get right. It takes real practice — nobody writes great tests from day one, and that's fine. What matters is building the habit and improving over time. Five reasons make it worth the effort, and the first is the one people underestimate most:
 
-**100% code coverage.** Coverage measures lines executed; it does not measure decisions verified. Pursuing 100% coverage forces tests on code that structurally can't fail — `notebook.add(note); assert(notebook.contains(note))` — splitting your effort between low-value change detectors and the critical tests that actually catch regressions. Experience shows that critical bugs cluster in the lower, Foundation-only layers: the exact code that's easiest to test. Extract and test that layer thoroughly, and you've caught the vast majority of production regressions. Accept coverage in the 60–80% range. If a line is simple enough that you'd never make an error in it, don't test it.
+- **Development speed.** For logic-heavy code, developing through tests is faster than the build-run-verify loop. Consider the full cycle of checking a sync edge case by hand: build the app, launch it, navigate to the right notebook, put it in the right state, trigger the sync, verify the result, reset everything to try the next case. A test does all of that in seconds, and complex scenarios you'd never bother setting up manually actually get tested. Tests are a speed multiplier, not a tax.
+- **Confidence to change things.** A good suite means you can refactor, extend, and fix without fear of breaking something else. In a long-running project this is the single biggest benefit.
+- **Faster feedback.** If you find yourself launching the whole application to verify a change, that's the signal to write a test instead.
+- **Bug prevention.** Reproducing a bug in a test first guarantees it's fixed and prevents regression. The test becomes a permanent safeguard.
+- **Better design.** Writing tests before or alongside the code pushes you toward smaller, more modular types. If you can't test something, that's usually a sign the code needs restructuring — extracting the logic into its own type makes it testable and improves the architecture at the same time.
 
-**One assertion per test.** The real rule is one *scenario* per test — one input condition and its expected outcome. A test that pulls two notes and asserts the count, titles, and sync timestamps all together is one test, not four. Splitting it into `testPull_CountMatchesResponse`, `testPull_TitlesPopulated`, `testPull_TimestampsCorrect` triples your maintenance for no information gain. A test fails when it should fail; the assertion order doesn't matter.
+Not all code carries equal risk, so effort goes where bugs would hurt most. Critical errors cluster almost exclusively in the lower, Foundation-only layers — the manager, the model, the parser, the validator — which are also the easiest layers to test. A pragmatic suite over that logic catches the vast majority of critical errors; the AppKit-touching layers above it are covered by testing what they coordinate, never by testing them directly.
 
-**Mock every dependency.** Mock-heavy tests couple to implementation: they pass when your code is restructured wrongly and fail when restructured rightly, so they stop being a safety net. A test that exercises real collaborators — a real database, real file system, real domain object interactions — fails when any layer misbehaves, which is exactly the property you want. The exception is at external boundaries (network I/O, system processes), where a narrow stub replaces only the boundary itself, not the app's use of it. Use real collaborators by default; mock only where you have no other choice.
+## The shape of the chapter
 
-## What to test at each layer
+A test earns its place only if it can fail for a reason you care about. <a href="/guide/10-1-which-tests-to-write">Which Tests to Write</a> covers that judgment — the value question, the rules that keep a test from being a change detector, the layer table that says which of the architecture's types get tests at all, and the one place a test double is allowed.
 
-The Foundation/AppKit boundary from <a href="/guide/01-getting-started">Chapter 1</a> is also the testing boundary: nothing that touches AppKit gets a direct test, because there's no decision inside it that can regress independently of what it coordinates.
+Most testing happens in two contexts: fixing a bug and building a feature. <a href="/guide/10-2-testing-workflows">Testing Workflows</a> covers the discipline for each, worked through as a sync bug and an archive feature in the notebook app, and the habit of investing in test infrastructure the moment a scenario is hard to set up.
 
-<div class="table-wrap">
-<table>
-<thead><tr><th>Layer</th><th>Test?</th><th>Why</th></tr></thead>
-<tbody>
-<tr><td>Models &amp; managers</td><td><span class="pill">Yes</span></td><td>The write funnel from Chapter 5 — real decisions, real regressions.</td></tr>
-<tr><td>Action Validators</td><td><span class="pill">Yes</span></td><td>Pure precondition logic, Foundation-only.</td></tr>
-<tr><td>View State Controllers</td><td><span class="pill">Yes</span></td><td>Foundation-only data shaping — the one testable controller kind.</td></tr>
-<tr><td>Actions</td><td><span class="pill">Only if multi-step</span></td><td>A single model call needs no test beyond the manager's own.</td></tr>
-<tr><td>Action Controllers</td><td><span class="pill">No</span></td><td>Present UI. Test the Action they dispatch instead.</td></tr>
-<tr><td>Views &amp; other controllers</td><td><span class="pill">No</span></td><td>Coordination only. Test what they coordinate, not the wiring.</td></tr>
-</tbody>
-</table>
-</div>
+A test target has a fixed shape, and a test is one of four kinds. <a href="/guide/10-3-suite-layout-and-test-kinds">Suite Layout and Test Kinds</a> covers the module-named mirror, the three infrastructure folders, the precise meaning of fixture, factory and builder, and the live, performance and contract suites that don't run on every `Cmd+U`.
 
-<div class="rule">
-<span class="rule-label">The value question</span>
+Test data is built, not loaded. <a href="/guide/10-4-factories-builders-and-fixtures">Factories, Builders and Fixtures</a> covers the two factory shapes and why there's no third, the defaults a factory carries, payload builders that produce the wire shape, the narrow case where a fixture file is right, and the rule of two that decides when a private helper becomes a shared one.
 
-Before writing a test, ask: if it goes red six months from now, will whoever sees it thank the test or curse it? A test that fails because behavior actually regressed earns its place. A test that fails because someone reworded a label or reordered an enum case trains people to ignore red tests — don't write it. Test the decision a type makes, never the literal string or constant it happens to produce today.
+Inside a class, every test builds its own state and reads in one place. <a href="/guide/10-5-inside-a-test-class">Inside a Test Class</a> covers that — no shared setup, what a private helper may hide, assertions as free functions, the one allowed base class, naming, grouping tests by what they prove, and where a behavior is tested once and merely pinned everywhere else.
 
-</div>
+Finally, each layer of the architecture has a way it gets exercised. <a href="/guide/10-6-testing-each-layer">Testing Each Layer</a> works through the notebook app layer by layer: a manager through its public method with the network stubbed underneath, a multi-step Action, a validator, a View State Controller, async and error paths, and background jobs with progress.
 
-## Extract logic to make it testable
-
-When you encounter logic that's trapped in an untestable layer — usually conditional logic deep in a view controller or action controller — the answer is not to add a UI testing framework. The answer is to extract the logic into a Foundation-only type where it becomes easy to test.
-
-Imagine a view controller that shows one of three empty-state views: an empty list, a syncing spinner, or an error message. The logic is conditional on three flags: `notes.isEmpty`, `isSyncing`, `syncError != nil`. You might write:
-
-```swift
-if notes.isEmpty {
-    if isSyncing { showSyncingPlaceholder() }
-    else if syncError != nil { showErrorPlaceholder(syncError) }
-    else { showEmptyPlaceholder() }
-}
-```
-
-Extract this into a Foundation-only type:
-
-```swift
-enum NoteListPlaceholder { case empty, syncing, syncFailed(String), none }
-
-struct NoteListPlaceholderResolver {
-    static func placeholder(noteCount: Int, isSyncing: Bool, syncError: Error?) -> NoteListPlaceholder {
-        guard noteCount == 0 else { return .none }
-        if isSyncing { return .syncing }
-        if let error = syncError { return .syncFailed(error.localizedDescription) }
-        return .empty
-    }
-}
-```
-
-Now you can test all the combinations:
-
-```swift
-XCTAssertEqual(NoteListPlaceholderResolver.placeholder(noteCount: 0, isSyncing: true, syncError: nil), .syncing)
-XCTAssertEqual(NoteListPlaceholderResolver.placeholder(noteCount: 0, isSyncing: false, syncError: testError), .syncFailed(_))
-```
-
-The view controller becomes simple:
-
-```swift
-let placeholder = NoteListPlaceholderResolver.placeholder(noteCount: notes.count, isSyncing: isSyncing, syncError: syncError)
-switch placeholder {
-case .empty: showEmptyPlaceholder()
-case .syncing: showSyncingPlaceholder()
-case .syncFailed(let msg): showErrorPlaceholder(msg)
-case .none: hideAllPlaceholders()
-}
-```
-
-The extracted type is testable because it has no dependencies on AppKit or UIKit — only Foundation. It's also simpler to reason about: the logic is no longer buried in a controller's lifecycle, and edge cases (what if both `isSyncing` and `syncError` are set?) surface as combinations to enumerate in a test, not as unexpected runtime behavior.
-
-This pattern applies whenever logic is nested deep in an untestable layer. Never test a private method; instead, extract it into its own type. The extraction serves double duty: it makes the behavior testable and it makes the architecture clearer by separating concerns.
-
-## Two workflows: fixing a bug and building a feature
-
-Most of your testing happens in two contexts: you're fixing a bug or you're building a feature. Each has a discipline that makes testing efficient.
-
-### Fixing a bug
-
-Suppose `PullNotesJob` crashes when a note was renamed remotely while edited locally. The crash report shows the problem: the job tries to merge a note that no longer exists in the local database.
-
-The discipline is: reproduce the bug with a failing test *before* touching the fix.
-
-```swift
-func testPull_RenamedNoteEditedLocally_Merges() async throws {
-    let notebook = Notebook._notebook(
-        notes: [
-            .edited(title: "Original", editedAt: .now)
-        ]
-    )
-    let response = SyncFixture.notesResponse([
-        .remote(id: notebook.notes[0].id, title: "Renamed", updatedAt: .distantPast)
-    ])
-    stub(.get, "/notebooks/\(notebook.id)/notes") { _ in .json(response) }
-
-    try await NoteManager.shared.pull(notebookID: notebook.id)
-
-    let merged = try XCTUnwrap(notebook.notes.first)
-    XCTAssertEqual(merged.title, "Renamed")
-    XCTAssertEqual(merged.editedAt, .now)  // local edit preserved
-}
-```
-
-Why write the test before fixing? Three reasons: it proves you understand the bug (you can construct the exact state that fails), it proves your fix works (the test goes green), and it becomes a permanent guard against reoccurrence (six months later, if someone refactors the merge logic, this test fails).
-
-If you *can't* write the test, ask why. Usually the answer is a missing helper. You wanted `Notebook._notebook(notes: [.edited(...)])` but it doesn't exist. Write it — the helper pays for itself on the next bug:
-
-```swift
-extension Notebook {
-    static func _notebook(notes: [Note] = []) -> Notebook {
-        let notebook = Notebook(id: UUID(), title: "Test Notebook")
-        for note in notes {
-            notebook.add(note)
-        }
-        return notebook
-    }
-}
-
-extension Note {
-    static func edited(title: String, editedAt: Date) -> Note {
-        Note(id: UUID(), title: title, body: "", editedAt: editedAt)
-    }
-}
-```
-
-Once the test goes red and you've fixed the bug, take a moment to add related cases the test suggests. If renaming while editing fails, does renaming-and-deleting also fail? What about renaming twice? Add those as empty method signatures first, then fill them in:
-
-```swift
-func testPull_RenamedAndDeletedLocally_PreservesRemoteVersion() async throws { }
-func testPull_RenamedTwice_LastNameWins() async throws { }
-```
-
-Finally, step back: what else touches this path? Grep for usages of the merge logic, think through whether your change affects them, then do one manual test run of the app to confirm. The app run is confirmation, not the development loop.
-
-### Building a feature
-
-Before writing the implementation, write the *test method signatures only*. Suppose you're adding "archive notebook."
-
-```swift
-func testArchive_MovesNotebookOutOfActiveList() async throws {}
-func testArchive_PreservesNotesOnDisk() async throws {}
-func testArchive_WithSyncPending_WaitsForSync() async throws {}
-func testArchive_LastNotebook_Throws() async throws {}
-func testArchive_AlreadyArchived_Throws() async throws {}
-```
-
-Writing the signatures forces the questions that matter: What states can the notebook be in? What can go wrong? Which combinations trigger different code paths (test those; skip combinations that provably execute the same path)? Where do the tests go?
-
-The answer to the last question uses the layer table as a guide:
-
-- **Action test (one, full-flow):** Test that the Action coordinates the operation end-to-end. This is the only place you'll test that archiving actually removes the notebook from the UI. A single multi-step test: archive, verify the list refreshed, verify the archived notebook is gone.
-- **Manager tests (edge cases):** Test preconditions and error cases. Can you archive a notebook with no notes? Can you archive the last active notebook? Does archiving trigger a sync? These tests verify that the manager enforces the rules.
-- **Lower-layer tests (exhaustive):** If you extract a validator or state transformer for archive eligibility (e.g., `NotebookArchiveValidator`), test all the combinations that define the contract.
-
-This distribution matters because it clarifies where code belongs. If you find you're writing the same test in two places, the logic probably belongs in one layer, not both. If a feature requires tests at every layer, that usually means the feature is complex enough to warrant extraction.
-
-Why write signatures first? Because if you find you can't fill in a test without launching the app and manually setting up state, that's a signal: you're missing a helper. Fix that problem once (write the helper), and every future test becomes cheaper. The test-first discipline here — write signatures to enumerate cases, then write helpers to make cases cheap, then write the tests themselves — is where you invest the effort upfront and reap the savings across the whole test suite.
-
-## Test doubles and fixtures for async and persistence-backed code
-
-The default is to avoid mocks and use real collaborators: a real database against an in-memory store, a real temporary directory on disk, a real domain object graph. Each has enough real behavior — fetch predicates, file permissions, relationship cascades — that a mock layer over it mostly proves the mock returns what the test expects, not that the app works.
-
-There's one structural exception: a network client is mocked, but only at its own library boundary — a `URLProtocol` stub on an ephemeral session, verifying request construction and response parsing. The app that <em>consumes</em> that client doesn't re-mock the network at all; it constructs the response objects directly, since they're plain Swift values, and tests what the app does with them. Fixtures should match that same external shape — the wire format a server would actually send — never the internal model shape, or the parsing code they're meant to exercise goes untested.
-
-```swift
-@MainActor
-final class NoteManagerTests: TestCase {
-    func testPull_MergesRemoteNotes() async throws {
-        let notebook = Notebook._notebook()
-        let response = SyncFixture.notesResponse(count: 2)   // external shape
-        stub(.get, "/notebooks/\(notebook.id)/notes") { _ in .json(response) }
-
-        try await NoteManager.shared.pull(notebookID: notebook.id)
-
-        XCTAssertEqual(notebook.notes.count, 2)
-    }
-}
-```
-
-The test reaches `NoteManager` the same way production code does — `.shared`, never a constructor — because there's no injected-client seam to construct it with in the first place: `NoteManager`'s `init` is private, per <a href="/guide/05-model-layer">Chapter 5</a>. The stub sits at the HTTP boundary instead, intercepting the request `SyncClient` would otherwise send over the real network; `SyncClient` itself, request building, and response decoding all still run for real.
-
-Async work follows Chapter 7's own contract: prefer `async` test methods over bridging helpers, and where cancellation matters, assert the terminal persisted and published state — not merely that an error was thrown. Cancellation may arrive after a durable write, so the expected outcome can be an accurately settled partial result rather than an untouched store.
-
-## Test helpers are infrastructure
-
-The `Notebook._notebook()` and `SyncFixture.notesResponse(count:)` helpers in the examples above aren't conveniences — they're a deliberately maintained layer of test infrastructure, as important as the tests themselves.
-
-Helpers come in three kinds:
-
-- **Factory methods** — create test objects in useful states. Use underscore-prefixed names (`_notebook()`, `_note()`) to mark them as test-only. A factory uses production write paths, never direct storage pokes, so it stays synchronized with real code.
-- **Scenario builders** — compose objects into more complex states. `Notebook._notebook(notes: [.edited(...), .synced(...)])` builds a realistic scenario without scattered setup code.
-- **Fixture builders** — produce external representations (API responses, file formats) that match what your app will encounter in production.
-
-The investment in helpers pays for itself quickly. The moment you find yourself writing `let notebook = Notebook(...); notebook.title = "..."; notebook.add(note); try notebook.save()` for the third time, extract it into a helper. The first test is expensive (you build the helper), the next hundred are cheap.
-
-One rule: if you can't write a test because the setup is tedious, the fix is a new helper, not a skipped test. Skipped tests are technical debt. Helpers are investment.
+## The rule that holds across all six
 
 <div class="rule">
-<span class="rule-label">Test the decision, not today's order</span>
+<span class="rule-label">The rule</span>
 
-Test all combinations that *define the contract*, not all combinations that happen to execute today. If `NoteListPlaceholderResolver` checks `isSyncing` before `syncError`, and both happen to be true, test that the syncing state wins — test the contract. Also test the other combinations that have different behavior. But if reordering the checks doesn't change the outcome, you don't need a separate test for that reordering. One representative test per distinct code path suffices.
+A test is read top to bottom, in one file, and the reader knows what state it starts from, what it does, and what it proves. Opening one factory to check its doc comment is acceptable. Opening five setup methods to reconstruct the state is the failure mode every rule in this chapter is written against — such a test is also brittle, because nobody can change a setup method without knowing every test it feeds, so tests become hard to add and hard to change.
 
 </div>
 
-## Testing jobs and progress
+## Four things this guide considers myths
 
-Exercise real jobs and manager entry points with temporary storage and narrow doubles at external process or network boundaries. Use a deliberate gate in the test double to hold an operation while submitting the next one; avoid timing assertions based on sleeps. Test the application's group declarations and resulting behavior:
+Each of these sounds like discipline and produces the opposite.
 
-- Queue a rename behind a note update, then verify both changes survive. This catches a job capturing its editable baseline too early.
-- Export while a save is pending and verify the export sees the completed save. Also verify work on a different notebook can proceed.
-- Delete a note during ongoing work, then submit a delayed edit. Verify the edit reports the missing note and cannot recreate it.
-- Emit progress and then fail or cancel. Verify accepted progress precedes the final activity state, and a late callback cannot revive it.
-- Fail persistence after a successful download. Verify the activity reports failure and no successful-save notification is published. If an earlier step already saved data, verify that committed change is published accurately.
-- Start two draft requests with separate progress callbacks. Verify each caller receives only its own events, and a dismissed or replaced caller ignores stale updates.
-
-For a worker-only test, call `job.perform(context: work)`; progress-reporting jobs inherit that overload with reporting disabled, and it does not run result handling. To test progress and persistence together, use the manager entry point or `job.execute(context: work, resultContext: result)`. Assert the final accumulated text and meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
-
-The app's coalescing rule is also a small, directly testable value operation:
-
-```swift
-// DraftSummaryJob.Progress is Equatable in this example.
-XCTAssertEqual(
-    DraftSummaryJob.coalesceProgress(.text("Hello"), .text(" world")),
-    .text("Hello world")
-)
-XCTAssertNil(DraftSummaryJob.coalesceProgress(.text("Hello"), .stage("Saving")))
-XCTAssertNil(DraftSummaryJob.coalesceProgress(.started, .text("Hello")))
-```
-
-## Where performance testing fits
-
-Performance tests live in their own test plan, run separately from the default suite — they measure wall-clock time, not correctness, and running them on every commit only adds noise and flakiness to the fast feedback loop the rest of this chapter depends on. Naming them consistently (a shared suffix in the file name) keeps them filterable and keeps the two plans from drifting out of sync as tests are added.
+- **100 % test coverage.** Anything short of it has no meaning, and reaching it forces tests over code that cannot plausibly break — `notebook.add(note); XCTAssertTrue(notebook.contains(note))`. It produces low-value tests that slow the team down and make refactoring harder.
+- **One assertion per test.** What the advice actually means is that one input should have one expected outcome. A pulled notebook checked for count, titles and sync timestamps in one test is the readable form; one test per property is the workaround for a framework that stops at the first failure.
+- **Mock every dependency.** That tests the object graph's wiring, not its behavior, and couples every test to the implementation. A real collaborator fails the test when it misbehaves; a mock passes it.
+- **Test every class in isolation so a failure points at one class.** A test that exercises a component top to bottom fails when anything in between misbehaves, and that is exactly the property you want.
 
 <div class="seealso">
-<strong>End of the guide</strong>
-That closes the ten chapters. <a href="/">Back to the overview</a> for the full map, or start again from <a href="/guide/01-getting-started">Chapter 1</a>.
+<strong>Ahead in this chapter</strong>
+The judgment that decides whether a test gets written at all is first: <a href="/guide/10-1-which-tests-to-write">Chapter 10.1, Which Tests to Write</a>.
 </div>
