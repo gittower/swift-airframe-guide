@@ -158,6 +158,8 @@ The facade rule is a lint, not a convention. For every folder containing a `<Fol
 
 <strong>Libraries below the model may be remote.</strong> `NotebookSync` or `MarkdownImport` could as well be pinned packages from their own repositories, with a gitignored override slot for tandem development. `NotebookCore` and `NotebookActions` are always local: they are an enforced module boundary for this app, not a library anyone else consumes.
 
+<strong>A framework dependency may sit above the boundary.</strong> The Airframe package (<a href="/guide/11-the-airframe-package">Chapter 11</a>) is the exception to "remote means below the model": it is a pinned dependency the UI layer imports — `@StateObserving` and `@Tracked` are how view controllers and views react to state — so it lives above the Foundation/AppKit line, not below it. `NotebookCore` and `NotebookActions` never depend on it, and can't: it imports Cocoa, and they are Foundation-only, so the compiler holds that direction the same way it keeps AppKit out of them.
+
 <strong>Sibling targets sit beside the app target.</strong> A command-line helper embedded in the bundle, a dock tile plug-in, a Quick Look extension each get their own folder at the repository root, with their own test target laid out per <a href="/guide/10-3-suite-layout-and-test-kinds">Chapter 10.3</a>. Code compiled into two targets is a local package, never a folder added to both.
 
 <div class="rule">
