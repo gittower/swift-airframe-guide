@@ -161,6 +161,8 @@ An Airframe app is built from four layers, stacked so that dependencies only eve
 
 Every one of those layers can be described in a sentence, and none of them do the others' job. A view never reaches past its controller into the model. A model never knows a view exists.
 
+The four layers are also the shape of the project on disk — which of them are Swift packages, what the app target's root folders are, and how to decide where a file goes. That is <a href="/guide/01-1-project-layout">Project Layout</a>, the one subchapter of this chapter; read it once the layers below make sense.
+
 ## Two paths, one boundary
 
 Data only moves through the stack two ways: a <strong>read path</strong>, from Presentation down through a View State Controller to the Model, and a <strong>mutate path</strong>, from Presentation through an Action Controller into an Action and Validator, down to the Model. Both paths converge on the same layer and the Model closes the loop by notifying Presentation when something changes — nothing above it has to ask.

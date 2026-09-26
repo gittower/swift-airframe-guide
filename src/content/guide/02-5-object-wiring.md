@@ -26,7 +26,7 @@ If a collaborator dies with its owner and nothing else needs the same instance, 
 
 ```swift
 @MainActor
-final class NotebookListController {
+final class NotebookListStateController {
     private let formatter = RelativeDateFormatter()   // owned outright
 }
 ```

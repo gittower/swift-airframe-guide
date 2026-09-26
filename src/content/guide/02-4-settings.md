@@ -41,4 +41,6 @@ struct PreferencesView: View {
 
 Two boundaries keep this shape honest. It's `@Observable` only because nothing ever writes to it from a background job — the moment background work funnels through a settings object, it stops qualifying and becomes a regular manager-fronted model; <a href="/guide/05-model-layer">Chapter 5</a> draws that line precisely. And it holds <em>user</em> configuration, not launch configuration — the values a subsystem needs before it can start at all are a `configure(_:)`d struct, covered in <a href="/guide/02-5-object-wiring">Object Wiring</a>.
 
+One more distinction decides where a settings object <em>lives</em>. `EditorSettings` is app configuration: the user sets it once and every window honors it, so it sits in the app environment — `App/Settings/` in the tree from <a href="/guide/01-1-project-layout">Chapter 1.1</a>. A sort order, a collapsed section, a column width that one screen remembers about itself is <em>view</em> settings: the same `@UserDefault` shape, but it belongs to the screen and nothing outside the screen reads it, so it lives next to that screen's view controller. The test is who reads it, not how it's stored.
+
 Settings get their own full treatment as one shape in the Model layer's pattern catalog — see <a href="/guide/05-model-layer">Chapter 5</a>.

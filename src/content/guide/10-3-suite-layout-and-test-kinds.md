@@ -16,11 +16,12 @@ The test target root holds exactly three kinds of things: the <strong>mirror</st
 ```
 NotebookAppTests/               test target root (Xcode) — or Tests/NotebookSyncTests/ (SwiftPM)
   NotebookApp/                  the mirror: one folder per source folder, one test file per source file
-    Model/
-      Notes/
-      Sync/
-    Controllers/
-    Validators/
+    App/
+      Startup/
+    Integrations/
+    UI/
+      Screens/
+        NoteList/
   Factories/                    Swift code that builds values and scenarios
   Resources/                    files bundled into the test bundle
   Support/                      everything else that is not a test: assertions, doubles, loaders, harnesses
@@ -29,7 +30,7 @@ NotebookAppTests/               test target root (Xcode) — or Tests/NotebookSy
   Contracts/                    optional — tests that pin a promise of the whole module
 ```
 
-The mirror sits in a folder named exactly like the module — `NotebookApp`, `NotebookSync`, `MarkdownImport`. That one level is what makes the layout work: a source folder called `Support` or `Resources` can never collide with the test infrastructure, the root shows tested code and infrastructure apart at a glance, and finding a test is mechanical: `<TestTarget>/<Module>/<path relative to the module's source root>`. The alternative — one `TestSupport/` folder with the mirror at the root — doesn't survive a test target that covers more than one module, which an app target with several top-level source folders is.
+The mirror sits in a folder named exactly like the module — `NotebookApp`, `NotebookSync`, `MarkdownImport`. That one level is what makes the layout work: a source folder called `Support` or `Resources` can never collide with the test infrastructure, the root shows tested code and infrastructure apart at a glance, and finding a test is mechanical: `<TestTarget>/<Module>/<path relative to the module's source root>`. The alternative — one `TestSupport/` folder with the mirror at the root — doesn't survive a test target that covers more than one module, which an app target with several top-level source folders is. The source tree being mirrored is the one laid out in <a href="/guide/01-1-project-layout">Chapter 1.1</a>.
 
 Keep SwiftPM's `Tests/<Target>Tests/` layer. Don't set `path: "Tests"` on the test target to save a level; it blocks a second test target for the rest of the package's life.
 
@@ -39,7 +40,7 @@ Keep SwiftPM's `Tests/<Target>Tests/` layer. Don't set `path: "Tests"` on the te
 <table>
 <thead><tr><th>Folder</th><th>Holds</th><th>Does not hold</th></tr></thead>
 <tbody>
-<tr><td><code>&lt;Module&gt;/</code></td><td>Test files. The path mirrors the source file the test exercises. A source file with several operations may have one test class per operation, all in the mirrored folder (<code>Model/Notes/MoveNoteTests.swift</code>, <code>DeleteNoteTests.swift</code>).</td><td>Helpers used by more than one file.</td></tr>
+<tr><td><code>&lt;Module&gt;/</code></td><td>Test files. The path mirrors the source file the test exercises. A source file with several operations may have one test class per operation, all in the mirrored folder (<code>NotebookCore/Notes/MoveNoteTests.swift</code> in the model package's test target, <code>DeleteNoteTests.swift</code>).</td><td>Helpers used by more than one file.</td></tr>
 <tr><td><code>Factories/</code></td><td>Value factories (<code>Note.make(...)</code>), scenario factories (<code>Notebook.makeThreeNotes()</code>), payload builders producing the external shape (<code>SyncPayloads.note(...)</code>), the shared default values a factory reads (<code>NoteDefaults</code>).</td><td>Test doubles, loaders, assertions.</td></tr>
 <tr><td><code>Resources/</code></td><td>Files: captured import documents, recorded sync responses, whole notebook bundles. Grouped by what the data is (<code>Imports/</code>, <code>Themes/</code>), never in a folder called <code>Fixtures</code>. Declared with <code>.copy</code> or <code>.process</code> in <code>Package.swift</code>.</td><td>Swift code.</td></tr>
 <tr><td><code>Support/</code></td><td>Assertions with <code>file:line:</code>, test doubles (<code>StubURLProtocol</code>), resource loaders, temp-directory helpers, process and output capture, Swift Testing tags. <code>Support/Live/</code> holds the harness of the live suites (credentials, probes, printers).</td><td>Anything that builds a value of the module under test. That is a factory.</td></tr>
