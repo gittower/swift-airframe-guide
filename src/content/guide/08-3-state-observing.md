@@ -33,7 +33,7 @@ These rows are analogies, not 1:1 equivalents. `.onChange(of:)` is the closest m
 
 ## One method is the whole inventory
 
-Any class — view controller, view, or plain object — can conform to `StateObserving`, which the Airframe package vends (<a href="/guide/11-the-airframe-package">Chapter 11</a>) so you import the machinery rather than hand-write it. The `@StateObserving` macro adds an `observations` property, a private `updateStateObservation()` reconciliation method, and the protocol conformance; the conformer writes exactly one method, `observeState()`, and that method is the complete list of everything the object reacts to.
+Any class — view controller, view, or plain object — can conform to `StateObserving`, which Airframe provides as its `AirframeStateObserving` product (<a href="/guide/11-the-airframe-package">Chapter 11</a>) so you import the machinery rather than hand-write it. The `@StateObserving` macro adds an `observations` property, a private `updateStateObservation()` reconciliation method, and the protocol conformance; the conformer writes exactly one method, `observeState()`, and that method is the complete list of everything the object reacts to.
 
 ```swift
 @StateObserving

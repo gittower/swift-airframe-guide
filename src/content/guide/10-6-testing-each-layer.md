@@ -206,6 +206,6 @@ func testExport_WritesOneFilePerNote() async throws {
 ```
 
 <div class="seealso">
-<strong>End of the guide</strong>
-That closes the ten chapters. <a href="/">Back to the overview</a> for the full map, or start again from <a href="/guide/01-getting-started">Chapter 1</a>.
+<strong>End of the architecture</strong>
+That closes the architecture. What the framework ships of it as a Swift package — the products, how a target imports them, where they sit in the tree — is <a href="/guide/11-the-airframe-package">Chapter 11</a>. <a href="/">Back to the overview</a> for the full map.
 </div>
