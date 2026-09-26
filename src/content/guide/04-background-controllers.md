@@ -21,7 +21,7 @@ protocol BackgroundController: AnyObject {
 
 The protocol is a classification and a start/stop contract, nothing more — class names carry the specific suffix from the table below, never `Controller`. Conforming controllers start in phase 4 of launch — see <a href="/guide/02-2-startup">Chapter 2.2</a> — never earlier: initializers must stay fast, and a controller may assume the subsystems below it are already configured.
 
-Reach for one when work has no gesture behind it: refreshing data on an interval, reacting to system events that can happen at any time, maintaining state derived from model changes, cleaning up stale data periodically, recording events for telemetry. And know the three cases that look like one but aren't: a one-shot user-initiated operation is an Action — <a href="/guide/06-1-actions">Chapter 6.1</a>; work that needs progress reporting and user cancellation is a long-running Action — the Action <em>is</em> the live operation, per that same subchapter; window-scoped state belongs to a view state object — <a href="/guide/08-1-views">Chapter 8.1</a>.
+Reach for one when work has no gesture behind it: refreshing data on an interval, reacting to system events that can happen at any time, maintaining state derived from model changes, cleaning up stale data periodically, recording events for telemetry. And know the three cases that look like one but aren't: a one-shot user-initiated operation is an Action — <a href="/guide/06-1-actions">Chapter 6.1</a>; work that needs progress reporting and user cancellation is a long-running Action — the Action <em>is</em> the live operation, per that same subchapter; window-scoped state belongs to a view state model written by a view state controller — <a href="/guide/08-2-view-state">Chapter 8.2</a>.
 
 <div class="table-wrap">
 <table>
@@ -105,7 +105,7 @@ An event-driven controller is the same skeleton with a subscription in place of 
 <table>
 <thead><tr><th>Channel</th><th>When</th></tr></thead>
 <tbody>
-<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and state objects consume it by tracking — <a href="/guide/08-3-state-observing">Chapter 8.3</a>.</td></tr>
+<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and view state controllers consume it by tracking — <a href="/guide/08-4-state-observing">Chapter 8.4</a>.</td></tr>
 <tr><td>A posted notification</td><td>Broad fan-out to consumers that don't hold a reference.</td></tr>
 <tr><td>A write into a manager</td><td>The controller's whole job is refreshing data the manager already owns.</td></tr>
 </tbody>

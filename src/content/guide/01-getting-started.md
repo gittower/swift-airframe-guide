@@ -91,7 +91,7 @@ The most persistent misconception is that the view controller *is* the Controlle
 
 That misreading, not MVC itself, is what the industry has spent two decades reacting to — swapping the massive view controller for a new per-screen coordinator under a new acronym: a view model in MVVM, a presenter in MVP, a module in VIPER. But the question that caused the pain — *where does application state live, and who may change it?* — is asked once, for the whole app; a pattern whose unit is the screen cannot answer it, only relocate it.
 
-It is no accident that these patterns grew up on iOS, where showing one screen at a time makes the screen look like the unit of architecture. A Mac window dispels that at a glance: sidebar, note list, editor, window title, and menu bar are five presentations of the same state, all obliged to agree the instant a note is deleted — and two view models each holding their own copy of the notes have no source of truth between them. Keeping many separate views in sync is the resting state of a macOS app (and behind its single screen, an iOS app has the same app-level state); MVC read as layers answers it with one place state lives and controllers translating between it and every view. What survives of the per-screen patterns is their valid kernel: a View State Controller is a view model demoted from owner to lens — it shapes model data for one presentation, but owns no state and performs no mutations.
+It is no accident that these patterns grew up on iOS, where showing one screen at a time makes the screen look like the unit of architecture. A Mac window dispels that at a glance: sidebar, note list, editor, window title, and menu bar are five presentations of the same state, all obliged to agree the instant a note is deleted — and two view models each holding their own copy of the notes have no source of truth between them. Keeping many separate views in sync is the resting state of a macOS app (and behind its single screen, an iOS app has the same app-level state); MVC read as layers answers it with one place state lives and controllers translating between it and every view. What survives of the per-screen patterns is their valid kernel: a View State Controller is a view model demoted from owner to lens — it shapes model data for one presentation into a view state model the view reads, but owns no application state and performs no mutations.
 
 ### Application state vs. view state
 
@@ -155,7 +155,7 @@ Because all application state sits in one layer, every controller reuses the sam
 An Airframe app is built from four layers, stacked so that dependencies only ever point downward:
 
 - <strong>Presentation</strong> — views and view controllers. What the user sees and touches.
-- <strong>Controllers</strong> — the coordination layer. A <strong>View State Controller</strong> shapes model data for display; an <strong>Action Controller</strong> turns a user gesture into a configured <strong>Action</strong>.
+- <strong>Controllers</strong> — the coordination layer. A <strong>View State Controller</strong> shapes model data into a view state model for display; an <strong>Action Controller</strong> turns a user gesture into a configured <strong>Action</strong>.
 - <strong>Actions</strong> — the operations that mutate state, plus the <strong>Validators</strong> that check whether they're allowed to run.
 - <strong>Model</strong> — the domain state itself, sitting on top of the packages and libraries that talk to disk, network, and other processes. The source of truth.
 

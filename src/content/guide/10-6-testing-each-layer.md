@@ -119,7 +119,7 @@ A validator with two checks whose order matters — "is syncing" before "is the 
 
 ## View State Controllers
 
-The one testable controller kind. Load it, wait for it, and assert on the shaped output — how many items, in what order, grouped how, which ones filtered out. Never on the internal loading mechanics.
+The one testable controller kind. Load it, wait for it, and assert on the shaped output — how many items, in what order, grouped how, which ones filtered out. Never on the internal loading mechanics. The output is the view state model the controller writes, so the assertion reads `controller.state`. That model is a second seam: a test of how a view renders one particular state — loading, failed — constructs the model directly, the way a preview does in <a href="/guide/08-2-view-state">Chapter 8.2</a>, and never runs the controller.
 
 ```swift
 @MainActor
@@ -136,7 +136,7 @@ final class NoteListStateControllerTests: TestCase {
 
         await controller.load()
 
-        XCTAssertEqual(controller.items.map(\.title), ["Pinned", "New", "Old"])
+        XCTAssertEqual(controller.state.items.map(\.title), ["Pinned", "New", "Old"])
     }
 }
 ```

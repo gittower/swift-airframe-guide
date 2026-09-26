@@ -2,7 +2,7 @@
 title: "View Controllers"
 description: "A view controller does four jobs — assemble, wire, map, and coordinate — always through the same override point, loadView(). This subchapter covers how a programmatic view controller is structured, and when a piece of UI has earned one of its own rather than staying embedded in its parent's."
 order: 8
-subOrder: 2
+subOrder: 3
 ---
 
 A view controller does four jobs — assemble, wire, map, and coordinate — always through the same override point, `loadView()`. This subchapter covers how a programmatic view controller is structured, and when a piece of UI has earned one of its own rather than staying embedded in its parent's. It builds on the view components from <a href="/guide/08-1-views">Chapter 8.1</a> — read that first if you haven't; this chapter doesn't re-explain what a view component is or how one composes.
@@ -141,7 +141,7 @@ The guiding principle is that one view controller covers one logical concern —
 <table>
 <thead><tr><th>Question</th><th>If yes</th></tr></thead>
 <tbody>
-<tr><td>Does it need its own data source or state?</td><td>Separate view controller, with its own state object.</td></tr>
+<tr><td>Does it need its own data source or state?</td><td>Separate view controller, with its own state controller and model.</td></tr>
 <tr><td>Could it appear in a different context — a different pane, a different window?</td><td>Separate view controller, so it can be reused.</td></tr>
 <tr><td>Does it have its own lifecycle needs — appear/disappear timing, its own subscriptions?</td><td>Separate view controller.</td></tr>
 <tr><td>Would embedding it make the parent's <code>loadView()</code> or tracked updater span two unrelated concerns?</td><td>Split it out.</td></tr>
@@ -159,5 +159,5 @@ A well-scoped view controller shows up as a focused `loadView()` — one that re
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The activation lifecycle behind <code>observeState()</code> and <code>@Tracked</code>, worked through in full, is next: <a href="/guide/08-3-state-observing">Chapter 8.3, State Observing</a>.
+The activation lifecycle behind <code>observeState()</code> and <code>@Tracked</code>, worked through in full, is next: <a href="/guide/08-4-state-observing">Chapter 8.4, State Observing</a>.
 </div>

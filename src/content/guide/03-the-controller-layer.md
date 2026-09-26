@@ -22,9 +22,9 @@ A controller's job description has the same shape everywhere it appears: when so
 <tbody>
 <tr><td><strong>Action Controller</strong></td><td>A user gesture and a dialog &rarr; a dispatched Action</td><td>AppKit</td><td><a href="/guide/06-2-action-controllers">Chapter 6.2</a></td></tr>
 <tr><td><strong>Background Controller</strong></td><td>App events and timers &rarr; Model-layer work</td><td>AppKit for system events; never renders</td><td><a href="/guide/04-background-controllers">Chapter 4</a></td></tr>
-<tr><td><strong>View State Controller</strong></td><td>Model data &rarr; view-shaped read state</td><td>Foundation-only</td><td><a href="/guide/08-the-view-layer">Chapter 8</a></td></tr>
-<tr><td><strong>View Controller</strong></td><td>View state &rarr; a rendered AppKit view hierarchy</td><td>AppKit</td><td><a href="/guide/08-2-view-controllers">Chapter 8.2</a></td></tr>
-<tr><td><strong>Menu controller</strong></td><td>A view-component specialization, for menus specifically</td><td>AppKit</td><td><a href="/guide/08-4-menus">Chapter 8.4</a></td></tr>
+<tr><td><strong>View State Controller</strong></td><td>Model data &rarr; a view state model it writes and the view reads</td><td>Foundation-only</td><td><a href="/guide/08-2-view-state">Chapter 8.2</a></td></tr>
+<tr><td><strong>View Controller</strong></td><td>View state &rarr; a rendered AppKit view hierarchy</td><td>AppKit</td><td><a href="/guide/08-3-view-controllers">Chapter 8.3</a></td></tr>
+<tr><td><strong>Menu controller</strong></td><td>A view-component specialization, for menus specifically</td><td>AppKit</td><td><a href="/guide/08-5-menus">Chapter 8.5</a></td></tr>
 </tbody>
 </table>
 </div>

@@ -221,7 +221,7 @@ However the state is shaped, it has to tell interested views when it changes. Th
 <table>
 <thead><tr><th>Source</th><th>Signal</th></tr></thead>
 <tbody>
-<tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/08-1-views">Chapter 8.1</a>.</td></tr>
+<tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/08-2-view-state">Chapter 8.2</a>.</td></tr>
 <tr><td>Flat, ambient, app-wide settings or state with no per-view projection to make — the one narrow exception</td><td><code>@Observable</code>, read directly, as in <a href="/guide/02-4-settings">Chapter 2.4</a>.</td></tr>
 <tr><td>Any other model-layer state — in-memory domain data or database-backed</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read.</td></tr>
 <tr><td>Platform / framework events</td><td>Subscribe to the framework's own notification directly.</td></tr>
@@ -237,5 +237,5 @@ When a notification-based source has more than one consumer that wants to observ
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-View-side consumption of all three signals — the `observations.track` / `observations.observe` mechanics — is <a href="/guide/08-1-views">Chapter 8.1</a>, with the full activation lifecycle in <a href="/guide/08-3-state-observing">Chapter 8.3</a>. What actually calls into the manager, and how a write earns the overhead of a full Action, is <a href="/guide/06-1-actions">Chapter 6.1</a>, next.
+View-side consumption of all three signals — the `observations.track` / `observations.observe` mechanics — is <a href="/guide/08-4-state-observing">Chapter 8.4</a>; the view state controller and model those signals feed is <a href="/guide/08-2-view-state">Chapter 8.2</a>. What actually calls into the manager, and how a write earns the overhead of a full Action, is <a href="/guide/06-1-actions">Chapter 6.1</a>, next.
 </div>

@@ -61,13 +61,13 @@ NotebookApp/
 │   │                                the user's tools and OS surfaces — a URL scheme handler feeding Chapter 9 would be the first occupant
 │   ├── UI/                          "What does the user see?"                               8
 │   │   ├── ActionSenderValidation/  ActionSenderValidator, NotebookActionSenderValidator    6.3
-│   │   ├── Menus/                   NotebookMenuController, NSMenuItem+Values               8.4
+│   │   ├── Menus/                   NotebookMenuController, NSMenuItem+Values               8.5
 │   │   ├── Navigation/              NotebookNavigationState                                 9
 │   │   ├── Screens/                 one folder per screen; the read path lives WITH its screen
 │   │   │   ├── Workspace/           WorkspaceViewController                                 9
-│   │   │   ├── Sidebar/             NotebookSidebarViewController, NotebookSidebarController, NotebookListStateController   8.3
-│   │   │   ├── NoteList/            NoteListViewController, NoteListStateController, NoteListView, NoteRowState      8.3
-│   │   │   ├── NoteDetail/          NoteDetailViewController, NoteDetailState, NoteEditorView, TagFilterButtonController   8.1
+│   │   │   ├── Sidebar/             NotebookSidebarViewController, NotebookSidebarController, NotebookListStateController + NotebookListState   8.4
+│   │   │   ├── NoteList/            NoteListViewController, NoteListStateController + NoteListState, NoteListView, NoteRowState   8.4
+│   │   │   ├── NoteDetail/          NoteDetailViewController, NoteDetailStateController + NoteDetailState, NoteEditorView, TagFilterButtonController   8.1, 8.2
 │   │   │   ├── Search/              NoteSearchController                                    7
 │   │   │   └── Preferences/         PreferencesView                                         2.4
 │   │   ├── Shared/                  SyncStatusView, SyncStatusViewController, UnsyncedBadgeView
@@ -85,7 +85,8 @@ A few placements are worth spelling out, because each is a rule in miniature:
 - <strong>Jobs live next to the manager that enqueues them,</strong> with their result contexts, not in a `Jobs/` folder at the package root.
 - <strong>Validators live with the Actions they guard,</strong> in the Actions package. The action sender validators are AppKit and stay in `UI/`.
 - <strong>`NoteSearchController` is a view state controller</strong> that happens to demonstrate cancel-and-replace in <a href="/guide/07-concurrency">Chapter 7</a>, so it goes with its screen.
-- <strong>`SyncStatusViewController` is in `Shared/`</strong> because <a href="/guide/08-2-view-controllers">Chapter 8.2</a> embeds it in other screens; it is a component, not a screen.
+- <strong>A state controller and its model share a file.</strong> `NoteDetailStateController.swift` declares both `NoteDetailStateController` and `NoteDetailState`, so `fileprivate(set)` makes the controller the model's only writer — <a href="/guide/08-2-view-state">Chapter 8.2</a>. The file is named for the controller; the model is what the screen's views receive.
+- <strong>`SyncStatusViewController` is in `Shared/`</strong> because <a href="/guide/08-3-view-controllers">Chapter 8.3</a> embeds it in other screens; it is a component, not a screen.
 - <strong>`BackgroundControllers/` has no test mirror.</strong> The work each controller dispatches is a manager function, tested in the model package.
 
 ## Why the roots look like this
@@ -96,7 +97,7 @@ A few placements are worth spelling out, because each is a rule in miniature:
 
 <strong>`Integrations/` is the outward bridges.</strong> The litmus test: the app launches and works without it, and unplugging it disconnects a feature, not the product. Who is on the other end decides where it goes. The user's environment or an OS surface — their external editor, Spotlight, notification center, Shortcuts — is an integration. Your own product infrastructure is `App/`.
 
-<strong>`UI/` holds everything that renders, and everything that shapes state for rendering.</strong> Views, view controllers, view state controllers, menus, navigation state, drag and drop. `Screens/` is one folder per screen. `Shared/` is the reusable visual components — base dialogs, badges, chips. `Support/` is the logic-heavy helpers that serve the UI without being visual: styles, input validators, display formatters.
+<strong>`UI/` holds everything that renders, and everything that shapes state for rendering.</strong> Views, view controllers, view state controllers and the view state models they write, menus, navigation state, drag and drop. `Screens/` is one folder per screen. `Shared/` is the reusable visual components — base dialogs, badges, chips. `Support/` is the logic-heavy helpers that serve the UI without being visual: styles, input validators, display formatters.
 
 ## Deciding where a file goes
 

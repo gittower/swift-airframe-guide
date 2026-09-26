@@ -1,11 +1,11 @@
 ---
 title: "State Observing"
-description: "Chapter 8.1 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale."
+description: "Chapter 8.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale."
 order: 8
-subOrder: 3
+subOrder: 4
 ---
 
-Chapter 8.1 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale.
+Chapter 8.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale.
 
 ## Why this pattern exists
 
@@ -21,7 +21,7 @@ SwiftUI views get all of this for free — which is exactly the standard this pa
 <tbody>
 <tr><td><code>body</code></td><td><code>observations.track { render() }</code></td></tr>
 <tr><td><code>.onChange(of:)</code></td><td><code>observations.observe({ read }, perform:)</code></td></tr>
-<tr><td><code>.task(id:)</code></td><td><code>observations.observe({ input }) { loader.reload() }</code> — trigger half only</td></tr>
+<tr><td><code>.task(id:)</code></td><td><code>observations.observe({ input }) { controller.reload() }</code> — trigger half only</td></tr>
 <tr><td><code>.task</code> (no id)</td><td><code>reload()</code> at the activation call site</td></tr>
 <tr><td><code>.onReceive(publisher)</code></td><td><code>observations.observe(publisher) { … }</code></td></tr>
 <tr><td><code>.onAppear</code> / <code>.onDisappear</code></td><td><code>activateObservation()</code> / <code>deactivateObservation()</code></td></tr>
@@ -29,7 +29,7 @@ SwiftUI views get all of this for free — which is exactly the standard this pa
 </table>
 </div>
 
-These rows are analogies, not 1:1 equivalents. `.onChange(of:)` is the closest match — both watch a value and fire a closure on change only, which either updates state or performs a side effect. `.task(id:)` bundles the change trigger together with automatic task management (cancel the running task, start a fresh one); the observation replicates only the trigger half, and supersession of in-flight work is the loader's job — see <a href="/guide/07-concurrency">Chapter 7</a>. And where SwiftUI re-evaluates `body` and diffs a view tree, StateObserving re-runs small imperative updaters against long-lived views — which is why updaters must stay idempotent applications of current state.
+These rows are analogies, not 1:1 equivalents. `.onChange(of:)` is the closest match — both watch a value and fire a closure on change only, which either updates state or performs a side effect. `.task(id:)` bundles the change trigger together with automatic task management (cancel the running task, start a fresh one); the observation replicates only the trigger half, and supersession of in-flight work is the state controller's job — see <a href="/guide/07-concurrency">Chapter 7</a>. And where SwiftUI re-evaluates `body` and diffs a view tree, StateObserving re-runs small imperative updaters against long-lived views — which is why updaters must stay idempotent applications of current state.
 
 ## One method is the whole inventory
 
@@ -146,21 +146,22 @@ The tracking half rides on the Observation framework (macOS 14+) — the same ma
 
 `@Tracked` makes a single property on an otherwise plain class participate in observation tracking, exactly as a property on an `@Observable` object would: reading it inside a `track` or `observe(read:perform:)` scope registers it, assigning it triggers the observers. It also de-dupes — the value must be `Equatable`, and the setter swallows an assignment of an equal value, so observers only ever fire for real changes and call sites need no `guard changed` of their own. It doesn't apply to `weak` properties or properties exposed to Objective-C.
 
-`@Observable` classes get the same deduplication from the framework itself: the macro's generated setter routes through `shouldNotifyObservers()`, whose `Equatable` overload compares old and new value, so equal assignments of `Equatable` properties never notify — no extra guard is needed in a state object. The gate only exists where a comparison exists, though: non-`Equatable` value properties always notify, and reference-typed ones compare by identity — give hot properties an `Equatable` type if dedupe matters.
+`@Observable` classes get the same deduplication from the framework itself: the macro's generated setter routes through `shouldNotifyObservers()`, whose `Equatable` overload compares old and new value, so equal assignments of `Equatable` properties never notify — no extra guard is needed in a view state model. The gate only exists where a comparison exists, though: non-`Equatable` value properties always notify, and reference-typed ones compare by identity — give hot properties an `Equatable` type if dedupe matters.
 
-Use `@Tracked` for state a controller or view hosts and renders itself; state that is shared, loads asynchronously, or cascades belongs in a dedicated `@Observable` state object — see <a href="/guide/08-1-views">Chapter 8.1</a>.
+Use `@Tracked` for state a controller or view hosts and renders itself; state that is shared, loads asynchronously, or cascades belongs to a view state controller writing a dedicated `@Observable` view state model — see <a href="/guide/08-2-view-state">Chapter 8.2</a>.
 
 ## Example: a view controller
 
 ```swift
 @StateObserving
-final class NoteListViewController: NSViewController {
-    let loader = NoteListLoader()      // @Observable state object
+final class NoteListViewController: NSViewController, StateObservingContainer {
+    let list = NoteListStateController()   // writes the @Observable NoteListState the updaters read
+    var childStateObservers: [any StateObserving] { [list] }
 
     override func viewWillAppear() {
         super.viewWillAppear()
         activateObservation()
-        loader.reload()                // initial load, and catch-up after inactivity
+        list.reload()                  // initial load, and catch-up after inactivity
     }
 
     override func viewWillDisappear() {
@@ -173,7 +174,7 @@ final class NoteListViewController: NSViewController {
         observations.observe(
             NotificationCenter.default.publisher(for: NSWindow.didBecomeMainNotification, object: view.window)
         ) { [weak self] _ in
-            self?.loader.reload()
+            self?.list.reload()
         }
 
         // TRACK — render the loader's state.
@@ -181,12 +182,12 @@ final class NoteListViewController: NSViewController {
         observations.track { [weak self] in self?.updateTable() }
     }
 
-    private func updateSpinner() { /* read loader.isLoading, show or hide */ }
-    private func updateTable() { /* read loader.notes, apply a snapshot */ }
+    private func updateSpinner() { /* read list.state.isLoading, show or hide */ }
+    private func updateTable() { /* read list.state.notes, apply a snapshot */ }
 }
 ```
 
-The async work lives on the loader, exactly as in <a href="/guide/08-1-views">Chapter 8.1</a>; the controller only decides <em>when</em> (activation, the notification) and <em>how it looks</em> (the two updaters). Registering one `observations.track` call per updater, rather than one giant updater, is deliberate — their read sets are allowed to overlap freely, and each stays a small, single-purpose render pass.
+The async work lives on the state controller and the updaters read the model it writes, exactly as in <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller only decides <em>when</em> (activation, the notification) and <em>how it looks</em> (the two updaters). Listing the state controller in `childStateObservers` arms its own model-layer subscriptions on the view controller's scope — the container shape worked through below. Registering one `observations.track` call per updater, rather than one giant updater, is deliberate — their read sets are allowed to overlap freely, and each stays a small, single-purpose render pass.
 
 ## Example: a self-rendering view
 
@@ -329,9 +330,9 @@ private func updateRowState() {
 }
 ```
 
-Every subscription in `observeState()` calls `updateRowState()`, however often the underlying signals fire; `@Tracked`'s equality guard means the render updater re-runs only when the snapshot actually changed. Anything derived for display — a formatted date, a computed title — lives as a property on the snapshot itself, so the updater stays a dumb application of already-decided state. Keep supporting value types like the snapshot at file scope (`fileprivate`), above the class, so the class body leads with its actual state. Reach for this over a plain `@Observable` state object once the values are ones the object renders itself and nothing else needs to share or await; a state object earns its place instead once loading, cascading, or another consumer enters the picture — see <a href="/guide/08-1-views">Chapter 8.1</a>.
+Every subscription in `observeState()` calls `updateRowState()`, however often the underlying signals fire; `@Tracked`'s equality guard means the render updater re-runs only when the snapshot actually changed. Anything derived for display — a formatted date, a computed title — lives as a property on the snapshot itself, so the updater stays a dumb application of already-decided state. Keep supporting value types like the snapshot at file scope (`fileprivate`), above the class, so the class body leads with its actual state. Reach for this over a view state controller and model once the values are ones the object renders itself and nothing else needs to share or await; a view state controller and its model earn their place instead once loading, cascading, a model-layer subscription, or another consumer enters the picture — see <a href="/guide/08-2-view-state">Chapter 8.2</a>.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Menus — themselves just view components wired to Actions — are next: <a href="/guide/08-4-menus">Chapter 8.4</a>. Navigation state, which a parent pushes into its children as a plain input rather than something they observe directly, is <a href="/guide/09-navigation">Chapter 9</a>.
+Menus — themselves just view components wired to Actions — are next: <a href="/guide/08-5-menus">Chapter 8.5</a>. Navigation state, which a parent pushes into its children as a plain input rather than something they observe directly, is <a href="/guide/09-navigation">Chapter 9</a>.
 </div>

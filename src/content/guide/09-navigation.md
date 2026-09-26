@@ -1,10 +1,10 @@
 ---
 title: "Navigation"
-description: "Every chapter so far has been about one screen. This one is about the seam between screens — and why that seam is a state object owned by a parent, never a view holding a reference to another view."
+description: "Every chapter so far has been about one screen. This one is about the seam between screens — and why that seam is a view state model owned by a parent, never a view holding a reference to another view."
 order: 9
 ---
 
-Every chapter so far has been about one screen. This one is about the seam between screens — and why that seam is a state object owned by a parent, never a view holding a reference to another view.
+Every chapter so far has been about one screen. This one is about the seam between screens — and why that seam is a view state model owned by a parent, never a view holding a reference to another view.
 
 ## Moving between screens without views reaching into each other
 
@@ -19,6 +19,8 @@ final class NotebookNavigationState {
     var selectedNoteID: NoteID?
 }
 ```
+
+A navigation state object is a view state model whose writer is the parent view controller. There's no view state controller in front of it because nothing is loaded or subscribed to fill it — the parent sets it from a child's intent closure, and children read it as a plain input.
 
 ```swift
 @StateObserving
@@ -52,7 +54,7 @@ final class WorkspaceViewController: NSViewController {
 }
 ```
 
-The sidebar never calls into the detail controller. It fires a closure; the parent updates its navigation state; the tracked updater above — the render mechanism covered in <a href="/guide/08-3-state-observing">Chapter 8.3</a> — pushes the new input into the detail controller, which reacts to its own `notebookID` changing exactly the way any input property does.
+The sidebar never calls into the detail controller. It fires a closure; the parent updates its navigation state; the tracked updater above — the render mechanism covered in <a href="/guide/08-4-state-observing">Chapter 8.4</a> — pushes the new input into the detail controller, which reacts to its own `notebookID` changing exactly the way any input property does.
 
 ## Where navigation sits relative to controllers and actions
 
@@ -71,5 +73,5 @@ Because the navigation state stores identifiers and not the objects themselves, 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Testing a navigation state object — a plain `@Observable` class with no AppKit dependency — follows the same rules as testing any other state object; see <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+Testing a navigation state object — a plain `@Observable` class with no AppKit dependency — follows the same rules as testing any other view state model; see <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
 </div>

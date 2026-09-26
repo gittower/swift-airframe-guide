@@ -74,5 +74,5 @@ If a validator needs a piece of data that isn't on the UI element that triggered
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-How a menu item carries `notebookValue` — a typed, safe accessor over `representedObject` — is <a href="/guide/08-4-menus">Chapter 8.4</a>. Testing validators directly, without constructing an Action or a controller, is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+How a menu item carries `notebookValue` — a typed, safe accessor over `representedObject` — is <a href="/guide/08-5-menus">Chapter 8.5</a>. Testing validators directly, without constructing an Action or a controller, is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
 </div>

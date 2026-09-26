@@ -2,7 +2,7 @@
 title: "Menus"
 description: "A menu isn't a special case bolted onto the architecture — it's the mutate path from Chapter 1 wearing an NSMenuItem. This subchapter covers building menus, carrying typed data on them safely, and getting validation for free."
 order: 8
-subOrder: 4
+subOrder: 5
 ---
 
 A menu isn't a special case bolted onto the architecture — it's the mutate path from Chapter 1 wearing an NSMenuItem. This subchapter covers building menus, carrying typed data on them safely, and getting validation for free.

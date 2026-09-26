@@ -1,11 +1,11 @@
 ---
 title: "Views"
-description: "SwiftUI renders. AppKit controls. This subchapter states that split precisely, covers the three-layer shape every piece of UI follows, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale."
+description: "SwiftUI renders. AppKit controls. This subchapter states that split precisely, covers what a view component's interface looks like and how components compose, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale."
 order: 8
 subOrder: 1
 ---
 
-SwiftUI renders. AppKit controls. This subchapter states that split precisely, covers the three-layer shape every piece of UI follows, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale.
+SwiftUI renders. AppKit controls. This subchapter states that split precisely, covers what a view component's interface looks like and how components compose, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale.
 
 ## The stance
 
@@ -18,22 +18,11 @@ Use `NSHostingController` when a view controller's entire content is SwiftUI and
 
 </div>
 
-## Three layers, every time
+## Four objects, one of them the view
 
-Each meaningful piece of UI splits the same way: what's happening, how it looks, and when things happen.
+Each meaningful piece of UI is four objects. A <strong>view state controller</strong> subscribes, loads, and shapes model data, and writes it into a <strong>view state model</strong> — pure, semantic data. A <strong>view component</strong> renders that model. A <strong>view controller</strong> assembles the components, owns the state pair, and coordinates. The first two are <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller is <a href="/guide/08-3-view-controllers">Chapter 8.3</a>. This subchapter is about the view.
 
-<div class="table-wrap">
-<table>
-<thead><tr><th>Layer</th><th>Concern</th><th>Knows about</th></tr></thead>
-<tbody>
-<tr><td><strong>State object</strong></td><td>What's happening — modes, loaded data, flags</td><td>Domain/model types only. Never a display string, image, or color.</td></tr>
-<tr><td><strong>View component</strong></td><td>How it looks — strings, images, layout, color</td><td>Semantic data from state, plus AppKit or SwiftUI itself.</td></tr>
-<tr><td><strong>View controller</strong></td><td>When things happen — lifecycle, coordination, actions</td><td>State and views. Wires them together; formats nothing.</td></tr>
-</tbody>
-</table>
-</div>
-
-A state object exposes an enum like `.syncing` or `.conflict(count: 3)` — never the string "3 conflicting notes" that a view renders from it. That boundary is what keeps state testable by asserting cases, not strings, and lets two different views present the same state differently.
+A view's interface has two halves and a private middle: semantic data in, intents out, and the mapping from one to pixels kept inside. It knows nothing about where its data came from or what happens after an intent leaves.
 
 ```swift
 final class SyncStatusView: NSView {
@@ -108,74 +97,25 @@ Note what's absent from the inputs: `NoteManager` itself. A shared instance is n
 
 Exposing the component as a property is one of two integration modes: a `make…()` method or a `let` component covers the common case where the controller creates the control, and an `attach(to:)` method covers a control that already exists — a toolbar item the window hands over, say. Either way the owner decides <em>where</em> the component goes; the component controller decides everything about how it behaves.
 
-Not being an `NSViewController` is the point, not a shortcut. There's no view hierarchy to own and no containment lifecycle to participate in, so an `NSViewController` would be ceremony around an object that is really just coordination. What a component controller <em>does</em> share with any other controller is observation: it conforms to `StateObserving` when it reacts to state, its owner activates it on the owner's own scope — or lists it in `childStateObservers` and lets a container do it — exactly as <a href="/guide/08-3-state-observing">Chapter 8.3</a> describes.
+Not being an `NSViewController` is the point, not a shortcut. There's no view hierarchy to own and no containment lifecycle to participate in, so an `NSViewController` would be ceremony around an object that is really just coordination. What a component controller <em>does</em> share with any other controller is observation: it conforms to `StateObserving` when it reacts to state, its owner activates it on the owner's own scope — or lists it in `childStateObservers` and lets a container do it — exactly as <a href="/guide/08-4-state-observing">Chapter 8.4</a> describes.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-A view component controller owns exactly one component and the behavior around it. The moment it starts assembling several components into a layout, it's becoming a view controller; the moment other objects start reading state off it, that state wants to be a state object. Both are signs to promote, not to grow.
+A view component controller owns exactly one component and the behavior around it. The moment it starts assembling several components into a layout, it's becoming a view controller; the moment other objects start reading state off it, that state wants to be a view state model with a controller writing it. Both are signs to promote, not to grow.
 
 </div>
 
-The most common specialization is the menu controller — a component controller whose component is a menu (or a button-plus-menu pair) — which gets its own treatment in <a href="/guide/08-4-menus">Chapter 8.4</a>.
+The most common specialization is the menu controller — a component controller whose component is a menu (or a button-plus-menu pair) — which gets its own treatment in <a href="/guide/08-5-menus">Chapter 8.5</a>.
 
-## Observable state objects: the seam between model and a dumb view
+## Hosting SwiftUI: read the model inside `body`
 
-A controller has exactly two mechanisms for responding to state, and conflating them is the second most common way this pattern erodes.
-
-<div class="table-wrap">
-<table>
-<thead><tr><th>Mechanism</th><th>Purpose</th></tr></thead>
-<tbody>
-<tr><td><code>observations.track { }</code></td><td><strong>Render.</strong> Every view change — labels, visibility, swapped content, layout — belongs in a tracked updater and nowhere else. Runs automatically whenever an <code>@Observable</code> (or <code>@Tracked</code>) property read inside it changes.</td></tr>
-<tr><td><code>observations.observe { }</code></td><td><strong>React.</strong> Side effects that are <em>not</em> a view change — triggering a reload when an input changes, responding to a notification. Never touches a view directly.</td></tr>
-</tbody>
-</table>
-</div>
-
-```swift
-@StateObserving
-final class NoteDetailViewController: NSViewController {
-    let state = NoteDetailState()
-
-    override func viewWillAppear() {
-        super.viewWillAppear()
-        activateObservation()
-        state.reload()      // initial load, and catch-up after inactivity
-    }
-
-    override func viewWillDisappear() {
-        super.viewWillDisappear()
-        deactivateObservation()
-    }
-
-    func observeState() {
-        observations.observe({ self.state.noteID }) { [weak self] in self?.state.reload() }
-        observations.track { [weak self] in self?.updateFields() }
-    }
-
-    private func updateFields() {
-        titleField.stringValue = state.title
-        bodyView.isHidden = state.isLoading
-    }
-}
-```
+A SwiftUI view hosted inside an AppKit view controller follows the same contract as an `NSView` component — a view state model in, closures out — and gets its reactivity from the Observation framework: any `@Observable` property read inside `body` is tracked, so the view re-renders when exactly that state changes, and nothing has to tell it to.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-An external event never calls <code>updateFields()</code> — or any other tracked updater — directly. It only ever updates the state that updater reads; the updater re-runs because <code>observations.track</code> noticed the state changed, not because something told it to run. Reaching for the updater directly from a notification handler or a delegate callback is the tell that state and rendering have blurred together: fix it by routing the event through a state property instead, even if that means adding one nothing-else-does-it property. This is what keeps rendering a pure function of current state — the same guarantee <a href="/guide/08-3-state-observing">Chapter 8.3</a> builds the whole activation lifecycle around.
-
-</div>
-
-Both mechanisms are declared in one place — `observeState()`, the complete inventory of everything the controller reacts to — and wired up by an activation lifecycle (`activateObservation()` / `deactivateObservation()`) rather than by hand. That lifecycle, plus a parent controller that activates a whole tree of children at once, gets its own chapter next: <a href="/guide/08-3-state-observing">Chapter 8.3</a>.
-
-Hosting a SwiftUI view inside that same controller works the same way — the Observation framework tracks any `@Observable` property read inside a view's `body`, so a hosted SwiftUI view stays reactive to exactly the state it reads.
-
-<div class="rule">
-<span class="rule-label">The rule</span>
-
-Hand a SwiftUI view the `@Observable` object <strong>by reference</strong>, and read its properties <strong>inside `body`</strong>. A snapshot — a plain value struct captured once at construction, even if it came off an observable object — is a detached copy. Mutating the source later does nothing to it. This is the single most common way a hosted SwiftUI view goes silently stale, and the tell is a controller doing `hostingView.rootView = NewView(value)` by hand on every change instead of just mutating the model and letting the view follow.
+Hand a SwiftUI view the `@Observable` <strong>view state model</strong> — never the controller that writes it, even though the controller is the object you already hold — <strong>by reference</strong>, and read its properties <strong>inside `body`</strong>. A snapshot — a plain value struct captured once at construction, even if it came off an observable object — is a detached copy. Mutating the source later does nothing to it. This is the single most common way a hosted SwiftUI view goes silently stale, and the tell is a controller doing `hostingView.rootView = NewView(value)` by hand on every change instead of just mutating the model and letting the view follow.
 
 </div>
 
@@ -185,9 +125,9 @@ Constraints are built where the view is built — a component's own `loadSubview
 
 ## Naming and composition, briefly
 
-A <strong>Screen</strong> (or the AppKit view controller playing that role) owns a view model and wires up loading; a <strong>Page</strong> is one step within a Screen's multi-step flow; a <strong>View</strong> is pure rendering, previewable in every state because it depends on nothing but the state handed to it. In SwiftUI composition, reach for a <strong>ViewModifier</strong> to restyle an existing view, a <strong>ViewBuilder container</strong> for a reusable layout shape with swappable content, and a <strong>custom View struct</strong> for a complete, semantically named component — and avoid `@ViewBuilder` computed properties entirely; they recompute on every render, can't hold state, and are a strong signal the content wants to be its own View struct instead.
+A <strong>Screen</strong> (or the AppKit view controller playing that role) owns a view state controller, hands its model down, and wires up loading; a <strong>Page</strong> is one step within a Screen's multi-step flow; a <strong>View</strong> is pure rendering, previewable in every state because it depends on nothing but the state handed to it. In SwiftUI composition, reach for a <strong>ViewModifier</strong> to restyle an existing view, a <strong>ViewBuilder container</strong> for a reusable layout shape with swappable content, and a <strong>custom View struct</strong> for a complete, semantically named component — and avoid `@ViewBuilder` computed properties entirely; they recompute on every render, can't hold state, and are a strong signal the content wants to be its own View struct instead.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The activation lifecycle behind `observeState()`, `@Tracked`, and `StateObservingContainer` for a parent with subcontrollers get their own chapter next: <a href="/guide/08-3-state-observing">Chapter 8.3</a>. Menus — which are themselves just view components wired to Actions — follow after that: <a href="/guide/08-4-menus">Chapter 8.4</a>. Moving between screens without one view holding a reference to another is <a href="/guide/09-navigation">Chapter 9</a>.
+What a view is given — the view state controller and the model it writes — is next: <a href="/guide/08-2-view-state">Chapter 8.2</a>. The view controller that assembles views and owns that pair is <a href="/guide/08-3-view-controllers">Chapter 8.3</a>; the activation lifecycle behind `observeState()` and `@Tracked` is <a href="/guide/08-4-state-observing">Chapter 8.4</a>; menus — themselves just view components wired to Actions — are <a href="/guide/08-5-menus">Chapter 8.5</a>. Moving between screens without one view holding a reference to another is <a href="/guide/09-navigation">Chapter 9</a>.
 </div>
