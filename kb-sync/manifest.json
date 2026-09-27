@@ -1,7 +1,7 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-09-26",
+  "lastSync": "2026-09-27",
   "documents": {
     "manager-architecture": {
       "updated_at": "2026-09-13T12:23:36.751+00:00",
@@ -382,6 +382,13 @@
         "01-1-project-layout",
         "02-4-settings",
         "10-3-suite-layout-and-test-kinds"
+      ]
+    },
+    "user-preferences-window-toolbar-tabs-swiftui-panes-and-settings-controllers": {
+      "updated_at": "2026-09-27T16:09:20.644+00:00",
+      "sha256": "780ebdaa109d9c586b0256435a9857b1cf24bc10dfcd1d96b598584f7a2a006e",
+      "chapters": [
+        "08-6-settings-window"
       ]
     }
   },

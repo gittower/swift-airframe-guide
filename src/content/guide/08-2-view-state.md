@@ -146,7 +146,7 @@ Two previews, no controller, no manager, no running app. The same construction i
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-A view takes exactly two things: a view state model, by reference, and closures for its intents. Never the controller that writes the model, never a manager, never an Action. A view emits an intent and reacts to state — it does not handle the action itself; the view controller receives the intent and dispatches it. The only exceptions have no coordination in them at all: a static info sheet, or a `Toggle` bound straight to a flat settings object as `PreferencesView` does in <a href="/guide/02-4-settings">Chapter 2.4</a>, where the settings object is its own manager and there is no controller to go around. This is the single most important thing to check on any view: does it take anything other than a model and closures?
+A view takes exactly two things: a view state model, by reference, and closures for its intents. Never the controller that writes the model, never a manager, never an Action. A view emits an intent and reacts to state — it does not handle the action itself; the view controller receives the intent and dispatches it. The only exceptions have no coordination in them at all: a static info sheet, or a `Toggle` bound straight to a flat settings object as `EditorSectionView` does in <a href="/guide/02-4-settings">Chapter 2.4</a>, where the settings object is its own manager and there is no controller to go around — and <a href="/guide/08-6-settings-window">Chapter 8.6</a> marks exactly where that exception ends. This is the single most important thing to check on any view: does it take anything other than a model and closures?
 
 </div>
 

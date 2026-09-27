@@ -77,5 +77,5 @@ Because the item's target is `nil`, enabling and disabling it is automatic once 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Moving between the screens a menu item might navigate to is <a href="/guide/09-navigation">Chapter 9</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+The settings window — the one the app menu's "Settings…" item opens, and the place every subchapter of this chapter meets — is next: <a href="/guide/08-6-settings-window">Chapter 8.6</a>. Moving between the screens a menu item might navigate to is <a href="/guide/09-navigation">Chapter 9</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
 </div>

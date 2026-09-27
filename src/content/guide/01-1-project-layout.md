@@ -49,14 +49,14 @@ NotebookApp/
 │   │   ├── Init/                    AppInitializing and the initializer chain               2.2
 │   │   ├── Startup/                 AppController, AppStatus, StartupController             2.2
 │   │   ├── WindowRestoration/       WindowRestorationController, RestoredWindow             2.3
-│   │   ├── Settings/                EditorSettings                                          2.4
+│   │   ├── Settings/                EditorSettings, SyncSettings, AppearanceSettings        2.4
 │   │   ├── Updates/                 what UpdatesInitializer configures
 │   │   └── Runtime/                 the BackgroundController protocol                       4
 │   ├── ActionControllers/           "How does a gesture become an operation?"               6.2
 │   │   ├── Notes/                   NoteActionController
 │   │   └── Notebooks/               NotebookActionController
 │   ├── BackgroundControllers/       "What keeps the app current with no gesture behind it?" 4
-│   │                                StaleDraftReaper, TagUsageProjector
+│   │                                StaleDraftReaper, TagUsageProjector, AppearanceApplier
 │   ├── Integrations/                "What does the app bridge to outward?"
 │   │                                the user's tools and OS surfaces — a URL scheme handler feeding Chapter 9 would be the first occupant
 │   ├── UI/                          "What does the user see?"                               8
@@ -69,7 +69,7 @@ NotebookApp/
 │   │   │   ├── NoteList/            NoteListViewController, NoteListStateController + NoteListState, NoteListView, NoteRowState   8.4
 │   │   │   ├── NoteDetail/          NoteDetailViewController, NoteDetailStateController + NoteDetailState, NoteEditorView, TagFilterButtonController   8.1, 8.2
 │   │   │   ├── Search/              NoteSearchController                                    7
-│   │   │   └── Preferences/         PreferencesView                                         2.4
+│   │   │   └── Settings/            SettingsWindowController, SettingsTabViewController, SettingsForm; General/ and Appearance/ panes — a Screen, and per section a View plus a Controller   8.6
 │   │   ├── Shared/                  SyncStatusView, SyncStatusViewController, UnsyncedBadgeView
 │   │   └── Support/                 view styles, input validators, display formatters
 │   └── Resources/

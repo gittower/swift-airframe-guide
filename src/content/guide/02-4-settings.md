@@ -29,15 +29,17 @@ final class EditorSettings {
 A view reads it directly — no injection, no protocol, just the shared instance:
 
 ```swift
-struct PreferencesView: View {
-    let settings = EditorSettings.shared
+struct EditorSectionView: View {
+    @Bindable var settings: EditorSettings   // handed EditorSettings.shared by its owner
 
     var body: some View {
-        Stepper("Font size: \(settings.fontSize)",
-                value: Bindable(settings).fontSize, in: 10...24)
+        Stepper("Font size: \(settings.fontSize) pt", value: $settings.fontSize, in: 10...24)
+        Toggle("Show line numbers", isOn: $settings.showLineNumbers)
     }
 }
 ```
+
+That view is one section of the app's settings window; <a href="/guide/08-6-settings-window">Chapter 8.6</a> builds the window around it, and covers the point at which a section outgrows a direct binding like this one and needs a controller in between.
 
 Two boundaries keep this shape honest. It's `@Observable` only because nothing ever writes to it from a background job — the moment background work funnels through a settings object, it stops qualifying and becomes a regular manager-fronted model; <a href="/guide/05-model-layer">Chapter 5</a> draws that line precisely. And it holds <em>user</em> configuration, not launch configuration — the values a subsystem needs before it can start at all are a `configure(_:)`d struct, covered in <a href="/guide/02-5-object-wiring">Object Wiring</a>.
 

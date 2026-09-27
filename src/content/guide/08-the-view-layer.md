@@ -1,10 +1,10 @@
 ---
 title: "The View Layer"
-description: "Views read from the Model. This chapter introduces the read/render side of the architecture — how a SwiftUI view hosted inside AppKit stays reactive, where the state it renders comes from, how a view controller assembles and scopes that hierarchy, the activation lifecycle that drives it, and the menus that are themselves just another view component — and lays out how the five relate before five subchapters go deeper on each."
+description: "Views read from the Model. This chapter introduces the read/render side of the architecture — how a SwiftUI view hosted inside AppKit stays reactive, where the state it renders comes from, how a view controller assembles and scopes that hierarchy, the activation lifecycle that drives it, the menus that are themselves just another view component, and the settings window that puts all of it together — and lays out how the six relate before six subchapters go deeper on each."
 order: 8
 ---
 
-Views read from the Model. This chapter introduces the read/render side of the architecture — how a SwiftUI view hosted inside AppKit stays reactive, where the state it renders comes from, how a view controller assembles and scopes that hierarchy, the activation lifecycle that drives it, and the menus that are themselves just another view component — and lays out how the five relate before five subchapters go deeper on each.
+Views read from the Model. This chapter introduces the read/render side of the architecture — how a SwiftUI view hosted inside AppKit stays reactive, where the state it renders comes from, how a view controller assembles and scopes that hierarchy, the activation lifecycle that drives it, the menus that are themselves just another view component, and the settings window that puts all of it together — and lays out how the six relate before six subchapters go deeper on each.
 
 ## The shape of the layer
 
@@ -18,7 +18,9 @@ Views and their AppKit controllers lean on `observeState()` and `activateObserva
 
 A menu isn't a special case bolted onto the architecture — it's the mutate path wearing an `NSMenuItem`. <a href="/guide/08-5-menus">Menus</a> covers building menus as view components wired to Actions, carrying typed data on them safely, and getting validation for free.
 
-## The rule that holds across all five
+The settings window is where all of the above meets in one place, and the first complete window most apps build after the main one. <a href="/guide/08-6-settings-window">The Settings Window</a> builds it end to end — a shared window controller, an AppKit tab controller with toolbar tabs, SwiftUI panes hosted as ordinary content views, and the sections inside them, which either bind straight to a settings object or get a small controller of their own the moment they need to derive anything.
+
+## The rules that hold across all six
 
 <div class="rule">
 <span class="rule-label">The rule</span>
