@@ -171,15 +171,15 @@
       ]
     },
     "repository-queue": {
-      "updated_at": "2026-09-19T11:13:56.275+00:00",
-      "sha256": "d113939317c1e2b8fc2d4debfd0057befb693dcec74752c73c4843b0dc63b215",
+      "updated_at": "2026-10-07T18:34:44.444+00:00",
+      "sha256": "f0e228689ecc31c9b1b0393d470798446526700e025c2881998b4f57ddb5152e",
       "chapters": [
         "05-5-runners-and-scheduling"
       ]
     },
     "serial-task-runner": {
-      "updated_at": "2026-09-19T11:13:54.543+00:00",
-      "sha256": "67ff57ccf51b3733be378e0ea845fbd496e6c58c8791570a50ab266ee33f69e9",
+      "updated_at": "2026-10-07T18:33:19.498+00:00",
+      "sha256": "1f7149ad7e79dda63ee00074a51dc28b529f75953d5affa629998a81bbaf7ba1",
       "chapters": [
         "05-5-runners-and-scheduling"
       ]
@@ -258,8 +258,8 @@
       "scope": "cookbook-candidate"
     },
     "execution-strategies": {
-      "updated_at": "2026-09-19T11:14:55.289+00:00",
-      "sha256": "42bb834f1eb0fd445d99ec63dc8e65b79f246cd09182344ab18c45a26d88e4af",
+      "updated_at": "2026-10-07T18:33:46.737+00:00",
+      "sha256": "8a5060659cd724072d06a4cd320e9c16ea382dda5f8dd200a55108cb64881aea",
       "chapters": [
         "05-8-execution-strategies"
       ]
