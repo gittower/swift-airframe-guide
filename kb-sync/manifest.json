@@ -4,8 +4,8 @@
   "lastSync": "2026-09-29",
   "documents": {
     "manager-architecture": {
-      "updated_at": "2026-09-13T12:23:36.751+00:00",
-      "sha256": "4cd6139814e02d9ca9759205809955b1c021a65c9038d7f1a26dbb0ceb562a6e",
+      "updated_at": "2026-10-07T12:02:55.089+00:00",
+      "sha256": "5f3348baed05fbc9df4b61c8993413254d070aac3fc59a20150a49f709791cda",
       "chapters": [
         "05-model-layer",
         "07-concurrency"
@@ -19,10 +19,11 @@
       ]
     },
     "object-wiring-shared-instances-and-configure": {
-      "updated_at": "2026-09-09T15:37:00.649+00:00",
-      "sha256": "78d0c868c7f25cf9d5673c9f26fe2f9f3cb273ebd58e8718d286a5dc10783260",
+      "updated_at": "2026-10-07T12:01:37.908+00:00",
+      "sha256": "bc01ae68a3bfd7943d146ed2323517700be7f62a52c11a4c8a3d2500c0124a09",
       "chapters": [
-        "02-5-object-wiring"
+        "02-5-object-wiring",
+        "05-model-layer"
       ]
     },
     "view-state-management-stateobserving-protocol": {
@@ -179,9 +180,10 @@
       ]
     },
     "background-task-structs": {
-      "updated_at": "2026-06-06T11:13:11.18+00:00",
-      "sha256": "626a7b3097132c274e6d7eef9973da9449d0193a954609fc996ac074cab1fcfe",
+      "updated_at": "2026-10-07T12:03:51.091+00:00",
+      "sha256": "4e690603ccf9204b395cc8de3ec7ec48aa30e5b6420450267b7d0f7640c079b5",
       "chapters": [
+        "05-model-layer",
         "07-concurrency"
       ]
     },

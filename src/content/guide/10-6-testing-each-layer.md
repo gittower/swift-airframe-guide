@@ -11,7 +11,7 @@ Every example follows the layer table from <a href="/guide/10-1-which-tests-to-w
 
 ## Models and managers
 
-Test the manager's public interface, never the job it enqueues or the store underneath. The manager is reached through `.shared`, exactly as production reaches it, and the only double is at the HTTP boundary: a `URLProtocol` stub registered on the session `SyncClient` uses, handed a payload in the server's wire shape.
+Test the manager's public interface, never the job it enqueues or the store underneath. The test owns its manager: `NoteManager.standalone(notebook:)` builds a private environment from <a href="/guide/05-model-layer">Chapter 5</a> over the test's own notebook, so nothing touches the production registry, and the only double is at the HTTP boundary — a `URLProtocol` stub registered on the session `SyncClient` uses, handed a payload in the server's wire shape.
 
 ```swift
 @MainActor
@@ -25,7 +25,7 @@ final class NoteManagerTests: TestCase {
             ]))
         }
 
-        try await NoteManager.shared.pull(notebookID: notebook.id)
+        try await NoteManager.standalone(notebook: notebook).pull()
 
         let titles = Note.all(in: notebook).map(\.title)
         XCTAssertEqual(titles, ["Monday", "Tuesday"])
@@ -33,14 +33,14 @@ final class NoteManagerTests: TestCase {
 }
 ```
 
-Everything between the stub and the assertion runs for real: `SyncClient` builds the request and decodes the response, `PullNotesJob` performs on the runner and merges in `handleResult`, the store writes to the in-memory database, and the model's query reads it back. Because the database merges background saves onto the main context automatically, the query sees the merged notes without a manual refresh — the same guarantee <a href="/guide/05-model-layer">Chapter 5</a> describes at runtime.
+Everything between the stub and the assertion runs for real: the environment builds its runner and both job contexts, `SyncClient` builds the request and decodes the response, `PullNotesJob` performs on the runner and merges in `handleResult`, the store writes to the in-memory database, and the model's query reads it back. A test that needs the sibling manager reaches `manager.environment.tagManager` rather than building a second graph. Because the database merges background saves onto the main context automatically, the query sees the merged notes without a manual refresh — the same guarantee <a href="/guide/05-model-layer">Chapter 5</a> describes at runtime.
 
 ```swift
 // ✅ Test the interface
-try await NoteManager.shared.pull(notebookID: notebook.id)
+try await NoteManager.standalone(notebook: notebook).pull()
 
 // ❌ Don't test the job directly
-let job = PullNotesJob(notebookID: notebook.id)
+let job = PullNotesJob()
 ```
 
 Model behavior that lives in the database itself — cascades, relationships, validation — is tested the same way, through the model's API against the in-memory stack:
@@ -79,7 +79,7 @@ final class MoveNoteActionTests: TestCase {
         let destination = try Notebook.make { n in n.setTitle("Published") }
         let note = try XCTUnwrap(Note.all(in: source).first)
 
-        let action = MoveNoteAction(noteID: note.id, from: source.id, to: destination.id)
+        let action = MoveNoteAction(noteID: note.id, from: source, to: destination)
         action.perform()
         await action.waitUntilFinished()
 
@@ -90,7 +90,7 @@ final class MoveNoteActionTests: TestCase {
 }
 ```
 
-A `DeleteTagAction` that forwards one call to `TagManager.shared.delete(_:)` gets no test; the manager's test already proves the deletion.
+A `DeleteTagAction` that forwards one call to `TagManager.shared(for:).delete(_:)` gets no test; the manager's test already proves the deletion. An Action reaches its managers through `shared(for:)` exactly as in production, so its test does go through the registry — over the test's own notebooks, which the in-memory database makes fresh each time.
 
 ## Validators
 
@@ -169,13 +169,13 @@ assert(Note.all(in: notebook).count == 3)
 Exercise real jobs through the manager entry point, with temporary storage and a narrow double at the external process or network boundary. Use a deliberate gate in the double to hold one operation while submitting the next; never a timing assertion built on `sleep`. Test the application's group declarations from <a href="/guide/07-concurrency">Chapter 7</a> and the behavior that results:
 
 - Queue a rename behind a note update, then verify both changes survive. This catches a job capturing its editable baseline too early.
-- Export while a save is pending and verify the export sees the completed save. Also verify work on a different notebook can proceed.
+- Export while a save is pending and verify the export sees the completed save.
 - Delete a note during ongoing work, then submit a delayed edit. Verify the edit reports the missing note and cannot recreate it.
 - Emit progress and then fail or cancel. Verify accepted progress precedes the final activity state, and a late callback cannot revive it.
 - Fail persistence after a successful download. Verify the activity reports failure and no successful-save notification is published. If an earlier step already saved data, verify that committed change is published accurately.
-- Start two draft requests with separate progress callbacks. Verify each caller receives only its own events, and a dismissed or replaced caller ignores stale updates.
+- Start a second draft while one is running. Verify the first settles on the draft activity before the second begins, and a cancelled request leaves the activity finished rather than generating.
 
-For a worker-only test, call `job.perform(context: work)`; progress-reporting jobs inherit that overload with reporting disabled, and it does not run result handling. To test progress and persistence together, use the manager entry point or `job.execute(context: work, resultContext: result)`. Assert the final accumulated text and meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
+For a worker-only test, call `job.perform(context: environment.workContext)`; progress-reporting jobs inherit that overload with reporting disabled, and it does not run result handling. To test progress and persistence together, use the manager entry point or `job.execute(work: environment.workContext, main: environment.mainContext)`, with the environment behind `manager.environment`. Assert the final accumulated text and meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
 
 The coalescing rule itself is a small, directly testable value operation:
 

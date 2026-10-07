@@ -79,25 +79,27 @@ A second, related line runs between the Model layer's manager functions and the 
 ```swift
 final class MoveNoteAction: Action {
     let noteID: NoteID
-    let destination: NotebookID
+    let source: Notebook
+    let destination: Notebook
 
     override func main() async throws {
         updateProgress(0.2)
-        try await NoteManager.shared.unlink(noteID, from: sourceNotebookID)
+        let note = try await NoteManager.shared(for: source).unlink(noteID)
         updateProgress(0.6)
-        try await NoteManager.shared.link(noteID, to: destination)
+        try await NoteManager.shared(for: destination).link(note)
         updateProgress(1.0)
     }
 }
 ```
 
-No composite "activity" type wraps the two manager calls. Cancelling the outer task cascades into whichever `await` is currently in flight, and progress reports through the same `status` every other Action uses.
+No composite "activity" type wraps the two manager calls. Cancelling the outer task cascades into whichever `await` is currently in flight, and progress reports through the same `status` every other Action uses. The two calls live here and not inside a `NoteManager.move` because managers never call each other — <a href="/guide/05-model-layer">Chapter 5</a>'s rule. The choreography of a move is this Action's to show, and the two notebooks' managers run on two different environments' queues.
 
 ### Smell checks
 
 - A manager function that posts a user-visible notification or registers undo has drifted into Action territory — post the notification and register undo in the Action, after the manager call returns.
 - An Action that issues raw I/O instead of calling a manager function has drifted the other way — push that work down.
 - An Action that bypasses its manager to read or write state directly breaks the single-funnel rule from <a href="/guide/05-model-layer">Chapter 5</a>. Go through the manager, always.
+- A manager calling another manager has taken over an Action's job. Lift the sequence into the Action that needs it; if two managers keep needing the same step, that step is a job both can enqueue.
 - A manager growing `isSyncRunning`-style in-flight flags is duplicating what the Action layer already knows — the central manager enumerates running Actions. Track in-flight state on a manager only when a consumer that isn't an Action genuinely needs to query it; parallel bookkeeping drifts.
 
 <div class="seealso">

@@ -30,7 +30,9 @@ final class MoveNoteTests: TestCase {
         let destination = try Notebook.make { n in n.setTitle("Archive") }
         let note = try XCTUnwrap(Note.all(in: source).first)
 
-        try await NoteManager.shared.move(note.id, from: source.id, to: destination.id)
+        let action = MoveNoteAction(noteID: note.id, from: source, to: destination)
+        action.perform()
+        await action.waitUntilFinished()
 
         XCTAssertNil(Note.note(id: note.id, in: source))
         XCTAssertNotNil(Note.note(id: note.id, in: destination))
@@ -122,7 +124,7 @@ func testPull_Unauthorized_SurfacesSyncError() async throws {
     let notebook = try Notebook.makeThreeNotes()
     stub(.get, "/notebooks/\(notebook.id)/notes") { _ in .status(401) }
 
-    await XCTAssertAsyncThrowsError(try await NoteManager.shared.pull(notebookID: notebook.id)) { error in
+    await XCTAssertAsyncThrowsError(try await NoteManager.standalone(notebook: notebook).pull()) { error in
         XCTAssertEqual(error as? SyncError, .unauthorized)
     }
 }

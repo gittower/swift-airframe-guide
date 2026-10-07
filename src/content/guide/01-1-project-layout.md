@@ -28,7 +28,8 @@ NotebookApp/
 │   ├── MarkdownImport/              another library below the model
 │   ├── NotebookCore/                THE MODEL LAYER                                          5
 │   │   ├── Sources/NotebookCore/
-│   │   │   ├── Notes/               Note, NoteManager, NoteStore, Note+Queries
+│   │   │   ├── Environment/         NotebookEnvironment, NotebookEnvironment+Shared          5
+│   │   │   ├── Notes/               Note, NoteManager, NoteStore, Note+Queries, NoteWorkContext, NoteMainContext, NoteActivities   5, 7
 │   │   │   │   └── Jobs/            PullNotesJob, RenameNoteJob, DraftSummaryJob, …         5, 7
 │   │   │   ├── Notebooks/           Notebook, NotebookManager, NotebookStore, ExportManager
 │   │   │   ├── Tags/                Tag, TagManager, LoadTagIndexJob
@@ -128,7 +129,7 @@ A feature may stay vertical only if all four conditions hold:
 3. <strong>Layered inside.</strong> Vertical means co-located, not unlayered. Model files are Foundation-only, views render state and emit intents, controllers decide when and never how. A feature may own a background controller, an action controller, even an Action if only the feature dispatches it. Its model and validators are tested; its controllers and views are not. The feature is the four-layer architecture at small scale, with a wall around it.
 4. <strong>No package consumer.</strong> Nothing in `NotebookCore` or `NotebookActions` names any of its types. The compiler enforces this for free while the folder lives in the app target.
 
-"Its own model" means private state, not a second source of truth. The feature's model is what nothing outside it reads. It may read the app's Model layer downward, through `NoteManager.shared` like any other code. It may never hold state that another feature displays, because the only way that state could get out is through a channel the facade rule forbids. State that two features need is app model and belongs in Core.
+"Its own model" means private state, not a second source of truth. The feature's model is what nothing outside it reads. It may read the app's Model layer downward, through `NoteManager.shared(for:)` like any other code. It may never hold state that another feature displays, because the only way that state could get out is through a channel the facade rule forbids. State that two features need is app model and belongs in Core.
 
 A feature lives under the root whose question it answers — `App/Telemetry/`, `UI/Screens/QuickOpen/`, `Integrations/ExternalEditor/`. There is deliberately no `Features/` root: vertical is a property a folder earns, not a place it goes to. The folder is flat until it needs layers, and then its subfolders are the layer names:
 

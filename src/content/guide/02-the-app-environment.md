@@ -19,7 +19,7 @@ The remaining two pieces outlive launch. <a href="/guide/02-4-settings">Settings
 
 <strong>Launch order is enforced, not assumed.</strong> Initializers only call into the Model layer; no controller starts before phase 4; nothing shows UI before the startup gates clear. Every object downstream is written assuming the subsystems it depends on are already configured — which is only safe because the phases make it true.
 
-<strong>The environment is ambient, not passed.</strong> Objects reach shared subsystems through flat accessors — <code>SyncManager.shared</code>, <code>EditorSettings.shared</code> — never through constructor-injected dependencies or a root service object. What varies gets configured once at launch; what doesn't stays concrete.
+<strong>The environment is ambient, not passed.</strong> Objects reach shared subsystems through flat accessors — <code>SyncManager.shared</code>, <code>EditorSettings.shared</code>, <code>NoteManager.shared(for: notebook)</code> — never through constructor-injected dependencies or a root object that only forwards. What varies gets configured once at launch; what doesn't stays concrete.
 
 </div>
 

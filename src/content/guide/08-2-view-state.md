@@ -74,7 +74,7 @@ final class NoteDetailStateController {
         guard let noteID else { return }
         state.isLoading = true
         defer { state.isLoading = false }
-        guard let note = try? await NoteManager.shared.note(id: noteID), !Task.isCancelled else { return }
+        guard let note = Note.note(id: noteID), !Task.isCancelled else { return }
         state.title = note.title
         state.body = note.body
     }

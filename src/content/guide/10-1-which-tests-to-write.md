@@ -31,7 +31,7 @@ The Foundation/AppKit boundary from <a href="/guide/01-getting-started">Chapter 
 <table>
 <thead><tr><th>Component</th><th>Test?</th><th>Notes</th></tr></thead>
 <tbody>
-<tr><td>Models &amp; managers</td><td><span class="pill">Yes</span></td><td>Test the interface — <code>NoteManager.shared.pull(notebookID:)</code> — not the job it schedules.</td></tr>
+<tr><td>Models &amp; managers</td><td><span class="pill">Yes</span></td><td>Test the interface — <code>NoteManager.pull()</code> — not the job it schedules.</td></tr>
 <tr><td>Action Validators</td><td><span class="pill">Yes</span></td><td>Pure precondition logic, Foundation-only.</td></tr>
 <tr><td>View State Controllers</td><td><span class="pill">Yes</span></td><td>Foundation-only data shaping — the one testable controller kind.</td></tr>
 <tr><td>Actions</td><td><span class="pill">Only if multi-step</span></td><td>An Action that forwards a single manager call is covered by the manager's test.</td></tr>
@@ -135,7 +135,7 @@ If there is no branching at all, write no test.
 
 - **All non-trivial logic:** parsing, mapping, validation, state transitions, anything with more than one code path, wherever it lives.
 - **Bug fixes:** reproduce the bug in a failing test first, then fix — the workflow is <a href="/guide/10-2-testing-workflows">Chapter 10.2</a>. If you cannot write the test, ask why: a missing factory or builder primitive is written first, code that resists testing is restructured.
-- **The public interface**, not the mechanism behind it: `NoteManager.shared.pull(notebookID:)`, not the `PullNotesJob` it enqueues; the model's query, not the store underneath it.
+- **The public interface**, not the mechanism behind it: `NoteManager.pull()`, not the `PullNotesJob` it enqueues; the model's query, not the store underneath it.
 - **Components that add a decision** over the ones they call. A multi-step Action or a coordinator with branching is tested; one that forwards a single call is covered by the callee's tests and needs none of its own.
 
 ## What not to test

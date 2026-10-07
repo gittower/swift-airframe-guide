@@ -80,7 +80,11 @@ final class StaleDraftReaper: BackgroundController {
 
     private func reap() {
         let cutoff = Date().addingTimeInterval(-30 * 24 * 3600)
-        NoteManager.shared.deleteDrafts(olderThan: cutoff)
+        Task {
+            for notebook in Notebook.all() {
+                try? await NoteManager.shared(for: notebook).deleteDrafts(olderThan: cutoff)
+            }
+        }
     }
 }
 ```
@@ -93,7 +97,7 @@ The lifecycle rules the example encodes:
 
 ## The work goes elsewhere
 
-Look at what `reap()` actually does: one line, a call into `NoteManager`. That is not an accident of the example — it is the rule. A background controller decides <em>when</em>; the <em>what</em> is a named collaborator below the boundary — a manager function, a background job from <a href="/guide/07-concurrency">Chapter 7</a>, a Foundation-only helper that computes the state a projector publishes. The collaborator is tested where it lives, `deleteDrafts(olderThan:)` in the model package per <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>. The controller is not tested at all, per <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a>: there is no decision in it that can regress on its own, and a test of it would either restate the wiring or become an integration test of everything it touches.
+Look at what `reap()` actually does: one manager call per open notebook, nothing else. That is not an accident of the example — it is the rule. A background controller decides <em>when</em>; the <em>what</em> is a named collaborator below the boundary — a manager function, a background job from <a href="/guide/07-concurrency">Chapter 7</a>, a Foundation-only helper that computes the state a projector publishes. The collaborator is tested where it lives, `deleteDrafts(olderThan:)` in the model package per <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>. The controller is not tested at all, per <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a>: there is no decision in it that can regress on its own, and a test of it would either restate the wiring or become an integration test of everything it touches.
 
 So the tell is simple. If a background controller's body contains a computation, a filter, a decision beyond "fire now" — anything you would want a test for — that is a collaborator waiting to be extracted. A background controller that would need its own test is a sign the split is wrong.
 
