@@ -1,44 +1,47 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-09-29",
+  "lastSync": "2026-10-07",
   "documents": {
     "manager-architecture": {
-      "updated_at": "2026-10-07T12:02:55.089+00:00",
-      "sha256": "5f3348baed05fbc9df4b61c8993413254d070aac3fc59a20150a49f709791cda",
+      "updated_at": "2026-10-07T15:25:07.513+00:00",
+      "sha256": "0811593ac62b2d6bcb2a873206f4aaf09f8654e086784e213b63129ea976fbd0",
       "chapters": [
         "05-model-layer",
-        "07-concurrency"
+        "05-2-the-environment",
+        "05-3-the-manager",
+        "05-4-jobs-and-contexts"
       ]
     },
     "async-cancellation-patterns": {
-      "updated_at": "2026-09-09T17:24:53.257+00:00",
+      "updated_at": "2026-09-19T11:13:57.834+00:00",
       "sha256": "41ac79a01f1fcd05dc921a91890c44cdd373ae1821f92a7d280c30879ebf3f6d",
       "chapters": [
-        "07-concurrency"
+        "05-3-the-manager",
+        "05-9-cancellation"
       ]
     },
     "object-wiring-shared-instances-and-configure": {
-      "updated_at": "2026-10-07T12:01:37.908+00:00",
-      "sha256": "bc01ae68a3bfd7943d146ed2323517700be7f62a52c11a4c8a3d2500c0124a09",
+      "updated_at": "2026-10-07T15:21:08.118+00:00",
+      "sha256": "231e1fb147c3fcbcc8d00c60aac1d49edc9f87e03329237fbd85ec68e79f99ee",
       "chapters": [
         "02-5-object-wiring",
-        "05-model-layer"
+        "05-2-the-environment"
       ]
     },
     "view-state-management-stateobserving-protocol": {
       "updated_at": "2026-09-12T11:09:20.214+00:00",
       "sha256": "df0b2c359f2c3cf29b296f529dbcd780cfa6488526fa9eca4a0bdaf6d228d931",
       "chapters": [
-        "08-1-views",
-        "08-4-state-observing"
+        "07-1-views",
+        "07-4-state-observing"
       ]
     },
     "model-queries-static-accessors-via-model-queries-swift": {
       "updated_at": "2026-09-13T12:23:57.83+00:00",
       "sha256": "7de0af9f3d76a7584b2d69cb7f3a221a76317f229eb0c0fb06b6cf9b816d7515",
       "chapters": [
-        "05-model-layer"
+        "05-1-the-model"
       ]
     },
     "migrating-objective-c-observer-classes-to-combine-publishers": {
@@ -51,18 +54,18 @@
       "updated_at": "2026-09-29T05:21:46.401+00:00",
       "sha256": "097fc212d8b2d1700fa91ae3cbbd6e073a7331b9ce5dccf346af40d2ebf29f31",
       "chapters": [
-        "08-1-views",
-        "08-2-view-state",
-        "08-4-state-observing"
+        "07-1-views",
+        "07-2-view-state",
+        "07-4-state-observing"
       ]
     },
     "view-state-management-patterns-and-lifecycle": {
       "updated_at": "2026-09-29T05:20:05.984+00:00",
       "sha256": "95f752d56918e4078f68bc21b66006ec3b5021248cf39ca785283f2bfceaea63",
       "chapters": [
-        "08-1-views",
-        "08-2-view-state",
-        "08-4-state-observing"
+        "07-1-views",
+        "07-2-view-state",
+        "07-4-state-observing"
       ]
     },
     "toolbar-item-management-item-classes-and-the-badge-model": {
@@ -81,30 +84,30 @@
       "updated_at": "2026-09-17T06:08:21.187+00:00",
       "sha256": "3e9d5ba171be59f6a9ea9e04dd73134f20eddea10c31ee444f26f29b42fca9d8",
       "chapters": [
-        "10-5-inside-a-test-class"
+        "09-5-inside-a-test-class"
       ]
     },
     "test-factories-builders-and-fixtures": {
       "updated_at": "2026-09-17T06:07:57.154+00:00",
       "sha256": "c0e700d3acd7f18db3441d22a874846adb804cb2d6639de70138d88385c9dabd",
       "chapters": [
-        "10-4-factories-builders-and-fixtures"
+        "09-4-factories-builders-and-fixtures"
       ]
     },
     "test-suite-layout-and-test-kinds": {
       "updated_at": "2026-09-17T06:07:33.717+00:00",
       "sha256": "8443b03d34f09800ac9893a78584e9d189dafca61e5cf7499f4e58c8fb7849fa",
       "chapters": [
-        "10-3-suite-layout-and-test-kinds"
+        "09-3-suite-layout-and-test-kinds"
       ]
     },
     "unit-testing-conventions": {
       "updated_at": "2026-09-17T06:10:33.838+00:00",
       "sha256": "b46058966b7b2f234a0f1db30d3d2965fe702d86fb676ccf369bb90581c12f0f",
       "chapters": [
-        "10-1-which-tests-to-write",
-        "10-5-inside-a-test-class",
-        "10-6-testing-each-layer"
+        "09-1-which-tests-to-write",
+        "09-5-inside-a-test-class",
+        "09-6-testing-each-layer"
       ]
     },
     "what-s-new-feature-architecture-and-content-guidelines": {
@@ -118,15 +121,15 @@
       "sha256": "67a66bca3b5ad9adf7a883f4e88e72fa89198a743e3ead875138c401723b0dc6",
       "chapters": [
         "01-getting-started",
-        "08-1-views",
-        "08-2-view-state"
+        "07-1-views",
+        "07-2-view-state"
       ]
     },
     "swift-test-base-class-subclass-testcase-and-use-userdefaults-shared": {
       "updated_at": "2026-07-01T15:12:42.5+00:00",
       "sha256": "334b81faf8b410ca353b91e64ed54a9058850303cb322e76e727b9dd8614ebe2",
       "chapters": [
-        "10-5-inside-a-test-class"
+        "09-5-inside-a-test-class"
       ]
     },
     "actions-and-activities": {
@@ -159,32 +162,34 @@
       ]
     },
     "model-layer-organization": {
-      "updated_at": "2026-09-13T15:26:31.704+00:00",
+      "updated_at": "2026-09-19T11:13:51.005+00:00",
       "sha256": "9944a82afd4d4c7483bdaf6afb787a0fa79d10da38a7eafce3e9cda74346ad62",
       "chapters": [
         "02-4-settings",
-        "05-model-layer"
+        "05-1-the-model",
+        "05-7-model-shapes"
       ]
     },
     "repository-queue": {
-      "updated_at": "2026-09-09T17:26:37.791+00:00",
+      "updated_at": "2026-09-19T11:13:56.275+00:00",
       "sha256": "d113939317c1e2b8fc2d4debfd0057befb693dcec74752c73c4843b0dc63b215",
-      "chapters": [],
-      "scope": "unmapped"
+      "chapters": [
+        "05-5-runners-and-scheduling"
+      ]
     },
     "serial-task-runner": {
-      "updated_at": "2026-09-09T17:27:10.865+00:00",
+      "updated_at": "2026-09-19T11:13:54.543+00:00",
       "sha256": "67ff57ccf51b3733be378e0ea845fbd496e6c58c8791570a50ab266ee33f69e9",
       "chapters": [
-        "07-concurrency"
+        "05-5-runners-and-scheduling"
       ]
     },
     "background-task-structs": {
-      "updated_at": "2026-10-07T12:03:51.091+00:00",
-      "sha256": "4e690603ccf9204b395cc8de3ec7ec48aa30e5b6420450267b7d0f7640c079b5",
+      "updated_at": "2026-10-07T15:21:51.052+00:00",
+      "sha256": "e551c1291845024faa70a3fc0647cc2baa7eb9660404cf20d8eba126ae9cf5e4",
       "chapters": [
-        "05-model-layer",
-        "07-concurrency"
+        "05-4-jobs-and-contexts",
+        "05-6-progress-and-activities"
       ]
     },
     "swiftlint-pre-commit-hook": {
@@ -194,10 +199,10 @@
       "scope": "out-of-scope"
     },
     "model-state-cases-for-change-notification": {
-      "updated_at": "2026-09-13T15:26:52.75+00:00",
+      "updated_at": "2026-09-19T11:13:49.183+00:00",
       "sha256": "2f175ef15fc2300cb9c0e4c3c2b0e726b4e27bb6bcd0f8d20dcab74d4f0a6480",
       "chapters": [
-        "05-model-layer"
+        "05-1-the-model"
       ]
     },
     "architecture-overview": {
@@ -234,15 +239,15 @@
       "updated_at": "2026-05-03T14:31:25.971+00:00",
       "sha256": "c795aee71d46efe1c6496b228016162da4ba92d88cbc76745bcd96ca721e6154",
       "chapters": [
-        "10-testing",
-        "10-2-testing-workflows"
+        "09-testing",
+        "09-2-testing-workflows"
       ]
     },
     "performance-tests-conventions-and-setup": {
       "updated_at": "2026-04-29T11:51:10.024+00:00",
       "sha256": "ddbde81406fe71235b063c720026df01655ed5e101866a2a1d2765c66a009aff",
       "chapters": [
-        "10-3-suite-layout-and-test-kinds"
+        "09-3-suite-layout-and-test-kinds"
       ],
       "scope": "cookbook-candidate"
     },
@@ -253,10 +258,10 @@
       "scope": "cookbook-candidate"
     },
     "execution-strategies": {
-      "updated_at": "2026-04-26T15:30:51.607+00:00",
+      "updated_at": "2026-09-19T11:14:55.289+00:00",
       "sha256": "42bb834f1eb0fd445d99ec63dc8e65b79f246cd09182344ab18c45a26d88e4af",
       "chapters": [
-        "07-concurrency"
+        "05-8-execution-strategies"
       ]
     },
     "http-client-library-guidelines": {
@@ -269,14 +274,14 @@
       "updated_at": "2026-03-24T14:21:04.507+00:00",
       "sha256": "ab9c2d721c2cc41bfc1229be3c6b59eeb9a8498d0d626cda590b405f2387292a",
       "chapters": [
-        "08-5-menus"
+        "07-5-menus"
       ]
     },
     "managing-menus": {
       "updated_at": "2026-03-24T14:02:05.897+00:00",
       "sha256": "4acda763ce2e3e54a8e275523c4eced463fd610fb54452fba9d7a7db60317ef8",
       "chapters": [
-        "08-5-menus"
+        "07-5-menus"
       ]
     },
     "text-plugin-system-architecture": {
@@ -289,50 +294,50 @@
       "updated_at": "2026-03-13T07:04:03.482+00:00",
       "sha256": "66d26f045280ff2813173d742c3fccfab3bfd8b17a7a5efd145b5ff2c39c2594",
       "chapters": [
-        "08-3-view-controllers"
+        "07-3-view-controllers"
       ]
     },
     "programmatic-views-view-controller-assembly": {
       "updated_at": "2026-03-13T06:50:13.317+00:00",
       "sha256": "beb1abf1148f9b2516125d1750a6a29f03ec78e208d5e240dd9092d3d8600095",
       "chapters": [
-        "08-3-view-controllers"
+        "07-3-view-controllers"
       ]
     },
     "nshostingcontroller-vs-nshostingview-choosing-the-right-approach": {
       "updated_at": "2026-03-10T06:14:20.845+00:00",
       "sha256": "7bef2e37a3e7a4263d2c455df27a79fbe4c40ddb734c7928d58475da36f299bd",
       "chapters": [
-        "08-1-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-view-composition-and-swapping": {
       "updated_at": "2026-03-08T19:34:20.864+00:00",
       "sha256": "3379430e0e4f1812604e8af41014b2cd9767bc1ae2b36295756cdbae0a06ec18",
       "chapters": [
-        "08-1-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-layout-constraints": {
       "updated_at": "2026-03-08T19:33:22.944+00:00",
       "sha256": "25fab3517b40bfcbcaa543c6a80d8775d36485454f8257b71c3829ff9c6358cd",
       "chapters": [
-        "08-1-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-view-components": {
       "updated_at": "2026-03-08T19:32:53.797+00:00",
       "sha256": "2be5945e4d6726dc922d7282ff8ea0c1b9fa22bdf6299e99c97f5fef8f4e4177",
       "chapters": [
-        "08-1-views"
+        "07-1-views"
       ]
     },
     "programmatic-views-three-layer-architecture": {
       "updated_at": "2026-09-29T05:20:15.991+00:00",
       "sha256": "5fd297bd9e73199dfac6dce74a17aa4bff4377e3be6b0d960af6b6307be52100",
       "chapters": [
-        "08-1-views",
-        "08-2-view-state"
+        "07-1-views",
+        "07-2-view-state"
       ]
     },
     "view-styling-guideline-replacing-viewstyles-with-local-definitions": {
@@ -367,14 +372,14 @@
       "updated_at": "2026-03-07T12:14:24.377+00:00",
       "sha256": "8c9ff4848a2ad1efd19e1bd7d01a13490da82d210a314b085816bf22c298ce08",
       "chapters": [
-        "08-1-views"
+        "07-1-views"
       ]
     },
     "swiftui-naming-conventions-screen-page-view": {
       "updated_at": "2026-03-07T12:04:04.633+00:00",
       "sha256": "e86a2040786176f53b35978b8ee62393ab4d894c7bba749a6baf273d74196838",
       "chapters": [
-        "08-1-views"
+        "07-1-views"
       ]
     },
     "project-directory-structure": {
@@ -383,15 +388,27 @@
       "chapters": [
         "01-1-project-layout",
         "02-4-settings",
-        "10-3-suite-layout-and-test-kinds"
+        "09-3-suite-layout-and-test-kinds"
       ]
     },
     "user-preferences-window-toolbar-tabs-swiftui-panes-and-settings-controllers": {
       "updated_at": "2026-09-27T16:09:20.644+00:00",
       "sha256": "780ebdaa109d9c586b0256435a9857b1cf24bc10dfcd1d96b598584f7a2a006e",
       "chapters": [
-        "08-6-settings-window"
+        "07-6-settings-window"
       ]
+    },
+    "auditable-components-and-layers-audit-skill-map": {
+      "updated_at": "2026-09-22T12:48:49.296+00:00",
+      "sha256": "235d587017c70153f17fbd6cc1391281945ed4fcea936534a4be779d42edcf2a",
+      "chapters": [],
+      "scope": "out-of-scope"
+    },
+    "partly-relative-date-display-relative-recent-absolute-beyond": {
+      "updated_at": "2026-09-22T10:49:10.71+00:00",
+      "sha256": "38005db980e329dec9eb4361716044e981f1ec77be75bda9b3a38429cd371905",
+      "chapters": [],
+      "scope": "cookbook-candidate"
     }
   },
   "otherDomains": {
@@ -402,24 +419,24 @@
           "updated_at": "2026-09-17T06:09:45.809+00:00",
           "sha256": "a9e38403e3133ecad0111e73d01fb30f5abf17459616bb4039351151f0ca7f7e",
           "chapters": [
-            "10-testing",
-            "10-2-testing-workflows"
+            "09-testing",
+            "09-2-testing-workflows"
           ]
         },
         "which-tests-to-write": {
           "updated_at": "2026-09-17T06:09:24.163+00:00",
           "sha256": "255282b7ad08a9aa4e28b21d09d8d603ec79fb53130b2f743152ccb996e3795f",
           "chapters": [
-            "10-1-which-tests-to-write"
+            "09-1-which-tests-to-write"
           ]
         },
         "test-design-principles": {
           "updated_at": "2026-09-17T06:08:48.633+00:00",
           "sha256": "a03cfeb653d77bb9790e3acc8d80d7b73cc4d101ea74add1d4e63753162ec1bb",
           "chapters": [
-            "10-3-suite-layout-and-test-kinds",
-            "10-4-factories-builders-and-fixtures",
-            "10-5-inside-a-test-class"
+            "09-3-suite-layout-and-test-kinds",
+            "09-4-factories-builders-and-fixtures",
+            "09-5-inside-a-test-class"
           ]
         }
       }
