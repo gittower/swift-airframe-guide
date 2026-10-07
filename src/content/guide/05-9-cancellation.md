@@ -154,7 +154,7 @@ The termination handler maps a signal death to `CancellationError`, so the job a
 <tbody>
 <tr><td><strong>Cancel-and-replace</strong></td><td>Built in: the previous task is cancelled when a new one starts. The caller never cancels by hand; the <code>checkCancellation</code> before the write is what keeps the superseded result out.</td></tr>
 <tr><td><strong>Serial</strong></td><td>Cancels the one caller's job, queued or running. Later jobs in the queue are unaffected and run when their turn comes.</td></tr>
-<tr><td><strong>Coalesce</strong></td><td>Does <em>not</em> cancel the shared work — other callers still want it. Coalesced methods deliberately drop the bridge; a caller that needs to bail checks cancellation after the await.</td></tr>
+<tr><td><strong>Coalesce</strong></td><td>Does <em>not</em> cancel the shared work — other callers still want it. Coalesced methods await through <code>awaitShared</code>, which has no bridge and checks cancellation after the await instead, so a cancelled caller bails without touching the shared job.</td></tr>
 <tr><td><strong>Gate</strong></td><td>Cancels through the outer task like any operation. The <code>defer</code> that re-opens the gate still runs, so the next attempt is allowed.</td></tr>
 </tbody>
 </table>

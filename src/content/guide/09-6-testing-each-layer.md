@@ -183,6 +183,7 @@ Exercise real jobs through the manager entry point, with temporary storage and a
 
 - Queue a rename behind a note update, then verify both changes survive. This catches a job capturing its editable baseline too early.
 - Export while a save is pending and verify the export sees the completed save.
+- Request a pull while one is queued behind a held job, then verify one fetch serves both callers. Queue a save behind the pull and request again, then verify a second fetch runs after the save.
 - Delete a note during ongoing work, then submit a delayed edit. Verify the edit reports the missing note and cannot recreate it.
 - Emit progress and then fail or cancel. Verify accepted progress precedes the final activity state, and a late callback cannot revive it.
 - Fail persistence after a successful download. Verify the activity reports failure and no successful-save notification is published. If an earlier step already saved data, verify that committed change is published accurately.

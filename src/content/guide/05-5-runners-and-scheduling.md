@@ -1,11 +1,11 @@
 ---
 title: "Runners and Scheduling"
-description: "@MainActor protects a synchronous read, not an operation that suspends halfway through. This subchapter covers the runner that closes that gap — the serial runner and why it is a struct and not an actor, the grouped runner that lets reads overlap, how a job declares what it touches, the enqueue helper that adopts it, and how deleting something with work in flight becomes one submission instead of a race."
+description: "@MainActor protects a synchronous read, not an operation that suspends halfway through. This subchapter covers the runner that closes that gap — the serial runner's API and why it is a struct and not an actor, the grouped runner that lets reads overlap, how a job declares what it touches, the enqueue helper that adopts it, how a reload that is already queued is shared instead of run twice, and how deleting something with work in flight becomes one submission instead of a race."
 order: 5
 subOrder: 5
 ---
 
-`@MainActor` protects a synchronous read, not an operation that suspends halfway through. This subchapter covers the runner that closes that gap — the serial runner and why it is a struct and not an actor, the grouped runner that lets reads overlap, how a job declares what it touches, the enqueue helper that adopts it, and how deleting something with work in flight becomes one submission instead of a race.
+`@MainActor` protects a synchronous read, not an operation that suspends halfway through. This subchapter covers the runner that closes that gap — the serial runner's API and why it is a struct and not an actor, the grouped runner that lets reads overlap, how a job declares what it touches, the enqueue helper that adopts it, how a reload that is already queued is shared instead of run twice, and how deleting something with work in flight becomes one submission instead of a race.
 
 ## The gap a runner closes
 
@@ -27,59 +27,40 @@ The runner belongs to the environment from <a href="/guide/05-2-the-environment"
 
 ## The serial runner
 
-`SerialTaskRunner` runs async closures one at a time, in strict FIFO order, off the main thread, with synchronous enqueue. It is small enough to read in full:
+`SerialTaskRunner` runs async closures one at a time, in strict FIFO order, off the main thread, with synchronous enqueue. Its whole surface is three members:
 
 ```swift
 // Packages/Concurrency/SerialTaskRunner.swift
 struct SerialTaskRunner: Sendable {
-    private let state = State()
+    init()
 
-    private final class State: @unchecked Sendable {
-        let lock = NSLock()
-        var previous: Task<Void, Never>?
-    }
-
+    /// Adds `operation` to the end of the queue. It starts once every operation added before it has ended,
+    /// even one that was cancelled, so two operations never run at the same time. With a `key`, an operation
+    /// equal to one still waiting at the end of the queue is not added — the returned task is that operation's.
     @discardableResult
     func run<T: Sendable>(
+        coalescing key: AnyHashable? = nil,
         priority: TaskPriority? = nil,
         _ operation: @Sendable @escaping () async throws -> T
-    ) -> Task<T, Error> {
-        state.lock.lock()
-        let prev = state.previous
-        state.lock.unlock()
+    ) -> Task<T, Error>
 
-        let task = Task.detached(priority: priority) {
-            _ = await prev?.value            // wait for the predecessor
-            try Task.checkCancellation()     // bail if cancelled while queued
-            return try await operation()
-        }
-
-        state.lock.lock()
-        state.previous = Task.detached { _ = try? await task.value }
-        state.lock.unlock()
-
-        return task
-    }
-
-    func cancelAll() {
-        state.lock.lock()
-        let prev = state.previous
-        state.previous = nil
-        state.lock.unlock()
-        prev?.cancel()
-    }
+    /// Cancels the running operation and every queued one. The running one stops at its next cancellation
+    /// check; queued ones never start. An operation added afterwards still waits until the cancelled ones have ended.
+    func cancelAll()
 }
 ```
 
-Each piece is there for a reason:
+What the API promises, and why each promise matters:
 
-- <strong>A struct over a reference-typed `State`.</strong> Cheap to copy, and every copy coordinates through the same chain — which is what lets several managers share one runner by value.
-- <strong>`Task.detached`.</strong> A plain `Task { }` inherits the caller's actor; called from a `@MainActor` manager it would run on the main thread and defeat the purpose.
-- <strong>Two tasks per call.</strong> The returned task carries `T` and `Error`. The chain task is uniformly `Task<Void, Never>` so heterogeneous return types still link: `run { String }` can follow `run { Int }`.
-- <strong>`checkCancellation` before the operation.</strong> A task cancelled while waiting its turn never starts its work.
-- <strong>A lock, held only across a pointer swap.</strong> Never `await` while holding it.
+- <strong>Strict FIFO, one at a time.</strong> An operation starts only after every operation added before it has ended, whichever way it ended. That is the transaction the table above asks for.
+- <strong>Synchronous enqueue.</strong> `run` returns before anything runs, so a `@MainActor` manager can check state and submit in one synchronous step with no suspension in between.
+- <strong>Off the main thread.</strong> The operation runs on the cooperative pool with no inherited isolation; a job's main-actor handlers hop back explicitly — <a href="/guide/05-4-jobs-and-contexts">Chapter 5.4</a>.
+- <strong>A typed task per call.</strong> The returned `Task<T, Error>` carries the operation's own result type, so `run { String }` and `run { Int }` sit in one queue.
+- <strong>Cancellation while queued bails before the operation runs.</strong> A task cancelled while waiting its turn never starts its work, and cancelling it never breaks the chain for the operations behind it.
+- <strong>A value type over shared state.</strong> Copies of a runner coordinate through the same queue, which is what lets several managers share one by value.
+- <strong>A coalescing key.</strong> Covered below, once the grouped runner is in place, because the two runners differ in exactly one detail there.
 
-Why not an actor? Calling an actor method is itself an `await`, so enqueueing from `@MainActor` would suspend just to submit — and between any pre-enqueue check and that suspension, state can change. Actor re-entrancy also weakens FIFO: the `await prev?.value` inside an actor method is a suspension point that opens the door to reordering. The struct keeps enqueue synchronous and the chain tight.
+Why a struct and not an actor? Calling an actor method is itself an `await`, so enqueueing from `@MainActor` would suspend just to submit — and between any pre-enqueue check and that suspension, state can change. Actor re-entrancy also weakens FIFO: the wait for the predecessor inside an actor method is a suspension point that opens the door to reordering. The struct keeps enqueue synchronous and the chain tight, with a lock held only across the bookkeeping and never across an `await`.
 
 `run` is synchronous and returns a raw `Task`, and that is correct <em>for `run` itself</em>: it is the primitive a manager's `async` method wraps, never the shape the manager presents to its own callers. <a href="/guide/05-3-the-manager">Chapter 5.3</a> has the bridge. The same goes for `cancelAll()`: it exists on the primitive, and nothing outside the package can reach the runner to call it — cancellation arrives through the callers' own tasks, as <a href="/guide/05-9-cancellation">Chapter 5.9</a> lays out.
 
@@ -95,6 +76,7 @@ Use `SerialTaskRunner` when all operations share one resource and must run one a
 <tr><td><strong>What a job declares</strong></td><td>Nothing</td><td>Its groups and an access mode</td></tr>
 <tr><td><strong>Use when</strong></td><td>One logical resource, no read parallelism wanted — <strong>default when unsure</strong></td><td>One resource with semi-independent areas, or frequent reads that should not wait on each other</td></tr>
 <tr><td><strong>Cancellation</strong></td><td>Per task, or everything</td><td>Per task, by group, or everything</td></tr>
+<tr><td><strong>A queued reload is shared until</strong></td><td>anything is enqueued behind it</td><td>an overlapping write is enqueued behind it</td></tr>
 </tbody>
 </table>
 </div>
@@ -161,6 +143,41 @@ Declaring the `.notes` group on every rename also serialises edits to different 
 
 ## Adopting the grouped runner
 
+The grouped runner's surface is the serial runner's, with the declarations added to `run` and one more way to cancel:
+
+```swift
+// Packages/Concurrency/GroupedTaskRunner.swift
+struct GroupedTaskRunner<Group: Hashable & Sendable>: Sendable {
+    init()
+
+    /// Adds `operation` behind every queued or running operation it conflicts with — one whose groups overlap
+    /// `groups` where either side writes — and cancels the ones whose groups contain a member of `cancelling`.
+    /// With a `key`, an operation equal to one still waiting with no overlapping write behind it is not added.
+    @discardableResult
+    func run<T: Sendable>(
+        groups: Set<Group>,
+        access: TaskAccessMode,
+        cancelling: Set<Group> = [],
+        coalescing key: AnyHashable? = nil,
+        priority: TaskPriority? = nil,
+        _ operation: @Sendable @escaping () async throws -> T
+    ) -> Task<T, Error>
+
+    /// Cancels every queued or running operation whose groups contain `group`.
+    func cancel(group: Group)
+    func cancelAll()
+}
+
+enum TaskAccessMode: Sendable { case read, write }
+
+/// What a job declares so the manager's helper can pass it to `run`.
+protocol TaskAccess {
+    associatedtype Group: Hashable & Sendable
+    var groups: Set<Group> { get }
+    var access: TaskAccessMode { get }
+}
+```
+
 Change the environment's runner to `GroupedTaskRunner<NoteJobGroup>()`, then replace the body of `enqueue` in the `NotebookManaging` extension from Chapter 5.3:
 
 ```swift
@@ -184,6 +201,47 @@ extension NotebookManaging {
 Every manager in the environment picks up the new helper, and no public method changes. The third `where` clause joins the first two as a compile-time fence: a job declaring another domain's groups cannot be scheduled here.
 
 Mode and groups live on the job rather than at the call site because for these jobs they never vary — a rename is always a write to its note. If a job's locking genuinely differed per call, the groups would be an `enqueue` argument instead, and the job would stay pure work.
+
+## Coalescing a queued reload
+
+A pull asked for while a pull is still waiting in the queue should not run twice. The runner is the right owner of that decision because it alone knows the two facts it depends on: when a queued operation <em>starts</em>, and what was enqueued <em>behind</em> it. That is what the `coalescing:` key on both `run` methods is for. With a key, an operation equal to one that is still waiting is not added at all — the caller gets the waiting operation's task. The moment that operation starts, its key is spent, because it may read the source before a later request arrives. And the moment something that can change state is enqueued behind it, its key is spent too, because a later request wants state from after that change. Here the two runners differ, and it is the only place they do:
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Runner</th><th>A queued operation stays shareable until…</th></tr></thead>
+<tbody>
+<tr><td><code>SerialTaskRunner</code></td><td>anything is enqueued behind it — every operation counts as a writer</td></tr>
+<tr><td><code>GroupedTaskRunner</code></td><td>a <strong>writer</strong> whose groups overlap its own is enqueued behind it — a read behind it, or a write to disjoint groups, changes nothing</td></tr>
+</tbody>
+</table>
+</div>
+
+The key is the job itself. Jobs are structs of `let` inputs, so `Hashable` is synthesised for free, and "two equal jobs coalesce" is the right rule: every `PullNotesJob()` equals every other, while a `ReloadNoteJob(noteID:)` equals only a reload of the same note. `AnyHashable` includes the type, so two job types with equal fields never collide, and anything that must not be shared — a `force` flag — goes into the job and therefore into the key.
+
+The manager adopts the key through a second helper next to `enqueue`, and a second bridge, because a shared task has several waiters and none of them may cancel it:
+
+```swift
+extension NotebookManaging {
+    /// Like `enqueue`, but a job equal to one still waiting in the queue is not added — the returned task is that job's.
+    func enqueueCoalescing<J: BackgroundJob & TaskAccess & Hashable>(_ job: J) throws -> Task<J.Output, Error>
+    where J.WorkContext == NoteWorkContext, J.MainContext == NoteMainContext, J.Group == NoteJobGroup {
+        try Task.checkCancellation()
+        let work = environment.workContext, main = environment.mainContext
+        return environment.runner.run(groups: job.groups, access: job.access, coalescing: job) {
+            try await job.execute(work: work, main: main)
+        }
+    }
+
+    /// Coalesced work is shared with other callers, so this caller's cancellation must not reach it.
+    func awaitShared<T: Sendable>(_ task: Task<T, Error>) async throws -> T {
+        let value = try await task.value
+        try Task.checkCancellation()
+        return value
+    }
+}
+```
+
+Which jobs may coalesce, what a caller is promised, and the scenarios that follow from the rule are the subject of <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>, where `pull()` becomes one line again.
 
 ## Deleting a note with ongoing work
 

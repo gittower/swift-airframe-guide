@@ -95,33 +95,51 @@ func enqueue(_ work: @escaping @Sendable () async -> Void) {
 
 ## Coalesce
 
-Concurrent callers want the same result. Instead of starting a second identical operation, the later caller piggybacks on the one in flight.
+The same reload is asked for twice before the first has started. The second request attaches to the queued one instead of adding a job that would fetch the same thing again.
 
-A pull is the notebook app's case: `SyncUpdater`, a timer-driven background controller from <a href="/guide/04-background-controllers">Chapter 4</a>, pulls every notebook on an interval, and the user can press Sync Now at any moment. With a serial runner alone, the second pull would queue and run a redundant fetch the instant the first finished. Coalescing makes both callers wait on one:
+A pull is the notebook app's case: `SyncUpdater`, a timer-driven background controller from <a href="/guide/04-background-controllers">Chapter 4</a>, pulls every notebook on an interval, and the user can press Sync Now at any moment. With a serial runner alone, the second pull would queue and run a redundant fetch the instant the first finished. The runner's coalescing key from <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> shares the queued one, and `pull()` stays one line:
 
 ```swift
-// In NoteManager — replaces the one-line pull() from Chapter 5.3. A pull already in flight is the result every caller wants.
-private var inFlightPull: Task<[Note], Error>?
+// NotebookCore/Notes/Jobs/PullNotesJob.swift — add Hashable to the declaration from Chapter 5.4, so the job is its own key
+struct PullNotesJob: BackgroundJob, TaskAccess, Hashable { /* unchanged */ }
 
+// In NoteManager — replaces the pull() from Chapter 5.3. The manager holds no in-flight state.
 func pull() async throws {
-    if let inFlight = inFlightPull {
-        _ = try await inFlight.value          // piggyback — no second fetch
-        return
-    }
-    let task = try enqueue(PullNotesJob())
-    inFlightPull = task
-    defer { inFlightPull = nil }
-    _ = try await task.value
+    _ = try await awaitShared(enqueueCoalescing(PullNotesJob()))
 }
 ```
 
-There is no suspension between checking `inFlightPull` and setting it, so two callers arriving together cannot both start work — `@MainActor` is still the lock for the synchronous part. The `defer` clears the handle whichever way the owning call ends.
+<strong>What a caller is promised.</strong> When `pull()` returns, the model reflects the sync service as of no earlier than the moment `pull()` was called, and every job enqueued before that call has run. FIFO gives the second half for free. Coalescing may only share work that still satisfies both halves, and three rules protect that:
 
-Notice what is missing: the cancellation bridge. Cancelling one caller must not cancel work another caller is waiting on, so neither the owner nor the piggybacker forwards cancellation to the shared task. A pull runs to completion once started — it is a mutation that must land, exactly the category <a href="/guide/05-9-cancellation">Chapter 5.9</a> says is not worth cancelling. A caller that needs to bail early checks cancellation after the await, before using the result.
+1. <strong>Never share a running job.</strong> It may have read the source before the request arrived.
+1. <strong>Share a queued job only while nothing that can change state sits behind it.</strong> The serial runner spends the key on any later enqueue; the grouped runner only on a later writer whose groups overlap. The next request with that key gets a fresh job at the tail.
+1. <strong>Never drop or reorder.</strong> Earlier jobs keep their position and their callers. Coalescing only decides whether a <em>new</em> request gets its own job or attaches to the queued one. An earlier pull is not redundant because a later one exists — a save queued between them may depend on it having landed.
 
-This is also the one legitimate reason for a manager to hold in-flight state: deduplication inside its own method. It is private, it is a handle rather than a flag, and nothing outside the manager reads it — the `isPullRunning` smell in <a href="/guide/05-3-the-manager">Chapter 5.3</a> is a different thing.
+Worked through for the serial runner, with a new pull request arriving in each row (<code>R</code> a pull, <code>W</code> a save, <code>*</code> running):
 
-<strong>Use when</strong> the result is the same regardless of who triggered the request: expensive reads or idempotent refreshes that several UI paths can request at once.
+<div class="table-wrap">
+<table>
+<thead><tr><th>Queue</th><th>Result</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td><code>R*</code></td><td>new R</td><td>running is never shared</td></tr>
+<tr><td><code>R* R</code></td><td>attach to the queued R</td><td>nothing changed behind it</td></tr>
+<tr><td><code>R* R W</code></td><td>new R after W</td><td>W spent the queued R's key</td></tr>
+<tr><td><code>W*</code> then R, R</td><td>one R; the second attaches</td><td>the first R is waiting with nothing behind it</td></tr>
+<tr><td><code>R W R W</code> then R</td><td>new R</td><td>every R sits before a W</td></tr>
+<tr><td><code>R(a) R(b)</code> then R(a)</td><td>new R(a)</td><td>serial counts R(b) as a writer; the grouped runner attaches, because <code>.note(b)</code> does not overlap <code>.note(a)</code></td></tr>
+<tr><td><code>R export</code> then R</td><td>new R</td><td>serial counts the export as a writer; the grouped runner attaches, because an export reads</td></tr>
+<tr><td>queued R fails</td><td>every attached caller gets the error</td><td>the same outcome as if each had run</td></tr>
+</tbody>
+</table>
+</div>
+
+The conservative serial rows cost at most one redundant pull. A missed pull would be a bug, so the serial runner stays coarse and the grouped runner gets its precision from the groups it already has.
+
+<strong>Cancellation.</strong> `awaitShared` has no bridge on purpose. Cancelling one caller must not cancel work another caller is waiting on, so no waiter forwards cancellation to the shared task. A pull runs to completion once started — it is a mutation that must land, exactly the category <a href="/guide/05-9-cancellation">Chapter 5.9</a> says is not worth cancelling. A caller that needs to bail checks cancellation after the await, which `awaitShared` does before handing back the value.
+
+<strong>Sharing a running job</strong> is the weaker variant: a private handle on the manager that later callers join whether or not the job has started. It answers a Sync Now pressed mid-pull with data fetched before the change the user is waiting for, and it is in-flight state on the manager, which <a href="/guide/05-3-the-manager">Chapter 5.3</a> says not to keep. It is right only where freshness within the call's duration does not matter — two screens that both want the current export right now — and in this architecture those reads go through queries on the store, so a manager rarely sees them.
+
+<strong>Use when</strong> the result is the same regardless of who triggered the request: idempotent refreshes that several paths can request at once — a timer and a gesture, two windows opening on the same notebook, a launch-time reload of everything overlapping a gesture.
 
 ## Gate
 
@@ -158,19 +176,19 @@ Signing in twice concurrently is not two pieces of work to order; it is a mistak
 <tbody>
 <tr><td>Only the latest result matters</td><td><strong>Cancel-and-replace</strong></td><td>Previous work is obsolete; a stale result must not land</td></tr>
 <tr><td>Every request must complete</td><td><strong>Serial</strong> — <em>default when unsure</em></td><td>No work lost, order preserved</td></tr>
-<tr><td>Same result, several triggers</td><td><strong>Coalesce</strong></td><td>Avoid redundant work; everyone waits on one</td></tr>
+<tr><td>Same reload, several triggers</td><td><strong>Coalesce</strong></td><td>One queued job serves every caller that asked before it started</td></tr>
 <tr><td>A concurrent call is an error</td><td><strong>Gate</strong></td><td>The caller must know it was rejected</td></tr>
 <tr><td>Independent operations, no shared state</td><td>None</td><td>A direct <code>await</code> is fine</td></tr>
 </tbody>
 </table>
 </div>
 
-The strategy is chosen per call site, not per type, and the layers have defaults. A view state controller cancels and replaces, because its job is to show the current selection. A manager is serial, because the runner makes it so for free. Coalescing appears where a timer and a gesture can fire the same operation. The gate appears rarely, and always throws.
+The strategy is chosen per call site, not per type, and the layers have defaults. A view state controller cancels and replaces, because its job is to show the current selection. A manager is serial, because the runner makes it so for free. Coalescing appears where a timer and a gesture can fire the same reload, and lives in the runner's key rather than on the manager. The gate appears rarely, and always throws.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-Every method that reads state, suspends, and writes state has chosen a strategy, and the choice is visible in the code: a stored task that gets cancelled, a job on the runner, an in-flight handle, or a guard that throws. A method with none of those is a re-entrancy bug waiting for production traffic.
+Every method that reads state, suspends, and writes state has chosen a strategy, and the choice is visible in the code: a stored task that gets cancelled, a job on the runner, a coalescing key, or a guard that throws. A method with none of those is a re-entrancy bug waiting for production traffic.
 
 </div>
 

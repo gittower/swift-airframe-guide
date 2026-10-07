@@ -102,7 +102,7 @@ extension NotebookManaging {
 extension NoteManager: NotebookManaging {}
 ```
 
-The helpers are internal to the package rather than `private`, which is as far as a protocol extension can hide them — and far enough, since nothing outside `NotebookCore` can name them. <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> replaces `enqueue`'s body once with the grouped form and every manager picks it up.
+The helpers are internal to the package rather than `private`, which is as far as a protocol extension can hide them — and far enough, since nothing outside `NotebookCore` can name them. <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> replaces `enqueue`'s body once with the grouped form, adds a coalescing pair next to it for reloads, and every manager picks both up.
 
 ## Managers never call each other
 
@@ -126,7 +126,7 @@ The related line — whether a piece of work is a manager function at all, or th
 ## Red flags
 
 - A public method returning `Task<...>`, with or without `async` — the one-shape rule above.
-- A public method that calls `enqueue` or the runner without going through `awaitCancellable`: the caller's task stops being the one cancellation handle.
+- A public method that calls `enqueue` or the runner without going through `awaitCancellable` — or a coalesced job awaited through anything but `awaitShared`, <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a>: the caller's task stops being the one cancellation handle, or one waiter's cancellation reaches work every other waiter still expects.
 - A method that persists or publishes a job's result itself after `awaitCancellable` returns — the next conflicting job has already started by then. That work belongs in the job's `finalize`.
 - A manager with its own `static let shared` and a private runner in a domain that has an environment — two queues over one resource.
 - A manager calling another manager, or a manager method that reads state, `await`s, and writes state with no strategy chosen — <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>.
