@@ -15,5 +15,5 @@ A common shape opens a result window immediately, before the Action has finished
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Validators — the precondition checks Action Controllers use to enable or disable UI, referenced above — get their own subchapter next: <a href="/guide/06-3-action-validation">Chapter 6.3, Action Validation</a>. The serial runner and job structs used throughout Actions and Action Controllers are covered properly in <a href="/guide/07-concurrency">Chapter 7, Concurrency</a>.
+Validators — the precondition checks Action Controllers use to enable or disable UI, referenced above — get their own subchapter next: <a href="/guide/06-3-action-validation">Chapter 6.3, Action Validation</a>. The jobs and the runner used throughout Actions and Action Controllers are covered properly in <a href="/guide/05-4-jobs-and-contexts">Chapter 5.4</a> and <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a>.
 </div>

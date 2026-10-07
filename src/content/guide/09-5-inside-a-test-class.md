@@ -1,7 +1,7 @@
 ---
 title: "Inside a Test Class"
 description: "Every test builds its own state and is read in one place. This subchapter covers what that rules out — shared setUp, instance fields, helper-laden base classes — what a private helper may hide, assertions as free functions, naming, grouping tests by what they prove, and the rule that answers every double-testing question: test at the layer where the bug lives, pin once at each boundary it must cross."
-order: 10
+order: 9
 subOrder: 5
 ---
 
@@ -50,7 +50,7 @@ Accepted exceptions:
 
 ## Private helpers
 
-- A private helper that builds <strong>state of the module under test</strong> is a scenario factory and follows the rule of two in <a href="/guide/10-4-factories-builders-and-fixtures">Chapter 10.4</a>. Two or three per file at most.
+- A private helper that builds <strong>state of the module under test</strong> is a scenario factory and follows the rule of two in <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a>. Two or three per file at most.
 - A private helper that is <strong>infrastructure</strong> — temp directories, reading a setting, capturing output — doesn't belong in a test file at all. If it doesn't mention the subject under test, it's `Support/`.
 - A <strong>wrapper that invokes the subject</strong> — `private func resolve(noteCount: Int, isSyncing: Bool) -> NoteListPlaceholder`, `private func parse(_ text: String)` — is fine and common: one per file, it saves the boilerplate the test isn't about.
 
@@ -124,7 +124,9 @@ func testPull_Unauthorized_SurfacesSyncError() async throws {
     let notebook = try Notebook.makeThreeNotes()
     stub(.get, "/notebooks/\(notebook.id)/notes") { _ in .status(401) }
 
-    await XCTAssertAsyncThrowsError(try await NoteManager.standalone(notebook: notebook).pull()) { error in
+    let environment = NotebookEnvironment.make(notebook: notebook)
+
+    await XCTAssertAsyncThrowsError(try await environment.noteManager.pull()) { error in
         XCTAssertEqual(error as? SyncError, .unauthorized)
     }
 }
@@ -153,5 +155,5 @@ Flag a test or test file when any of these hold:
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
-With the shape of a test settled, the closing subchapter applies it layer by layer to the notebook app: <a href="/guide/10-6-testing-each-layer">Chapter 10.6, Testing Each Layer</a>.
+With the shape of a test settled, the closing subchapter applies it layer by layer to the notebook app: <a href="/guide/09-6-testing-each-layer">Chapter 9.6, Testing Each Layer</a>.
 </div>

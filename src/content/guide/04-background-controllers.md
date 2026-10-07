@@ -21,7 +21,7 @@ protocol BackgroundController: AnyObject {
 
 The protocol is a classification and a start/stop contract, nothing more — class names carry the specific suffix from the table below, never `Controller`. Conforming controllers start in phase 4 of launch — see <a href="/guide/02-2-startup">Chapter 2.2</a> — never earlier: initializers must stay fast, and a controller may assume the subsystems below it are already configured.
 
-Reach for one when work has no gesture behind it: refreshing data on an interval, reacting to system events that can happen at any time, maintaining state derived from model changes, cleaning up stale data periodically, recording events for telemetry. And know the three cases that look like one but aren't: a one-shot user-initiated operation is an Action — <a href="/guide/06-1-actions">Chapter 6.1</a>; work that needs progress reporting and user cancellation is a long-running Action — the Action <em>is</em> the live operation, per that same subchapter; window-scoped state belongs to a view state model written by a view state controller — <a href="/guide/08-2-view-state">Chapter 8.2</a>.
+Reach for one when work has no gesture behind it: refreshing data on an interval, reacting to system events that can happen at any time, maintaining state derived from model changes, cleaning up stale data periodically, recording events for telemetry. And know the three cases that look like one but aren't: a one-shot user-initiated operation is an Action — <a href="/guide/06-1-actions">Chapter 6.1</a>; work that needs progress reporting and user cancellation is a long-running Action — the Action <em>is</em> the live operation, per that same subchapter; window-scoped state belongs to a view state model written by a view state controller — <a href="/guide/07-2-view-state">Chapter 7.2</a>.
 
 <div class="table-wrap">
 <table>
@@ -97,7 +97,7 @@ The lifecycle rules the example encodes:
 
 ## The work goes elsewhere
 
-Look at what `reap()` actually does: one manager call per open notebook, nothing else. That is not an accident of the example — it is the rule. A background controller decides <em>when</em>; the <em>what</em> is a named collaborator below the boundary — a manager function, a background job from <a href="/guide/07-concurrency">Chapter 7</a>, a Foundation-only helper that computes the state a projector publishes. The collaborator is tested where it lives, `deleteDrafts(olderThan:)` in the model package per <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>. The controller is not tested at all, per <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a>: there is no decision in it that can regress on its own, and a test of it would either restate the wiring or become an integration test of everything it touches.
+Look at what `reap()` actually does: one manager call per open notebook, nothing else. That is not an accident of the example — it is the rule. A background controller decides <em>when</em>; the <em>what</em> is a named collaborator below the boundary — a manager function, a background job from <a href="/guide/05-4-jobs-and-contexts">Chapter 5.4</a>, a Foundation-only helper that computes the state a projector publishes. The collaborator is tested where it lives, `deleteDrafts(olderThan:)` in the model package per <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>. The controller is not tested at all, per <a href="/guide/09-1-which-tests-to-write">Chapter 9.1</a>: there is no decision in it that can regress on its own, and a test of it would either restate the wiring or become an integration test of everything it touches.
 
 So the tell is simple. If a background controller's body contains a computation, a filter, a decision beyond "fire now" — anything you would want a test for — that is a collaborator waiting to be extracted. A background controller that would need its own test is a sign the split is wrong.
 
@@ -109,7 +109,7 @@ An event-driven controller is the same skeleton with a subscription in place of 
 <table>
 <thead><tr><th>Channel</th><th>When</th></tr></thead>
 <tbody>
-<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and view controllers consume it by tracking — <a href="/guide/08-4-state-observing">Chapter 8.4</a>.</td></tr>
+<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and view controllers consume it by tracking — <a href="/guide/07-4-state-observing">Chapter 7.4</a>.</td></tr>
 <tr><td>A posted notification</td><td>Broad fan-out to consumers that don't hold a reference.</td></tr>
 <tr><td>A write into a manager</td><td>The controller's whole job is refreshing data the manager already owns.</td></tr>
 </tbody>

@@ -1,11 +1,11 @@
 ---
 title: "State Observing"
-description: "Chapter 8.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale."
-order: 8
+description: "Chapter 7.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale."
+order: 7
 subOrder: 4
 ---
 
-Chapter 8.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale.
+Chapter 7.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale.
 
 ## Why this pattern exists
 
@@ -29,11 +29,11 @@ SwiftUI views get all of this for free — which is exactly the standard this pa
 </table>
 </div>
 
-These rows are analogies, not 1:1 equivalents. `.onChange(of:)` is the closest match — both watch a value and fire a closure on change only, which either updates state or performs a side effect. `.task(id:)` bundles the change trigger together with automatic task management (cancel the running task, start a fresh one); the observation replicates only the trigger half, and supersession of in-flight work is the state controller's job — see <a href="/guide/07-concurrency">Chapter 7</a>. And where SwiftUI re-evaluates `body` and diffs a view tree, StateObserving re-runs small imperative updaters against long-lived views — which is why updaters must stay idempotent applications of current state.
+These rows are analogies, not 1:1 equivalents. `.onChange(of:)` is the closest match — both watch a value and fire a closure on change only, which either updates state or performs a side effect. `.task(id:)` bundles the change trigger together with automatic task management (cancel the running task, start a fresh one); the observation replicates only the trigger half, and supersession of in-flight work is the state controller's job — see <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>. And where SwiftUI re-evaluates `body` and diffs a view tree, StateObserving re-runs small imperative updaters against long-lived views — which is why updaters must stay idempotent applications of current state.
 
 ## One method is the whole inventory
 
-Any class — view controller, view, or plain object — can conform to `StateObserving`, which Airframe provides as its `AirframeStateObserving` product (<a href="/guide/11-the-airframe-package">Chapter 11</a>) so you import the machinery rather than hand-write it. The `@StateObserving` macro adds an `observations` property, a private `updateStateObservation()` reconciliation method, and the protocol conformance; the conformer writes exactly one method, `observeState()`, and that method is the complete list of everything the object reacts to.
+Any class — view controller, view, or plain object — can conform to `StateObserving`, which Airframe provides as its `AirframeStateObserving` product (<a href="/guide/10-the-airframe-package">Chapter 10</a>) so you import the machinery rather than hand-write it. The `@StateObserving` macro adds an `observations` property, a private `updateStateObservation()` reconciliation method, and the protocol conformance; the conformer writes exactly one method, `observeState()`, and that method is the complete list of everything the object reacts to.
 
 ```swift
 @StateObserving
@@ -148,7 +148,7 @@ The tracking half rides on the Observation framework (macOS 14+) — the same ma
 
 `@Observable` classes get the same deduplication from the framework itself: the macro's generated setter routes through `shouldNotifyObservers()`, whose `Equatable` overload compares old and new value, so equal assignments of `Equatable` properties never notify — no extra guard is needed in a view state model. The gate only exists where a comparison exists, though: non-`Equatable` value properties always notify, and reference-typed ones compare by identity — give hot properties an `Equatable` type if dedupe matters.
 
-Use `@Tracked` for state a controller or view hosts and renders itself; state that is shared, loads asynchronously, or cascades belongs to a view state controller writing a dedicated `@Observable` view state model — see <a href="/guide/08-2-view-state">Chapter 8.2</a>.
+Use `@Tracked` for state a controller or view hosts and renders itself; state that is shared, loads asynchronously, or cascades belongs to a view state controller writing a dedicated `@Observable` view state model — see <a href="/guide/07-2-view-state">Chapter 7.2</a>.
 
 ## Example: a view controller
 
@@ -191,7 +191,7 @@ final class NoteListViewController: NSViewController {
 }
 ```
 
-The async work lives on the state controller and the updaters read the model it writes, exactly as in <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller only decides <em>when</em> (activation, the two notifications) and <em>how it looks</em> (the two updaters). The state controller observes nothing itself — every signal that reloads it is declared here, which is why it isn't a `StateObserving` object and the view controller isn't a container for it. Registering one `observations.track` call per updater, rather than one giant updater, is deliberate — their read sets are allowed to overlap freely, and each stays a small, single-purpose render pass.
+The async work lives on the state controller and the updaters read the model it writes, exactly as in <a href="/guide/07-2-view-state">Chapter 7.2</a>; the view controller only decides <em>when</em> (activation, the two notifications) and <em>how it looks</em> (the two updaters). The state controller observes nothing itself — every signal that reloads it is declared here, which is why it isn't a `StateObserving` object and the view controller isn't a container for it. Registering one `observations.track` call per updater, rather than one giant updater, is deliberate — their read sets are allowed to overlap freely, and each stays a small, single-purpose render pass.
 
 ## Example: a self-rendering view
 
@@ -226,7 +226,7 @@ final class UnsyncedBadgeView: NSView {
 }
 ```
 
-The owner just assigns — `badge.count = notebook.unsyncedNoteCount` — and `@Tracked` does the rest: it dedupes equal assignments, so an assignment that doesn't actually change the value never triggers a render, and multiple assignments in one turn coalesce into one. This earns its keep once a view coalesces several signals or reads other observable objects; a view whose properties are set individually and that observes nothing else is just as correct with a plain `didSet { apply() }`, as `SyncStatusView` back in <a href="/guide/08-1-views">Chapter 8.1</a> already does.
+The owner just assigns — `badge.count = notebook.unsyncedNoteCount` — and `@Tracked` does the rest: it dedupes equal assignments, so an assignment that doesn't actually change the value never triggers a render, and multiple assignments in one turn coalesce into one. This earns its keep once a view coalesces several signals or reads other observable objects; a view whose properties are set individually and that observes nothing else is just as correct with a plain `didSet { apply() }`, as `SyncStatusView` back in <a href="/guide/07-1-views">Chapter 7.1</a> already does.
 
 ## Example: a container with a subcontroller
 
@@ -253,7 +253,7 @@ One call — `sidebar.activateObservation()` — arms the whole subtree; deactiv
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-A container lists only the children on its own scope. A child that lives on a different scope — a window-lifetime object hanging off a controller that's only active while key/main, say — is driven by its owner directly; a parent with mixed-scope children isn't a container. A view state controller is never a child: it observes nothing, so there is nothing to activate — <a href="/guide/08-2-view-state">Chapter 8.2</a>.
+A container lists only the children on its own scope. A child that lives on a different scope — a window-lifetime object hanging off a controller that's only active while key/main, say — is driven by its owner directly; a parent with mixed-scope children isn't a container. A view state controller is never a child: it observes nothing, so there is nothing to activate — <a href="/guide/07-2-view-state">Chapter 7.2</a>.
 
 </div>
 
@@ -287,7 +287,7 @@ final class NotebookDetailViewController: NSViewController {
 - <strong>Swapped while active</strong> — `updateStateObservation()` cancels everything, including the old notebook's subscription, then re-runs `observeState()` against the new one and re-seeds. Teardown and rebuild are the same code path as first activation.
 - <strong>Set to nil while active</strong> — the same re-arm; the `guard let` installs nothing. If nil needs a rendered empty state, seed before the guard.
 
-This `didSet` is the sanctioned call site for `updateStateObservation()` — and since the macro generates it as a private member, outside callers can't reach it at all. It's a different move from a parent just <em>forwarding</em> a new input to a child (`detail.notebookID = navigation.selectedNotebookID`, from <a href="/guide/09-navigation">Chapter 9</a>) — forwarding hands a plain value down and lets the child's own tracking pick it up; re-arming is specifically for when the property <em>is</em> the thing being observed.
+This `didSet` is the sanctioned call site for `updateStateObservation()` — and since the macro generates it as a private member, outside callers can't reach it at all. It's a different move from a parent just <em>forwarding</em> a new input to a child (`detail.notebookID = navigation.selectedNotebookID`, from <a href="/guide/08-navigation">Chapter 8</a>) — forwarding hands a plain value down and lets the child's own tracking pick it up; re-arming is specifically for when the property <em>is</em> the thing being observed.
 
 ### Seeding when nothing replays
 
@@ -334,9 +334,9 @@ private func updateRowState() {
 }
 ```
 
-Every subscription in `observeState()` calls `updateRowState()`, however often the underlying signals fire; `@Tracked`'s equality guard means the render updater re-runs only when the snapshot actually changed. Anything derived for display — a formatted date, a computed title — lives as a property on the snapshot itself, so the updater stays a dumb application of already-decided state. Keep supporting value types like the snapshot at file scope (`fileprivate`), above the class, so the class body leads with its actual state. Reach for this over a view state controller and model once the values are ones the object renders itself and nothing else needs to share or await; a view state controller and its model earn their place instead once loading, cascading, a model-layer subscription, or another consumer enters the picture — see <a href="/guide/08-2-view-state">Chapter 8.2</a>.
+Every subscription in `observeState()` calls `updateRowState()`, however often the underlying signals fire; `@Tracked`'s equality guard means the render updater re-runs only when the snapshot actually changed. Anything derived for display — a formatted date, a computed title — lives as a property on the snapshot itself, so the updater stays a dumb application of already-decided state. Keep supporting value types like the snapshot at file scope (`fileprivate`), above the class, so the class body leads with its actual state. Reach for this over a view state controller and model once the values are ones the object renders itself and nothing else needs to share or await; a view state controller and its model earn their place instead once loading, cascading, a model-layer subscription, or another consumer enters the picture — see <a href="/guide/07-2-view-state">Chapter 7.2</a>.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Menus — themselves just view components wired to Actions — are next: <a href="/guide/08-5-menus">Chapter 8.5</a>. Navigation state, which a parent pushes into its children as a plain input rather than something they observe directly, is <a href="/guide/09-navigation">Chapter 9</a>.
+Menus — themselves just view components wired to Actions — are next: <a href="/guide/07-5-menus">Chapter 7.5</a>. Navigation state, which a parent pushes into its children as a plain input rather than something they observe directly, is <a href="/guide/08-navigation">Chapter 8</a>.
 </div>

@@ -1,7 +1,7 @@
 ---
 title: "Testing Workflows"
 description: "Most tests get written in one of two situations: a bug needs fixing or a feature needs building. This subchapter covers the discipline for each — reproduce first, signatures first — worked through as a sync bug and an archive feature in the notebook app, plus the habit that makes both cheap: investing in test infrastructure the moment a scenario is hard to set up."
-order: 10
+order: 9
 subOrder: 2
 ---
 
@@ -24,7 +24,7 @@ Reproduce the bug in a failing test <em>before</em> touching the fix. It proves 
 
 </div>
 
-The test builds the exact state, in the test, with the builder from <a href="/guide/10-4-factories-builders-and-fixtures">Chapter 10.4</a>, and stubs the one external boundary — the network — with a payload in the server's wire shape:
+The test builds the exact state, in the test, with the builder from <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a>, and stubs the one external boundary — the network — with a payload in the server's wire shape:
 
 ```swift
 /// Guards the merge rule: a remote rename never overwrites a pending local body edit.
@@ -41,7 +41,7 @@ func testPull_RenamedRemotelyWhileEditedLocally_KeepsLocalBody() async throws {
         ]))
     }
 
-    try await NoteManager.standalone(notebook: notebook).pull()
+    try await NotebookEnvironment.make(notebook: notebook).noteManager.pull()
 
     let merged = try XCTUnwrap(Note.note(id: note.id, in: notebook))
     XCTAssertEqual(merged.title, "Renamed")
@@ -81,14 +81,14 @@ func testArchive_LastActiveNotebook_Throws() async throws { }
 func testArchive_AlreadyArchived_Throws() async throws { }
 ```
 
-The next question is where each test goes, and the layer table in <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a> answers it:
+The next question is where each test goes, and the layer table in <a href="/guide/09-1-which-tests-to-write">Chapter 9.1</a> answers it:
 
 - **Manager tests carry the rules.** Removing from the active list, keeping the notes, refusing the last active notebook, refusing a second archive — every one of these is a decision `NotebookManager.archive(_:)` makes, so every one is a manager test. This is where the case matrix lives.
 - **A validator test covers the precondition.** "Can this notebook be archived right now?" is a plain Foundation `ArchiveNotebookValidator` (<a href="/guide/06-3-action-validation">Chapter 6.3</a>) — constructed and asked in a test with no menu, no window, no app.
 - **The Action gets one test, only because it's multi-step.** `ArchiveNotebookAction` waits for the pending sync and then calls the manager — two steps, one decision of its own. It gets its happy path plus that one decision: `testArchive_WithPendingSync_WaitsForSync` is an Action test. It never re-enumerates the manager's matrix. An Action that only forwarded one manager call would get no test at all.
 - **The Action Controller gets none.** It presents a confirmation sheet and dispatches the Action. Nothing in it can regress on its own.
 
-Distributing tests this way is the same rule <a href="/guide/10-5-inside-a-test-class">Chapter 10.5</a> states for grouping — test at the layer where the bug lives, pin once at each boundary it must cross — and it has a side effect worth wanting: if you find yourself writing the same test at two layers, the logic probably belongs in one of them, not both. If a feature seems to need tests at every layer, it's usually complex enough to warrant extracting something.
+Distributing tests this way is the same rule <a href="/guide/09-5-inside-a-test-class">Chapter 9.5</a> states for grouping — test at the layer where the bug lives, pin once at each boundary it must cross — and it has a side effect worth wanting: if you find yourself writing the same test at two layers, the logic probably belongs in one of them, not both. If a feature seems to need tests at every layer, it's usually complex enough to warrant extracting something.
 
 Start with the simplest case, get it passing, then work through progressively more complex scenarios. Along the way you'll discover things — a missing factory, unclear behavior at a boundary, sometimes a bug in a neighboring part of the code. That's normal and valuable.
 
@@ -105,9 +105,9 @@ If setting up a scenario is hard, invest in the helper first. It pays for itself
 
 </div>
 
-Both workflows above hit this: the bug fix needed `editNote` on the builder, and the archive feature needs a way to put a notebook into "sync pending" without a live network. The moment you find yourself writing `let notebook = Notebook(...); notebook.title = "…"; store.insert(notebook); try store.save()` for the third time, that's a factory. How a helper is shaped — value factory, scenario factory, or builder step — is <a href="/guide/10-4-factories-builders-and-fixtures">Chapter 10.4</a>; where it lives in the target is <a href="/guide/10-3-suite-layout-and-test-kinds">Chapter 10.3</a>.
+Both workflows above hit this: the bug fix needed `editNote` on the builder, and the archive feature needs a way to put a notebook into "sync pending" without a live network. The moment you find yourself writing `let notebook = Notebook(...); notebook.title = "…"; store.insert(notebook); try store.save()` for the third time, that's a factory. How a helper is shaped — value factory, scenario factory, or builder step — is <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a>; where it lives in the target is <a href="/guide/09-3-suite-layout-and-test-kinds">Chapter 9.3</a>.
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
-Where those helpers go, and which tests run on every <code>Cmd+U</code> versus on demand, is next: <a href="/guide/10-3-suite-layout-and-test-kinds">Chapter 10.3, Suite Layout and Test Kinds</a>.
+Where those helpers go, and which tests run on every <code>Cmd+U</code> versus on demand, is next: <a href="/guide/09-3-suite-layout-and-test-kinds">Chapter 9.3, Suite Layout and Test Kinds</a>.
 </div>

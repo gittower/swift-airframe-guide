@@ -1,7 +1,7 @@
 ---
 title: "View State: Controller and Model"
 description: "The read path of a screen is two objects, not one: a view state controller that loads and shapes, and the `@Observable` view state model it writes — which is all a view ever receives. This subchapter covers the pair: why it's two objects, why the view controller does all the observing, the single-writer mechanics that keep a view previewable in any state, and the rule that a view takes a model and closures and nothing else."
-order: 8
+order: 7
 subOrder: 2
 ---
 
@@ -33,7 +33,7 @@ One object that both loads and gets rendered ends up in the view's hands, becaus
 - <strong>Previews need a live controller</strong>, with live collaborators behind it. There is no dummy object.
 - <strong>Mid-operation states become unreachable.</strong> `isLoading`, an operation in flight, a failure — none can be shown or tested without running the operation.
 
-With the split, a preview or a test constructs the model directly in any state, and the controller is tested on the model it produces — <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+With the split, a preview or a test constructs the model directly in any state, and the controller is tested on the model it produces — <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
 
 ## The pair in code
 
@@ -122,7 +122,7 @@ final class NoteDetailViewController: NSViewController {
 ```
 
 
-The two consumption mechanisms in that example — `observations.track` to render, `observations.observe` to react — are <a href="/guide/08-4-state-observing">Chapter 8.4</a>. What the example settles is where they live: both of them on the view controller, none on the state controller.
+The two consumption mechanisms in that example — `observations.track` to render, `observations.observe` to react — are <a href="/guide/07-4-state-observing">Chapter 7.4</a>. What the example settles is where they live: both of them on the view controller, none on the state controller.
 
 ## Who observes
 
@@ -132,7 +132,7 @@ The alternative is tempting, because the state controller knows what it loaded a
 
 - <strong>Two inventories instead of one.</strong> A state controller is Foundation-only, so it cannot see the window becoming main. The view controller has to observe that and call `reload()` regardless — and once it does, "what makes this screen reload?" is answered in two files if the state controller subscribes as well.
 - <strong>No one to route.</strong> A view controller with several state controllers needs to say which signal reloads which of them. Controllers that subscribe for themselves each reload on their own, and the owner can neither group them nor leave one out.
-- <strong>A lifecycle with nothing behind it.</strong> A state controller that observes has to be activated, deactivated, and listed as its owner's child, for subscriptions that all end in `reload()`. One that doesn't is tested by setting its input, awaiting `load()`, and asserting on `state` — <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+- <strong>A lifecycle with nothing behind it.</strong> A state controller that observes has to be activated, deactivated, and listed as its owner's child, for subscriptions that all end in `reload()`. One that doesn't is tested by setting its input, awaiting `load()`, and asserting on `state` — <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
 
 What stays on the state controller is everything that isn't observation: its inputs, whose `didSet` reloads because the owner assigned a property, and the task it loads in, which a newer `reload()` cancels — so two signals arriving together cost one load, not two.
 
@@ -200,7 +200,7 @@ Two previews, no controller, no manager, no running app. The same construction i
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-A view takes exactly two things: a view state model, by reference, and closures for its intents. Never the controller that writes the model, never a manager, never an Action. A view emits an intent and reacts to state — it does not handle the action itself; the view controller receives the intent and dispatches it. The only exceptions have no coordination in them at all: a static info sheet, or a `Toggle` bound straight to a flat settings object as `EditorSectionView` does in <a href="/guide/02-4-settings">Chapter 2.4</a>, where the settings object is its own manager and there is no controller to go around — and <a href="/guide/08-6-settings-window">Chapter 8.6</a> marks exactly where that exception ends. This is the single most important thing to check on any view: does it take anything other than a model and closures?
+A view takes exactly two things: a view state model, by reference, and closures for its intents. Never the controller that writes the model, never a manager, never an Action. A view emits an intent and reacts to state — it does not handle the action itself; the view controller receives the intent and dispatches it. The only exceptions have no coordination in them at all: a static info sheet, or a `Toggle` bound straight to a flat settings object as `EditorSectionView` does in <a href="/guide/02-4-settings">Chapter 2.4</a>, where the settings object is its own manager and there is no controller to go around — and <a href="/guide/07-6-settings-window">Chapter 7.6</a> marks exactly where that exception ends. This is the single most important thing to check on any view: does it take anything other than a model and closures?
 
 </div>
 
@@ -210,9 +210,9 @@ A view takes exactly two things: a view state model, by reference, and closures 
 - <strong>Inputs live on the controller.</strong> A selected note, a scoped identifier — the owner sets a plain property, and its `didSet` invalidates and reloads. The model never has inputs; it has results.
 - <strong>One pair per concern.</strong> A view controller may own several pairs for independent concerns, route its signals to their `reload()`s, and read all their models in its updaters. Concerns that cascade — one input invalidating another's data — belong in the same pair.
 - <strong>One file, next to the screen.</strong> `UI/Screens/NoteDetail/NoteDetailStateController.swift`, per <a href="/guide/01-1-project-layout">Chapter 1.1</a>. The controller is Foundation-only, so it stays testable without a window; it lives in the app target rather than a package because it belongs to exactly one screen.
-- <strong>When there is no controller.</strong> A model whose writer is the view controller itself is fine when nothing is loaded to fill it — navigation state in <a href="/guide/09-navigation">Chapter 9</a> is the standing example. The moment loading or shaping appears, the writer becomes a state controller.
+- <strong>When there is no controller.</strong> A model whose writer is the view controller itself is fine when nothing is loaded to fill it — navigation state in <a href="/guide/08-navigation">Chapter 8</a> is the standing example. The moment loading or shaping appears, the writer becomes a state controller.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The view controller that owns the pair, assembles the components, and coordinates is next: <a href="/guide/08-3-view-controllers">Chapter 8.3</a>. The activation lifecycle behind the view controller's `observeState()` — and `@Tracked`, for the values a controller renders itself without a pair — is <a href="/guide/08-4-state-observing">Chapter 8.4</a>. Testing a state controller on the model it writes is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+The view controller that owns the pair, assembles the components, and coordinates is next: <a href="/guide/07-3-view-controllers">Chapter 7.3</a>. The activation lifecycle behind the view controller's `observeState()` — and `@Tracked`, for the values a controller renders itself without a pair — is <a href="/guide/07-4-state-observing">Chapter 7.4</a>. Testing a state controller on the model it writes is <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
 </div>

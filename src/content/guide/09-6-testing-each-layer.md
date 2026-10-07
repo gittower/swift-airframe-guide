@@ -1,17 +1,17 @@
 ---
 title: "Testing Each Layer"
 description: "Each layer of the architecture has a way it gets exercised. This closing subchapter works through the notebook app layer by layer — a manager through its public method with the network stubbed underneath, a multi-step Action, a validator, a View State Controller, async and error paths, and background jobs with progress — with the in-memory store and the temporary directory that make the real collaborators cheap."
-order: 10
+order: 9
 subOrder: 6
 ---
 
 Each layer of the architecture has a way it gets exercised. This closing subchapter works through the notebook app layer by layer — a manager through its public method with the network stubbed underneath, a multi-step Action, a validator, a View State Controller, async and error paths, and background jobs with progress — with the in-memory store and the temporary directory that make the real collaborators cheap.
 
-Every example follows the layer table from <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a>, builds its state in the test per <a href="/guide/10-5-inside-a-test-class">Chapter 10.5</a>, and inherits `TestCase`'s wiring — an in-memory database, isolated defaults, a fresh documents directory — where it needs it.
+Every example follows the layer table from <a href="/guide/09-1-which-tests-to-write">Chapter 9.1</a>, builds its state in the test per <a href="/guide/09-5-inside-a-test-class">Chapter 9.5</a>, and inherits `TestCase`'s wiring — an in-memory database, isolated defaults, a fresh documents directory — where it needs it.
 
 ## Models and managers
 
-Test the manager's public interface, never the job it enqueues or the store underneath. The test owns its manager: `NoteManager.standalone(notebook:)` builds a private environment from <a href="/guide/05-model-layer">Chapter 5</a> over the test's own notebook, so nothing touches the production registry, and the only double is at the HTTP boundary — a `URLProtocol` stub registered on the session `SyncClient` uses, handed a payload in the server's wire shape.
+Test the manager's public interface, never the job it enqueues or the store underneath. The test owns its graph: it constructs a private `NotebookEnvironment` from <a href="/guide/05-2-the-environment">Chapter 5.2</a> over the test's own notebook — the environment is internal to the package, and the test target is inside it — so nothing touches the production registry, and the only double is at the HTTP boundary: a `URLProtocol` stub registered on the session `SyncClient` uses, handed a payload in the server's wire shape.
 
 ```swift
 @MainActor
@@ -25,7 +25,9 @@ final class NoteManagerTests: TestCase {
             ]))
         }
 
-        try await NoteManager.standalone(notebook: notebook).pull()
+        let environment = NotebookEnvironment.make(notebook: notebook)
+
+        try await environment.noteManager.pull()
 
         let titles = Note.all(in: notebook).map(\.title)
         XCTAssertEqual(titles, ["Monday", "Tuesday"])
@@ -33,11 +35,22 @@ final class NoteManagerTests: TestCase {
 }
 ```
 
-Everything between the stub and the assertion runs for real: the environment builds its runner and both job contexts, `SyncClient` builds the request and decodes the response, `PullNotesJob` performs on the runner and merges in `handleResult`, the store writes to the in-memory database, and the model's query reads it back. A test that needs the sibling manager reaches `manager.environment.tagManager` rather than building a second graph. Because the database merges background saves onto the main context automatically, the query sees the merged notes without a manual refresh — the same guarantee <a href="/guide/05-model-layer">Chapter 5</a> describes at runtime.
+`make(notebook:)` is a one-line factory in `Factories/`, per the rule of two in <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a>: it calls the internal initializer with the default clients, whose sessions `TestCase` has already pointed at the stub protocol.
+
+```swift
+// NotebookCoreTests/Factories/NotebookEnvironment+Factory.swift
+extension NotebookEnvironment {
+    static func make(notebook: Notebook) -> NotebookEnvironment {
+        NotebookEnvironment(notebook: notebook, client: SyncClient(config: .shared), assistant: AssistantClient(config: .shared))
+    }
+}
+```
+
+Everything between the stub and the assertion runs for real: the environment builds its runner and both job contexts, `SyncClient` builds the request and decodes the response, `PullNotesJob` performs on the runner and merges in `finalize`, the store writes to the in-memory database, and the model's query reads it back. A test that needs the sibling manager reaches `environment.tagManager` from the graph it already holds, rather than building a second one. Because the database merges background saves onto the main context automatically, the query sees the merged notes without a manual refresh — the same guarantee <a href="/guide/05-model-layer">Chapter 5</a> describes at runtime.
 
 ```swift
 // ✅ Test the interface
-try await NoteManager.standalone(notebook: notebook).pull()
+try await environment.noteManager.pull()
 
 // ❌ Don't test the job directly
 let job = PullNotesJob()
@@ -115,11 +128,11 @@ final class DeleteNotebookValidatorTests: TestCase {
 }
 ```
 
-A validator with two checks whose order matters — "is syncing" before "is the last notebook", say, because the error the user sees depends on which fires — gets both orders tested, per rule 8 in <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a>.
+A validator with two checks whose order matters — "is syncing" before "is the last notebook", say, because the error the user sees depends on which fires — gets both orders tested, per rule 8 in <a href="/guide/09-1-which-tests-to-write">Chapter 9.1</a>.
 
 ## View State Controllers
 
-The one testable controller kind. Load it, wait for it, and assert on the shaped output — how many items, in what order, grouped how, which ones filtered out. Never on the internal loading mechanics. The output is the view state model the controller writes, so the assertion reads `controller.state`. That model is a second seam: a test of how a view renders one particular state — loading, failed — constructs the model directly, the way a preview does in <a href="/guide/08-2-view-state">Chapter 8.2</a>, and never runs the controller.
+The one testable controller kind. Load it, wait for it, and assert on the shaped output — how many items, in what order, grouped how, which ones filtered out. Never on the internal loading mechanics. The output is the view state model the controller writes, so the assertion reads `controller.state`. That model is a second seam: a test of how a view renders one particular state — loading, failed — constructs the model directly, the way a preview does in <a href="/guide/07-2-view-state">Chapter 7.2</a>, and never runs the controller.
 
 ```swift
 @MainActor
@@ -155,7 +168,7 @@ func testArchive_LastActiveNotebook_Throws() async throws {
 }
 ```
 
-Where cancellation matters, assert the terminal persisted and published state — not merely that an error was thrown. Cancellation may arrive after a durable write, so the expected outcome can be an accurately settled partial result rather than an untouched store; <a href="/guide/07-concurrency">Chapter 7</a> defines that contract.
+Where cancellation matters, assert the terminal persisted and published state — not merely that an error was thrown. Cancellation may arrive after a durable write, so the expected outcome can be an accurately settled partial result rather than an untouched store; <a href="/guide/05-9-cancellation">Chapter 5.9</a> defines that contract.
 
 A precondition that the setup actually produced the intended state goes in a plain `assert`, so a broken factory fails loudly before the assertion under test can pass for the wrong reason:
 
@@ -166,7 +179,7 @@ assert(Note.all(in: notebook).count == 3)
 
 ## Jobs and progress
 
-Exercise real jobs through the manager entry point, with temporary storage and a narrow double at the external process or network boundary. Use a deliberate gate in the double to hold one operation while submitting the next; never a timing assertion built on `sleep`. Test the application's group declarations from <a href="/guide/07-concurrency">Chapter 7</a> and the behavior that results:
+Exercise real jobs through the manager entry point, with temporary storage and a narrow double at the external process or network boundary. Use a deliberate gate in the double to hold one operation while submitting the next; never a timing assertion built on `sleep`. Test the application's group declarations from <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> and the behavior that results:
 
 - Queue a rename behind a note update, then verify both changes survive. This catches a job capturing its editable baseline too early.
 - Export while a save is pending and verify the export sees the completed save.
@@ -175,7 +188,7 @@ Exercise real jobs through the manager entry point, with temporary storage and a
 - Fail persistence after a successful download. Verify the activity reports failure and no successful-save notification is published. If an earlier step already saved data, verify that committed change is published accurately.
 - Start a second draft while one is running. Verify the first settles on the draft activity before the second begins, and a cancelled request leaves the activity finished rather than generating.
 
-For a worker-only test, call `job.perform(context: environment.workContext)`; progress-reporting jobs inherit that overload with reporting disabled, and it does not run result handling. To test progress and persistence together, use the manager entry point or `job.execute(work: environment.workContext, main: environment.mainContext)`, with the environment behind `manager.environment`. Assert the final accumulated text and meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
+For a worker-only test, call `job.perform(context: environment.workContext)`; progress-reporting jobs inherit that overload with reporting disabled, and it does not run result handling. To test progress and persistence together, use the manager entry point or `job.execute(work: environment.workContext, main: environment.mainContext)` on the environment the test built. Assert the final accumulated text and meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
 
 The coalescing rule itself is a small, directly testable value operation:
 
@@ -207,5 +220,5 @@ func testExport_WritesOneFilePerNote() async throws {
 
 <div class="seealso">
 <strong>End of the architecture</strong>
-That closes the architecture. What the framework ships of it as a Swift package — the products, how a target imports them, where they sit in the tree — is <a href="/guide/11-the-airframe-package">Chapter 11</a>. <a href="/">Back to the overview</a> for the full map.
+That closes the architecture. What the framework ships of it as a Swift package — the products, how a target imports them, where they sit in the tree — is <a href="/guide/10-the-airframe-package">Chapter 10</a>. <a href="/">Back to the overview</a> for the full map.
 </div>

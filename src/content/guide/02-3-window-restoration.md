@@ -35,4 +35,4 @@ The deferred windows surface again in phase 4: launch shows whatever the coordin
 
 ## What a window restores
 
-Restoration hands back windows, not app state — what a window <em>shows</em> is re-derived, not deserialized. Persist identifiers in the window's `NSCoder` state (a selected notebook's ID, not the notebook), and re-resolve them against whatever the Model layer has actually loaded once launch completes. <a href="/guide/09-navigation">Chapter 9</a> covers this identifier-not-object rule in full, because it's the same rule navigation state lives by everywhere, not just at restoration time.
+Restoration hands back windows, not app state — what a window <em>shows</em> is re-derived, not deserialized. Persist identifiers in the window's `NSCoder` state (a selected notebook's ID, not the notebook), and re-resolve them against whatever the Model layer has actually loaded once launch completes. <a href="/guide/08-navigation">Chapter 8</a> covers this identifier-not-object rule in full, because it's the same rule navigation state lives by everywhere, not just at restoration time.

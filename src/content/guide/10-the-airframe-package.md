@@ -1,10 +1,10 @@
 ---
 title: "The Airframe Package"
-description: "The generic spine the ten chapters before this one describe ships as one Swift package. This chapter covers what the package provides — one product per part, carved along the Foundation/AppKit line — the two ways a target imports it, where it sits in the project's dependency graph, and the rules that decide what becomes a product."
-order: 11
+description: "The generic spine the nine chapters before this one describe ships as one Swift package. This chapter covers what the package provides — one product per part, carved along the Foundation/AppKit line — the two ways a target imports it, where it sits in the project's dependency graph, and the rules that decide what becomes a product."
+order: 10
 ---
 
-The generic spine the ten chapters before this one describe ships as one Swift package. This chapter covers what the package provides — one product per part, carved along the Foundation/AppKit line — the two ways a target imports it, where it sits in the project's dependency graph, and the rules that decide what becomes a product.
+The generic spine the nine chapters before this one describe ships as one Swift package. This chapter covers what the package provides — one product per part, carved along the Foundation/AppKit line — the two ways a target imports it, where it sits in the project's dependency graph, and the rules that decide what becomes a product.
 
 ## What the package provides
 
@@ -18,17 +18,17 @@ Swift has no submodule import, so "take only the parts you need" means several l
 <tbody>
 <tr><td colspan="3"><em>Foundation-only</em></td></tr>
 <tr><td><code>AirframeFoundation</code></td><td>Foundation and Combine extensions and the shared formatters — a relative display format style for dates, an English-in-current-region locale.</td><td>throughout</td></tr>
-<tr><td><code>AirframeStateObserving</code></td><td><code>@StateObserving</code>, <code>Observations</code>, <code>StateObserving</code> / <code>StateObservingContainer</code>, <code>@Tracked</code>.</td><td><a href="/guide/08-4-state-observing">8.3</a></td></tr>
+<tr><td><code>AirframeStateObserving</code></td><td><code>@StateObserving</code>, <code>Observations</code>, <code>StateObserving</code> / <code>StateObservingContainer</code>, <code>@Tracked</code>.</td><td><a href="/guide/07-4-state-observing">7.4</a></td></tr>
 <tr><td><code>AirframeControllers</code></td><td>The background controller and view state controller bases.</td><td><a href="/guide/03-the-controller-layer">3</a>, <a href="/guide/04-background-controllers">4</a></td></tr>
 <tr><td><code>AirframeActions</code></td><td>The Action, validator and action-manager bases.</td><td><a href="/guide/06-1-actions">6.1</a>, <a href="/guide/06-3-action-validation">6.3</a></td></tr>
 <tr><td colspan="3"><em>AppKit</em></td></tr>
-<tr><td><code>AirframeAppKit</code></td><td>AppKit extensions, the base view controller, settings, presentable helpers, menu bases.</td><td><a href="/guide/02-4-settings">2.4</a>, <a href="/guide/08-3-view-controllers">8.2</a>, <a href="/guide/08-5-menus">8.4</a></td></tr>
-<tr><td><code>AirframeSwiftUI</code></td><td>View modifiers and the AppKit-in-SwiftUI bridges.</td><td><a href="/guide/08-1-views">8.1</a></td></tr>
-<tr><td><code>AirframeNavigation</code></td><td>The URL-based navigation stack.</td><td><a href="/guide/09-navigation">9</a></td></tr>
+<tr><td><code>AirframeAppKit</code></td><td>AppKit extensions, the base view controller, settings, presentable helpers, menu bases.</td><td><a href="/guide/02-4-settings">2.4</a>, <a href="/guide/07-3-view-controllers">7.3</a>, <a href="/guide/07-5-menus">7.5</a></td></tr>
+<tr><td><code>AirframeSwiftUI</code></td><td>View modifiers and the AppKit-in-SwiftUI bridges.</td><td><a href="/guide/07-1-views">7.1</a></td></tr>
+<tr><td><code>AirframeNavigation</code></td><td>The URL-based navigation stack.</td><td><a href="/guide/08-navigation">8</a></td></tr>
 <tr><td><code>AirframeLifecycle</code></td><td>The initializer protocol and runner, the startup phases, window restoration.</td><td><a href="/guide/02-2-startup">2.2</a>, <a href="/guide/02-3-window-restoration">2.3</a></td></tr>
 <tr><td colspan="3"><em>Opt-in</em></td></tr>
 <tr><td><code>AirframeCoreData</code></td><td>Core Data support, for apps whose persistence stack is Core Data.</td><td>—</td></tr>
-<tr><td><code>AirframeTesting</code></td><td>Async XCTest helpers. The one product the umbrella never re-exports, because it links XCTest.</td><td><a href="/guide/10-4-factories-builders-and-fixtures">10.4</a></td></tr>
+<tr><td><code>AirframeTesting</code></td><td>Async XCTest helpers. The one product the umbrella never re-exports, because it links XCTest.</td><td><a href="/guide/09-4-factories-builders-and-fixtures">9.4</a></td></tr>
 </tbody>
 </table>
 </div>
@@ -83,5 +83,5 @@ The library products are runtime code. Beside them, one compiler plugin, `Airfra
 
 <div class="seealso">
 <strong>Where this connects</strong>
-The observation lifecycle worked through in full — a view controller, a self-rendering view, and a container that arms a whole subtree — is <a href="/guide/08-4-state-observing">Chapter 8.4</a>. The project tree the products slot into is <a href="/guide/01-1-project-layout">Chapter 1.1</a>. The package carries its own test suite, so in your app it is a trusted dependency you don't re-test: there is no decision of yours inside it that could regress, the same standard <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a> applies to everything else.
+The observation lifecycle worked through in full — a view controller, a self-rendering view, and a container that arms a whole subtree — is <a href="/guide/07-4-state-observing">Chapter 7.4</a>. The project tree the products slot into is <a href="/guide/01-1-project-layout">Chapter 1.1</a>. The package carries its own test suite, so in your app it is a trusted dependency you don't re-test: there is no decision of yours inside it that could regress, the same standard <a href="/guide/09-1-which-tests-to-write">Chapter 9.1</a> applies to everything else.
 </div>

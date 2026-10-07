@@ -22,20 +22,23 @@ Here is the notebook app on disk, every type the chapters define placed where it
 ```
 NotebookApp/
 ├── Packages/                        local-only Swift packages: in-repo, committed with the app
-│   ├── Concurrency/                 SerialTaskRunner, BackgroundJob, ProgressReportingJob   7
-│   ├── TestSupport/                 StubURLProtocol, temp directories                       10.4
+│   ├── Concurrency/                 SerialTaskRunner, GroupedTaskRunner, BackgroundJob, ProgressReportingJob   5.4, 5.5
+│   ├── TestSupport/                 StubURLProtocol, temp directories                       9.4
 │   ├── NotebookSync/                SyncClient — the library below the model                5
 │   ├── MarkdownImport/              another library below the model
+│   ├── NotebookExport/              ExportProcess — the converter an export shells out to       5.9
 │   ├── NotebookCore/                THE MODEL LAYER                                          5
 │   │   ├── Sources/NotebookCore/
-│   │   │   ├── Environment/         NotebookEnvironment, NotebookEnvironment+Shared          5
-│   │   │   ├── Notes/               Note, NoteManager, NoteStore, Note+Queries, NoteWorkContext, NoteMainContext, NoteActivities   5, 7
-│   │   │   │   └── Jobs/            PullNotesJob, RenameNoteJob, DraftSummaryJob, …         5, 7
+│   │   │   ├── Environment/         NotebookEnvironment, NotebookEnvironment+Shared, NotebookManaging   5.2, 5.3
+│   │   │   ├── Notes/               Note, NoteManager, NoteStore, Note+Queries, NoteWorkContext, NoteMainContext, NoteJobGroup, NoteActivities   5.1–5.6
+│   │   │   │   └── Jobs/            PullNotesJob, RenameNoteJob, SaveNoteJob, DeleteNoteJob, ExportNotebookJob, DraftSummaryJob   5.4–5.8
 │   │   │   ├── Notebooks/           Notebook, NotebookManager, NotebookStore, ExportManager
-│   │   │   ├── Tags/                Tag, TagManager, LoadTagIndexJob
+│   │   │   ├── Tags/                Tag, TagIndex, Tag+Queries, TagManager, LoadTagIndexJob  5.7
+│   │   │   ├── Suggestions/         Suggestion, SuggestionStore, Suggestion+Queries, SuggestionManager, PersistSuggestionJob, ProposeSuggestionsJob   5.7
+│   │   │   ├── Templates/           NoteTemplate, TemplateStore, NoteTemplate+Queries, TemplateManager   5.7
 │   │   │   ├── Sync/                SyncManager, SyncStore, SyncConfig, SyncState           2.5, 5
 │   │   │   └── Persistence/         the database stack PersistenceInitializer opens
-│   │   └── Tests/NotebookCoreTests/ NotebookCore/ mirror + Factories/ + Support/            10.3
+│   │   └── Tests/NotebookCoreTests/ NotebookCore/ mirror + Factories/ + Support/            9.3
 │   └── NotebookActions/             ACTIONS AND VALIDATORS, depends on NotebookCore          6.1, 6.3
 │       ├── Sources/NotebookActions/
 │       │   ├── Action, ActionStatus, ActionManager, ActionValidator
@@ -52,30 +55,30 @@ NotebookApp/
 │   │   ├── WindowRestoration/       WindowRestorationController, RestoredWindow             2.3
 │   │   ├── Settings/                EditorSettings, SyncSettings, AppearanceSettings        2.4
 │   │   ├── Updates/                 what UpdatesInitializer configures
-│   │   └── Runtime/                 the BackgroundController protocol                       4
+│   │   └── Runtime/                 the BackgroundController protocol, AppState                4, 5.7
 │   ├── ActionControllers/           "How does a gesture become an operation?"               6.2
 │   │   ├── Notes/                   NoteActionController
 │   │   └── Notebooks/               NotebookActionController
 │   ├── BackgroundControllers/       "What keeps the app current with no gesture behind it?" 4
 │   │                                StaleDraftReaper, TagUsageProjector, AppearanceApplier
 │   ├── Integrations/                "What does the app bridge to outward?"
-│   │                                the user's tools and OS surfaces — a URL scheme handler feeding Chapter 9 would be the first occupant
-│   ├── UI/                          "What does the user see?"                               8
+│   │                                the user's tools and OS surfaces — a URL scheme handler feeding Chapter 8 would be the first occupant
+│   ├── UI/                          "What does the user see?"                               7
 │   │   ├── ActionSenderValidation/  ActionSenderValidator, NotebookActionSenderValidator    6.3
-│   │   ├── Menus/                   NotebookMenuController, NSMenuItem+Values               8.5
-│   │   ├── Navigation/              NotebookNavigationState                                 9
+│   │   ├── Menus/                   NotebookMenuController, NSMenuItem+Values               7.5
+│   │   ├── Navigation/              NotebookNavigationState                                 8
 │   │   ├── Screens/                 one folder per screen; the read path lives WITH its screen
-│   │   │   ├── Workspace/           WorkspaceViewController                                 9
-│   │   │   ├── Sidebar/             NotebookSidebarViewController, NotebookSidebarController, NotebookListStateController + NotebookListState   8.4
-│   │   │   ├── NoteList/            NoteListViewController, NoteListStateController + NoteListState, NoteListView, NoteRowState   8.4
-│   │   │   ├── NoteDetail/          NoteDetailViewController, NoteDetailStateController + NoteDetailState, NoteEditorView, TagFilterButtonController   8.1, 8.2
-│   │   │   ├── Search/              NoteSearchController                                    7
-│   │   │   └── Settings/            SettingsWindowController, SettingsTabViewController, SettingsForm; General/ and Appearance/ panes — a Screen, and per section a View plus a Controller   8.6
+│   │   │   ├── Workspace/           WorkspaceViewController                                 8
+│   │   │   ├── Sidebar/             NotebookSidebarViewController, NotebookSidebarController, NotebookListStateController + NotebookListState   7.4
+│   │   │   ├── NoteList/            NoteListViewController, NoteListStateController + NoteListState, NoteListView, NoteRowState   7.4
+│   │   │   ├── NoteDetail/          NoteDetailViewController, NoteDetailStateController + NoteDetailState, NoteEditorView, TagFilterButtonController   7.1, 7.2
+│   │   │   ├── Search/              NoteSearchController                                    5.8
+│   │   │   └── Settings/            SettingsWindowController, SettingsTabViewController, SettingsForm; General/ and Appearance/ panes — a Screen, and per section a View plus a Controller   7.6
 │   │   ├── Shared/                  SyncStatusView, SyncStatusViewController, UnsyncedBadgeView
 │   │   └── Support/                 view styles, input validators, display formatters
 │   └── Resources/
 │
-└── NotebookAppTests/                mirror of the app target                                10.3
+└── NotebookAppTests/                mirror of the app target                                9.3
     ├── NotebookApp/UI/Screens/NoteList/   NoteListStateControllerTests
     └── Factories/  Resources/  Support/  Live/  Performance/
 ```
@@ -85,9 +88,9 @@ A few placements are worth spelling out, because each is a rule in miniature:
 - <strong>The sync stack splits across three levels.</strong> `SyncClient` builds requests and decodes payloads and knows nothing above itself, so it is a library below the model. `SyncManager`, `SyncStore` and the jobs are the model. The badge and the status view are UI. That is the same shape as any API or command-line wrapper under a domain manager under a screen.
 - <strong>Jobs live next to the manager that enqueues them,</strong> with their result contexts, not in a `Jobs/` folder at the package root.
 - <strong>Validators live with the Actions they guard,</strong> in the Actions package. The action sender validators are AppKit and stay in `UI/`.
-- <strong>`NoteSearchController` is a view state controller</strong> that happens to demonstrate cancel-and-replace in <a href="/guide/07-concurrency">Chapter 7</a>, so it goes with its screen.
-- <strong>A state controller and its model share a file.</strong> `NoteDetailStateController.swift` declares both `NoteDetailStateController` and `NoteDetailState`, so `fileprivate(set)` makes the controller the model's only writer — <a href="/guide/08-2-view-state">Chapter 8.2</a>. The file is named for the controller; the model is what the screen's views receive.
-- <strong>`SyncStatusViewController` is in `Shared/`</strong> because <a href="/guide/08-3-view-controllers">Chapter 8.3</a> embeds it in other screens; it is a component, not a screen.
+- <strong>`NoteSearchController` is a view state controller</strong> that happens to demonstrate cancel-and-replace in <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>, so it goes with its screen.
+- <strong>A state controller and its model share a file.</strong> `NoteDetailStateController.swift` declares both `NoteDetailStateController` and `NoteDetailState`, so `fileprivate(set)` makes the controller the model's only writer — <a href="/guide/07-2-view-state">Chapter 7.2</a>. The file is named for the controller; the model is what the screen's views receive.
+- <strong>`SyncStatusViewController` is in `Shared/`</strong> because <a href="/guide/07-3-view-controllers">Chapter 7.3</a> embeds it in other screens; it is a component, not a screen.
 - <strong>`BackgroundControllers/` has no test mirror.</strong> The work each controller dispatches is a manager function, tested in the model package.
 
 ## Why the roots look like this
@@ -120,7 +123,7 @@ The cost of sorting by layer at the root is that one capability is found in seve
 
 ## Features: when a component keeps its own model
 
-Some components are isolated enough that splitting them by layer only scatters them. A <strong>feature</strong> is a folder that owns everything one capability needs — its model, its controllers, its validators and its views — arranged by layer inside the folder and reachable from outside only through its facade file. The term is <em>feature</em>, not <em>component</em>, because <a href="/guide/08-1-views">Chapter 8.1</a> already uses "view component" for an `NSView` piece.
+Some components are isolated enough that splitting them by layer only scatters them. A <strong>feature</strong> is a folder that owns everything one capability needs — its model, its controllers, its validators and its views — arranged by layer inside the folder and reachable from outside only through its facade file. The term is <em>feature</em>, not <em>component</em>, because <a href="/guide/07-1-views">Chapter 7.1</a> already uses "view component" for an `NSView` piece.
 
 A feature may stay vertical only if all four conditions hold:
 
@@ -158,9 +161,9 @@ The facade rule is a lint, not a convention. For every folder containing a `<Fol
 
 <strong>Libraries below the model may be remote.</strong> `NotebookSync` or `MarkdownImport` could as well be pinned packages from their own repositories, with a gitignored override slot for tandem development. `NotebookCore` and `NotebookActions` are always local: they are an enforced module boundary for this app, not a library anyone else consumes.
 
-<strong>Airframe is the one dependency on both sides of the boundary.</strong> The framework (<a href="/guide/11-the-airframe-package">Chapter 11</a>) is a pinned remote dependency carved into products along the same Foundation/AppKit line this layout is built on. `NotebookCore` and `NotebookActions` import the individual Foundation-only products they need — `AirframeActions` for the Action and validator bases, `AirframeFoundation` for the shared helpers — and the app target imports the `Airframe` umbrella, which re-exports everything. A Foundation-only product never links AppKit, so the compiler holds the line through the framework the same way it holds it through your own packages. The framework is also why there is no `FoundationExtensions`, `StateObserving` or observation package of your own under `Packages/`: Airframe ships that generic code, and what remains there is either a library below the model or domain code.
+<strong>Airframe is the one dependency on both sides of the boundary.</strong> The framework (<a href="/guide/10-the-airframe-package">Chapter 10</a>) is a pinned remote dependency carved into products along the same Foundation/AppKit line this layout is built on. `NotebookCore` and `NotebookActions` import the individual Foundation-only products they need — `AirframeActions` for the Action and validator bases, `AirframeFoundation` for the shared helpers — and the app target imports the `Airframe` umbrella, which re-exports everything. A Foundation-only product never links AppKit, so the compiler holds the line through the framework the same way it holds it through your own packages. The framework is also why there is no `FoundationExtensions`, `StateObserving` or observation package of your own under `Packages/`: Airframe ships that generic code, and what remains there is either a library below the model or domain code.
 
-<strong>Sibling targets sit beside the app target.</strong> A command-line helper embedded in the bundle, a dock tile plug-in, a Quick Look extension each get their own folder at the repository root, with their own test target laid out per <a href="/guide/10-3-suite-layout-and-test-kinds">Chapter 10.3</a>. Code compiled into two targets is a local package, never a folder added to both.
+<strong>Sibling targets sit beside the app target.</strong> A command-line helper embedded in the bundle, a dock tile plug-in, a Quick Look extension each get their own folder at the repository root, with their own test target laid out per <a href="/guide/09-3-suite-layout-and-test-kinds">Chapter 9.3</a>. Code compiled into two targets is a local package, never a folder added to both.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
@@ -171,5 +174,5 @@ At the root, a folder is a layer; below it, a folder is a domain. The Model and 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The test target that mirrors this tree — one folder per source folder, one file per source file — is <a href="/guide/10-3-suite-layout-and-test-kinds">Chapter 10.3</a>. The two root folders that hold coordination code are <a href="/guide/04-background-controllers">Chapter 4</a> and <a href="/guide/06-2-action-controllers">Chapter 6.2</a>; the packages at the bottom are where <a href="/guide/05-model-layer">Chapter 5</a> and <a href="/guide/06-1-actions">Chapter 6.1</a> live.
+The test target that mirrors this tree — one folder per source folder, one file per source file — is <a href="/guide/09-3-suite-layout-and-test-kinds">Chapter 9.3</a>. The two root folders that hold coordination code are <a href="/guide/04-background-controllers">Chapter 4</a> and <a href="/guide/06-2-action-controllers">Chapter 6.2</a>; the packages at the bottom are where <a href="/guide/05-model-layer">Chapter 5</a> and <a href="/guide/06-1-actions">Chapter 6.1</a> live.
 </div>

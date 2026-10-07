@@ -1,7 +1,7 @@
 ---
 title: "Which Tests to Write"
 description: "A test earns its place only if it can fail for a reason you care about. This subchapter covers the value question, the nine rules that keep a test from becoming a change detector, which of the architecture's layers get tests at all, how to make trapped logic testable, and the one place a test double is allowed."
-order: 10
+order: 9
 subOrder: 1
 ---
 
@@ -47,7 +47,7 @@ Controllers coordinate — they wire collaborators together, present dialogs, ob
 - **Touches AppKit** (Action Controllers, window controllers, menu controllers, view controllers) — never tested. There is nothing to assert that isn't UI presentation.
 - **Pure Foundation** — testable <em>if</em> it actually produces data. In practice that means one kind: the View State Controller, a Foundation-only class that loads data from the model layer and shapes it for display — filter, group, sort — and writes the result into a view state model. It has real input-output behavior, so it's tested directly on its shaped output: how many items, in what order, grouped how, which ones filtered out. Never on its internal loading mechanics.
 
-Test what the controller coordinates instead: an Action Controller's Action, a view controller's View State Controller, a background controller's manager function or model behavior. <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a> works each of these through in the notebook app.
+Test what the controller coordinates instead: an Action Controller's Action, a view controller's View State Controller, a background controller's manager function or model behavior. <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a> works each of these through in the notebook app.
 
 ## Extract logic to make it testable
 
@@ -134,7 +134,7 @@ If there is no branching at all, write no test.
 ## What to test
 
 - **All non-trivial logic:** parsing, mapping, validation, state transitions, anything with more than one code path, wherever it lives.
-- **Bug fixes:** reproduce the bug in a failing test first, then fix — the workflow is <a href="/guide/10-2-testing-workflows">Chapter 10.2</a>. If you cannot write the test, ask why: a missing factory or builder primitive is written first, code that resists testing is restructured.
+- **Bug fixes:** reproduce the bug in a failing test first, then fix — the workflow is <a href="/guide/09-2-testing-workflows">Chapter 9.2</a>. If you cannot write the test, ask why: a missing factory or builder primitive is written first, code that resists testing is restructured.
 - **The public interface**, not the mechanism behind it: `NoteManager.pull()`, not the `PullNotesJob` it enqueues; the model's query, not the store underneath it.
 - **Components that add a decision** over the ones they call. A multi-step Action or a coordinator with branching is tested; one that forwards a single call is covered by the callee's tests and needs none of its own.
 
@@ -149,7 +149,7 @@ If there is no branching at all, write no test.
 
 Use the real thing wherever it can run in a test: the in-memory database, a real notebook built through the real store, a real temporary directory on disk. Do not introduce a protocol, an init parameter or a settable shared instance so that a test can swap in a mock — that couples the test to the implementation and makes it pass while the integrated code fails. The seams this guide accepts sit at <strong>external boundaries you cannot control</strong>: the network, an external process, credentials, time. Replacing an internal collaborator with a double is the case to push back on.
 
-This is why `NoteManager`'s `init` is private and tests reach it through `.shared`, exactly as production does (<a href="/guide/02-5-object-wiring">Chapter 2.5</a>): there is no injected-client seam to construct it with. The stub sits one layer down, at the HTTP boundary, intercepting the request `SyncClient` would otherwise send over the real network — `SyncClient` itself, request building and response decoding all still run for real. Doubles that do exist produce the <strong>external shape</strong> their real counterpart would (the payload builders in <a href="/guide/10-4-factories-builders-and-fixtures">Chapter 10.4</a>), so the full transformation pipeline runs in the test.
+This is why `NoteManager`'s `init` is private and tests reach it through `.shared`, exactly as production does (<a href="/guide/02-5-object-wiring">Chapter 2.5</a>): there is no injected-client seam to construct it with. The stub sits one layer down, at the HTTP boundary, intercepting the request `SyncClient` would otherwise send over the real network — `SyncClient` itself, request building and response decoding all still run for real. Doubles that do exist produce the <strong>external shape</strong> their real counterpart would (the payload builders in <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a>), so the full transformation pipeline runs in the test.
 
 ## Review checklist
 
@@ -165,5 +165,5 @@ Flag a test when any of these hold:
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
-With the judgment settled, the two disciplines that produce most tests — fixing a bug and building a feature — are next: <a href="/guide/10-2-testing-workflows">Chapter 10.2, Testing Workflows</a>.
+With the judgment settled, the two disciplines that produce most tests — fixing a bug and building a feature — are next: <a href="/guide/09-2-testing-workflows">Chapter 9.2, Testing Workflows</a>.
 </div>

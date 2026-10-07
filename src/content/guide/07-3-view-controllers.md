@@ -1,11 +1,11 @@
 ---
 title: "View Controllers"
 description: "A view controller does four jobs — assemble, wire, map, and coordinate — always through the same override point, loadView(). This subchapter covers how a programmatic view controller is structured, and when a piece of UI has earned one of its own rather than staying embedded in its parent's."
-order: 8
+order: 7
 subOrder: 3
 ---
 
-A view controller does four jobs — assemble, wire, map, and coordinate — always through the same override point, `loadView()`. This subchapter covers how a programmatic view controller is structured, and when a piece of UI has earned one of its own rather than staying embedded in its parent's. It builds on the view components from <a href="/guide/08-1-views">Chapter 8.1</a> — read that first if you haven't; this chapter doesn't re-explain what a view component is or how one composes.
+A view controller does four jobs — assemble, wire, map, and coordinate — always through the same override point, `loadView()`. This subchapter covers how a programmatic view controller is structured, and when a piece of UI has earned one of its own rather than staying embedded in its parent's. It builds on the view components from <a href="/guide/07-1-views">Chapter 7.1</a> — read that first if you haven't; this chapter doesn't re-explain what a view component is or how one composes.
 
 ## The four jobs
 
@@ -131,7 +131,7 @@ final class SyncStatusViewController: NSViewController {
 }
 ```
 
-`statusView` is the exact `SyncStatusView` component from <a href="/guide/08-1-views">Chapter 8.1</a> — this controller doesn't rebuild it, it composes it. Both `SyncStore.shared.status` and the notebook's sync target are plain, non-`@Observable` model state, per <a href="/guide/05-model-layer">Chapter 5</a>'s signalling table — so both need a notification bridged into a `@Tracked` property before a tracked updater can render them. Two independent bridges, one tracked updater: each signal gets exactly the subscription it needs, and `updateComponents()` stays a dumb application of whatever the two bridges most recently decided.
+`statusView` is the exact `SyncStatusView` component from <a href="/guide/07-1-views">Chapter 7.1</a> — this controller doesn't rebuild it, it composes it. Both `SyncStore.shared.status` and the notebook's sync target are plain, non-`@Observable` model state, per <a href="/guide/05-1-the-model">Chapter 5.1</a>'s signalling table — so both need a notification bridged into a `@Tracked` property before a tracked updater can render them. Two independent bridges, one tracked updater: each signal gets exactly the subscription it needs, and `updateComponents()` stays a dumb application of whatever the two bridges most recently decided.
 
 ## Scoping: when a piece of UI earns its own view controller
 
@@ -155,9 +155,9 @@ The naming threshold makes the call concrete: if a view controller's purpose fit
 
 Take a notebook sidebar with a bottom bar of filter and settings buttons, and a separate area showing live sync activity. That's three sibling view controllers under the sidebar: a content controller for the notebook list itself, plus two accessory controllers — one for the bottom bar, one for the activity area — each independently shown or hidden, each with whatever state it actually needs. Folding the activity area into the bottom-bar controller would coordinate two things that have nothing to do with each other: a `loadView()` that assembles unrelated components, and a tracked updater that renders unrelated state, both because they happened to live in the same corner of the screen.
 
-A well-scoped view controller shows up as a focused `loadView()` — one that reads clearly because it only ever had one concern to assemble. Child-view-controller nesting is how scoped controllers compose into a screen, the same containment idea <a href="/guide/08-1-views">Chapter 8.1</a> covers for view components one level down. And the same instinct that says "two pieces of UI needing different state belong in different view controllers" applies again inside a single controller, to its components: a component that needs its own state and its own lifecycle is a candidate to become its own view component controller, not a widening of the one it's currently attached to.
+A well-scoped view controller shows up as a focused `loadView()` — one that reads clearly because it only ever had one concern to assemble. Child-view-controller nesting is how scoped controllers compose into a screen, the same containment idea <a href="/guide/07-1-views">Chapter 7.1</a> covers for view components one level down. And the same instinct that says "two pieces of UI needing different state belong in different view controllers" applies again inside a single controller, to its components: a component that needs its own state and its own lifecycle is a candidate to become its own view component controller, not a widening of the one it's currently attached to.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The activation lifecycle behind <code>observeState()</code> and <code>@Tracked</code>, worked through in full, is next: <a href="/guide/08-4-state-observing">Chapter 8.4, State Observing</a>.
+The activation lifecycle behind <code>observeState()</code> and <code>@Tracked</code>, worked through in full, is next: <a href="/guide/07-4-state-observing">Chapter 7.4, State Observing</a>.
 </div>

@@ -1,7 +1,7 @@
 ---
 title: "Testing"
 description: "Not everything earns a test, and the tests that do earn their place are read top to bottom in one file. This closing chapter introduces the guide's testing discipline — why it tests at all, which tests it writes, how a suite is laid out, how test data is built, how a test class is shaped, and how each layer of the architecture is exercised — and lays out how the six subchapters relate before each goes deeper."
-order: 10
+order: 9
 ---
 
 Not everything earns a test, and the tests that do earn their place are read top to bottom in one file. This closing chapter introduces the guide's testing discipline — why it tests at all, which tests it writes, how a suite is laid out, how test data is built, how a test class is shaped, and how each layer of the architecture is exercised — and lays out how the six subchapters relate before each goes deeper.
@@ -20,17 +20,17 @@ Not all code carries equal risk, so effort goes where bugs would hurt most. Crit
 
 ## The shape of the chapter
 
-A test earns its place only if it can fail for a reason you care about. <a href="/guide/10-1-which-tests-to-write">Which Tests to Write</a> covers that judgment — the value question, the rules that keep a test from being a change detector, the layer table that says which of the architecture's types get tests at all, and the one place a test double is allowed.
+A test earns its place only if it can fail for a reason you care about. <a href="/guide/09-1-which-tests-to-write">Which Tests to Write</a> covers that judgment — the value question, the rules that keep a test from being a change detector, the layer table that says which of the architecture's types get tests at all, and the one place a test double is allowed.
 
-Most testing happens in two contexts: fixing a bug and building a feature. <a href="/guide/10-2-testing-workflows">Testing Workflows</a> covers the discipline for each, worked through as a sync bug and an archive feature in the notebook app, and the habit of investing in test infrastructure the moment a scenario is hard to set up.
+Most testing happens in two contexts: fixing a bug and building a feature. <a href="/guide/09-2-testing-workflows">Testing Workflows</a> covers the discipline for each, worked through as a sync bug and an archive feature in the notebook app, and the habit of investing in test infrastructure the moment a scenario is hard to set up.
 
-A test target has a fixed shape, and a test is one of four kinds. <a href="/guide/10-3-suite-layout-and-test-kinds">Suite Layout and Test Kinds</a> covers the module-named mirror, the three infrastructure folders, the precise meaning of fixture, factory and builder, and the live, performance and contract suites that don't run on every `Cmd+U`.
+A test target has a fixed shape, and a test is one of four kinds. <a href="/guide/09-3-suite-layout-and-test-kinds">Suite Layout and Test Kinds</a> covers the module-named mirror, the three infrastructure folders, the precise meaning of fixture, factory and builder, and the live, performance and contract suites that don't run on every `Cmd+U`.
 
-Test data is built, not loaded. <a href="/guide/10-4-factories-builders-and-fixtures">Factories, Builders and Fixtures</a> covers the two factory shapes and why there's no third, the defaults a factory carries, payload builders that produce the wire shape, the narrow case where a fixture file is right, and the rule of two that decides when a private helper becomes a shared one.
+Test data is built, not loaded. <a href="/guide/09-4-factories-builders-and-fixtures">Factories, Builders and Fixtures</a> covers the two factory shapes and why there's no third, the defaults a factory carries, payload builders that produce the wire shape, the narrow case where a fixture file is right, and the rule of two that decides when a private helper becomes a shared one.
 
-Inside a class, every test builds its own state and reads in one place. <a href="/guide/10-5-inside-a-test-class">Inside a Test Class</a> covers that — no shared setup, what a private helper may hide, assertions as free functions, the one allowed base class, naming, grouping tests by what they prove, and where a behavior is tested once and merely pinned everywhere else.
+Inside a class, every test builds its own state and reads in one place. <a href="/guide/09-5-inside-a-test-class">Inside a Test Class</a> covers that — no shared setup, what a private helper may hide, assertions as free functions, the one allowed base class, naming, grouping tests by what they prove, and where a behavior is tested once and merely pinned everywhere else.
 
-Finally, each layer of the architecture has a way it gets exercised. <a href="/guide/10-6-testing-each-layer">Testing Each Layer</a> works through the notebook app layer by layer: a manager through its public method with the network stubbed underneath, a multi-step Action, a validator, a View State Controller, async and error paths, and background jobs with progress.
+Finally, each layer of the architecture has a way it gets exercised. <a href="/guide/09-6-testing-each-layer">Testing Each Layer</a> works through the notebook app layer by layer: a manager through its public method with the network stubbed underneath, a multi-step Action, a validator, a View State Controller, async and error paths, and background jobs with progress.
 
 ## The rule that holds across all six
 
@@ -52,5 +52,5 @@ Each of these sounds like discipline and produces the opposite.
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
-The judgment that decides whether a test gets written at all is first: <a href="/guide/10-1-which-tests-to-write">Chapter 10.1, Which Tests to Write</a>.
+The judgment that decides whether a test gets written at all is first: <a href="/guide/09-1-which-tests-to-write">Chapter 9.1, Which Tests to Write</a>.
 </div>

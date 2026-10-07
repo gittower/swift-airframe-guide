@@ -1,11 +1,11 @@
 ---
 title: "The Settings Window"
 description: "The settings window is the first complete window most apps build after the main one, and it exercises the whole view layer at once: an app-level window controller, an AppKit tab controller with toolbar tabs, SwiftUI panes hosted as ordinary content views, and the settings objects from Chapter 2.4 behind them. This subchapter builds the notebook app's settings window end to end — window, tabs, panes, sections, and the two-column form they share."
-order: 8
+order: 7
 subOrder: 6
 ---
 
-The settings window is the first complete window most apps build after the main one, and it exercises the whole view layer at once: an app-level window controller, an AppKit tab controller with toolbar tabs, SwiftUI panes hosted as ordinary content views, and the settings objects from <a href="/guide/02-4-settings">Chapter 2.4</a> behind them. This subchapter builds the notebook app's settings window end to end — window, tabs, panes, sections, and the two-column form they share. It assumes the view contract from <a href="/guide/08-1-views">Chapter 8.1</a> and the state pair from <a href="/guide/08-2-view-state">Chapter 8.2</a>; neither is re-explained here.
+The settings window is the first complete window most apps build after the main one, and it exercises the whole view layer at once: an app-level window controller, an AppKit tab controller with toolbar tabs, SwiftUI panes hosted as ordinary content views, and the settings objects from <a href="/guide/02-4-settings">Chapter 2.4</a> behind them. This subchapter builds the notebook app's settings window end to end — window, tabs, panes, sections, and the two-column form they share. It assumes the view contract from <a href="/guide/07-1-views">Chapter 7.1</a> and the state pair from <a href="/guide/07-2-view-state">Chapter 7.2</a>; neither is re-explained here.
 
 ## The shape
 
@@ -74,7 +74,7 @@ final class SettingsWindowController: NSWindowController {
 }
 ```
 
-`show(_:sender:)` is the deep link. Every place in the app that wants to open settings on a particular pane — a "Configure sync…" button beside a disabled sync badge, a navigation URL from <a href="/guide/09-navigation">Chapter 9</a> — calls this one method with a `SettingsTab` case, and never reaches into the tab controller.
+`show(_:sender:)` is the deep link. Every place in the app that wants to open settings on a particular pane — a "Configure sync…" button beside a disabled sync badge, a navigation URL from <a href="/guide/08-navigation">Chapter 8</a> — calls this one method with a `SettingsTab` case, and never reaches into the tab controller.
 
 The tab controller adds one tab per pane, hosts each pane's Screen, and holds every pane to one size:
 
@@ -144,13 +144,13 @@ final class SettingsTabViewController: NSTabViewController {
 }
 ```
 
-`NSHostingController` is the right host here by <a href="/guide/08-1-views">Chapter 8.1</a>'s rule: a pane's entire content is SwiftUI and the controller has no lifecycle work of its own, so there's nothing for a custom `NSViewController` to do. The tab controller does the rest — it builds the toolbar from the tab items, switches panes, and retitles the window after the selected pane's label, which is why the window is titled "General", not "Settings", exactly as System Settings is.
+`NSHostingController` is the right host here by <a href="/guide/07-1-views">Chapter 7.1</a>'s rule: a pane's entire content is SwiftUI and the controller has no lifecycle work of its own, so there's nothing for a custom `NSViewController` to do. The tab controller does the rest — it builds the toolbar from the tab items, switches panes, and retitles the window after the selected pane's label, which is why the window is titled "General", not "Settings", exactly as System Settings is.
 
 Two sizing facts cost most first implementations an afternoon, and both are in the comments above. `preferredContentSize` is the <em>only</em> size the tab controller reads from a pane, so a hosted SwiftUI view's fitting size is ignored no matter how carefully it's framed. And the window has to be sized before it's centred, because until the first layout pass it's still the tab controller's default size. Holding every pane to one fixed size is the simple choice and the one made here. The alternative — a different `preferredContentSize` per pane, with the tab controller resizing the window on every switch — is what System Settings does, and works, at the cost of a visible relayout unless the transition is animated by hand.
 
 ## A pane is a Screen of sections
 
-A pane's root is a SwiftUI <strong>Screen</strong> in <a href="/guide/08-1-views">Chapter 8.1</a>'s naming: it owns the controllers, hands each view what it renders, and routes each view's intents back — the view-controller role, in the only place this guide lets SwiftUI play it, because a pane has no AppKit chrome of its own to coordinate. The Screen is a thin composition root and nothing else:
+A pane's root is a SwiftUI <strong>Screen</strong> in <a href="/guide/07-1-views">Chapter 7.1</a>'s naming: it owns the controllers, hands each view what it renders, and routes each view's intents back — the view-controller role, in the only place this guide lets SwiftUI play it, because a pane has no AppKit chrome of its own to coordinate. The Screen is a thin composition root and nothing else:
 
 ```swift
 // UI/Screens/Settings/General/GeneralSettingsScreen.swift
@@ -176,7 +176,7 @@ Two sections, wired two different ways, and the difference is the subject of the
 
 ## A section that binds directly
 
-The Editor section is the `EditorSettings` object from <a href="/guide/02-4-settings">Chapter 2.4</a>, edited in place. Every control maps one-to-one onto a property of the settings object; nothing is derived, filtered, or validated; writing the property <em>is</em> the whole effect. That is the one exception <a href="/guide/08-2-view-state">Chapter 8.2</a> grants to the model-and-closures rule — a flat settings object is its own manager, so there is no controller to go around — and the section takes the settings object by reference and binds to it:
+The Editor section is the `EditorSettings` object from <a href="/guide/02-4-settings">Chapter 2.4</a>, edited in place. Every control maps one-to-one onto a property of the settings object; nothing is derived, filtered, or validated; writing the property <em>is</em> the whole effect. That is the one exception <a href="/guide/07-2-view-state">Chapter 7.2</a> grants to the model-and-closures rule — a flat settings object is its own manager, so there is no controller to go around — and the section takes the settings object by reference and binds to it:
 
 ```swift
 // UI/Screens/Settings/General/EditorSectionView.swift
@@ -201,7 +201,7 @@ Reactivity is free: the properties are read inside `body`, the object is `@Obser
 
 ## A section with a controller
 
-The Sync section has one wrinkle: the interval picker is only meaningful while automatic sync is on. That's a value <em>derived</em> from a setting, not a setting — and per <a href="/guide/05-model-layer">Chapter 5</a>, the moment a screen derives, combines, or filters what a settings object holds, it has graduated to needing its own display object like everything else. A section that also validates a selection, computes the list of options offered, or triggers an effect beyond the write itself graduates for the same reason.
+The Sync section has one wrinkle: the interval picker is only meaningful while automatic sync is on. That's a value <em>derived</em> from a setting, not a setting — and per <a href="/guide/05-7-model-shapes">Chapter 5.7</a>, the moment a screen derives, combines, or filters what a settings object holds, it has graduated to needing its own display object like everything else. A section that also validates a selection, computes the list of options offered, or triggers an effect beyond the write itself graduates for the same reason.
 
 The section becomes four types in two files: what the view renders, what the view can ask for, the controller that connects both to the settings object, and the view.
 
@@ -252,7 +252,7 @@ final class SyncSectionController {
 
 `content` is computed, not stored, and the controller is not `@Observable` — deliberately. The settings object it reads <em>is</em> observable, and the Screen reads `sync.content` inside its own `body`, so every settings property the computation touches is tracked right there. A write from `handle`, from another window, or from outside the app re-renders the section with no seeding, no copies, and no subscription to keep current. That is what an `@Observable` settings object buys; a controller in front of a settings store that <em>isn't</em> observable would have to seed private copies from it and re-read after every write, and would still miss changes made anywhere else.
 
-This is <a href="/guide/08-2-view-state">Chapter 8.2</a>'s pair with its model collapsed to a value: `SyncSectionController` is the writer, `SyncSectionContent` is the state, and the view never sees the controller. The one difference from a state controller in an AppKit screen is that there is nothing to load, so the controller carries no `Task`. If a section ever needs one — an options list fetched from a server, say — it grows into a full state controller writing an `@Observable` model, and the Screen hands that model down by reference instead. The view is the same either way:
+This is <a href="/guide/07-2-view-state">Chapter 7.2</a>'s pair with its model collapsed to a value: `SyncSectionController` is the writer, `SyncSectionContent` is the state, and the view never sees the controller. The one difference from a state controller in an AppKit screen is that there is nothing to load, so the controller carries no `Task`. If a section ever needs one — an options list fetched from a server, say — it grows into a full state controller writing an `@Observable` model, and the Screen hands that model down by reference instead. The view is the same either way:
 
 ```swift
 // UI/Screens/Settings/General/SyncSectionView.swift
@@ -562,9 +562,9 @@ UI/Screens/Settings/
 
 Naming follows what the user sees: the pane is named after its tab, the section after its heading, and each section's four types share the section's name with a `Content`, `Action`, `Controller`, or `View` suffix — never `Settings`, which is the model's word. `SyncSettings` is the object in `App/Settings/`; `SyncSection…` is the UI that edits it.
 
-Testing splits the same way. The settings objects are tested as models — <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a> — against the isolated `UserDefaults` suite that <a href="/guide/10-5-inside-a-test-class">Chapter 10.5</a>'s test base class installs. A section controller is tested like any view state controller, on the content it produces: construct it, call `handle`, and assert on `content` — `handle(.setSyncsAutomatically(false))` leaves `content.canEditInterval` false. The views are covered by their previews, one per state, and are not unit-tested; the window and tab controllers are wiring, and aren't either.
+Testing splits the same way. The settings objects are tested as models — <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a> — against the isolated `UserDefaults` suite that <a href="/guide/09-5-inside-a-test-class">Chapter 9.5</a>'s test base class installs. A section controller is tested like any view state controller, on the content it produces: construct it, call `handle`, and assert on `content` — `handle(.setSyncsAutomatically(false))` leaves `content.canEditInterval` false. The views are covered by their previews, one per state, and are not unit-tested; the window and tab controllers are wiring, and aren't either.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Opening the window on a given pane from a URL is one use of the navigation stack in <a href="/guide/09-navigation">Chapter 9</a>. Testing the settings objects and section controllers built here is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+Opening the window on a given pane from a URL is one use of the navigation stack in <a href="/guide/08-navigation">Chapter 8</a>. Testing the settings objects and section controllers built here is <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
 </div>

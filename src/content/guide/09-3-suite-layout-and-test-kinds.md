@@ -1,13 +1,13 @@
 ---
 title: "Suite Layout and Test Kinds"
 description: "A test target has a fixed shape: a mirror of the module under test, the infrastructure around it, and the special-run suites that don't run on every Cmd+U. This subchapter covers that layout, the precise meaning of fixture, factory and builder, and the four kinds of test — tests, live tests, performance tests and contract tests — with the test plans that gate them."
-order: 10
+order: 9
 subOrder: 3
 ---
 
 A test target has a fixed shape: a mirror of the module under test, the infrastructure around it, and the special-run suites that don't run on every `Cmd+U`. This subchapter covers that layout, the precise meaning of fixture, factory and builder, and the four kinds of test — tests, live tests, performance tests and contract tests — with the test plans that gate them.
 
-The layout applies to every Swift test target you own: the app target in an Xcode project and the test targets in Swift packages alike. Every rule in it serves the one goal from <a href="/guide/10-testing">Chapter 10</a> — a test is read top to bottom, in one file, and finding the test for a source file is mechanical.
+The layout applies to every Swift test target you own: the app target in an Xcode project and the test targets in Swift packages alike. Every rule in it serves the one goal from <a href="/guide/09-testing">Chapter 9</a> — a test is read top to bottom, in one file, and finding the test for a source file is mechanical.
 
 ## The shape
 
@@ -55,7 +55,7 @@ The root itself holds only target configuration — `Info.plist`, a bridging hea
 
 Three words, used precisely:
 
-- **Fixture:** a fixed, known state a test runs against, that the test <em>loads</em> rather than builds. In these suites that is a file in `Resources/`. The word appears in loader APIs (`Fixture.data(named:)`) and nowhere else. Fixtures are used sparingly — <a href="/guide/10-4-factories-builders-and-fixtures">Chapter 10.4</a> says when.
+- **Fixture:** a fixed, known state a test runs against, that the test <em>loads</em> rather than builds. In these suites that is a file in `Resources/`. The word appears in loader APIs (`Fixture.data(named:)`) and nowhere else. Fixtures are used sparingly — <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a> says when.
 - **Factory:** code that builds a value on demand, with defaults, so a test names only what it cares about. Lives in `Factories/`.
 - **Builder:** a factory's DSL for composing a scenario step by step — `Notebook.make { n in n.createNote(titled: "A") }`. Builders live in `Factories/` or come from a test-support package; a test uses them inline.
 
@@ -103,7 +103,7 @@ final class SyncServiceLiveTests: XCTestCase {
 
 ### Contract tests
 
-Tests that pin a <strong>promise of the whole module</strong> rather than the behavior of one source file: every bundled theme file parsing without error, every export format round-tripping a reference notebook, every command-line entry point accepting `--dry-run`. They have no single mirror location, so they get `Contracts/`. Class names end in `ContractTests` (`BundledThemesContractTests`). If a contract test needs a built artifact, it skips with a reason when the artifact is absent. This is the one kind where a loop over a resource set is acceptable, explained in a comment — rule 3 in <a href="/guide/10-1-which-tests-to-write">Chapter 10.1</a>.
+Tests that pin a <strong>promise of the whole module</strong> rather than the behavior of one source file: every bundled theme file parsing without error, every export format round-tripping a reference notebook, every command-line entry point accepting `--dry-run`. They have no single mirror location, so they get `Contracts/`. Class names end in `ContractTests` (`BundledThemesContractTests`). If a contract test needs a built artifact, it skips with a reason when the artifact is absent. This is the one kind where a loop over a resource set is acceptable, explained in a comment — rule 3 in <a href="/guide/09-1-which-tests-to-write">Chapter 9.1</a>.
 
 ### Test plans
 
@@ -111,5 +111,5 @@ Every test target has a default plan that skips `Live` and `Performance` suites 
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
-What goes into <code>Factories/</code>, and why there are exactly two shapes of factory, is next: <a href="/guide/10-4-factories-builders-and-fixtures">Chapter 10.4, Factories, Builders and Fixtures</a>.
+What goes into <code>Factories/</code>, and why there are exactly two shapes of factory, is next: <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4, Factories, Builders and Fixtures</a>.
 </div>

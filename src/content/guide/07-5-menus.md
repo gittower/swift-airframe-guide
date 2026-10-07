@@ -1,7 +1,7 @@
 ---
 title: "Menus"
 description: "A menu isn't a special case bolted onto the architecture — it's the mutate path from Chapter 1 wearing an NSMenuItem. This subchapter covers building menus, carrying typed data on them safely, and getting validation for free."
-order: 8
+order: 7
 subOrder: 5
 ---
 
@@ -9,7 +9,7 @@ A menu isn't a special case bolted onto the architecture — it's the mutate pat
 
 ## Menus as an action-driven view concern
 
-Menu items are built through `make…()` factory methods in an `NSMenuItem` extension, so the same item can be assembled identically wherever it's needed. A dedicated <strong>menu controller</strong> — a view component controller from <a href="/guide/08-1-views">Chapter 8.1</a>, specialized for menus — owns a menu's lifecycle: it's the menu's `NSMenuDelegate` and rebuilds the item list on demand, reading whatever state the owning view controller has pushed into it. When the menu is tied to a pop-up or popover button, the menu controller manages the button and its menu together — the two are one component.
+Menu items are built through `make…()` factory methods in an `NSMenuItem` extension, so the same item can be assembled identically wherever it's needed. A dedicated <strong>menu controller</strong> — a view component controller from <a href="/guide/07-1-views">Chapter 7.1</a>, specialized for menus — owns a menu's lifecycle: it's the menu's `NSMenuDelegate` and rebuilds the item list on demand, reading whatever state the owning view controller has pushed into it. When the menu is tied to a pop-up or popover button, the menu controller manages the button and its menu together — the two are one component.
 
 ```swift
 extension NSMenuItem {
@@ -77,5 +77,5 @@ Because the item's target is `nil`, enabling and disabling it is automatic once 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The settings window — the one the app menu's "Settings…" item opens, and the place every subchapter of this chapter meets — is next: <a href="/guide/08-6-settings-window">Chapter 8.6</a>. Moving between the screens a menu item might navigate to is <a href="/guide/09-navigation">Chapter 9</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+The settings window — the one the app menu's "Settings…" item opens, and the place every subchapter of this chapter meets — is next: <a href="/guide/07-6-settings-window">Chapter 7.6</a>. Moving between the screens a menu item might navigate to is <a href="/guide/08-navigation">Chapter 8</a>. Testing a validator directly, without building a menu at all, is <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
 </div>

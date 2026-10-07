@@ -1,7 +1,7 @@
 ---
 title: "Factories, Builders and Fixtures"
 description: "Test data is built, not loaded. This subchapter covers the two shapes a factory takes and why there's no third, the defaults a factory carries and the rule that a test never asserts on one, payload builders that produce the wire shape, the narrow case where a fixture file is right, and the rule of two that decides when a private helper becomes a shared one."
-order: 10
+order: 9
 subOrder: 4
 ---
 
@@ -98,7 +98,7 @@ enum SyncPayloads {
 }
 ```
 
-A test that stubs the network with `SyncPayloads.notes([...])` runs `SyncClient`'s real decoding and `PullNotesJob`'s real merge — <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a> shows the whole test. A stub that handed back a ready-made `[Note]` would skip both.
+A test that stubs the network with `SyncPayloads.notes([...])` runs `SyncClient`'s real decoding and `PullNotesJob`'s real merge — <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a> shows the whole test. A stub that handed back a ready-made `[Note]` would skip both.
 
 ## Fixtures, sparingly
 
@@ -147,5 +147,5 @@ func testImport_NestedListsWithCheckboxes() throws {
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
-Inside the test class that calls these factories — no shared setup, what a helper may hide, one allowed base class, and how tests are grouped — is next: <a href="/guide/10-5-inside-a-test-class">Chapter 10.5, Inside a Test Class</a>.
+Inside the test class that calls these factories — no shared setup, what a helper may hide, one allowed base class, and how tests are grouped — is next: <a href="/guide/09-5-inside-a-test-class">Chapter 9.5, Inside a Test Class</a>.
 </div>

@@ -238,7 +238,7 @@ Everything below the boundary line is Foundation-only: no AppKit, no UI framewor
 
 Every layer above the bottom Packages layer is `@MainActor`-isolated. State lives on the main thread; background work runs on the cooperative thread pool and returns its result via `await`. There is no mutex, no concurrent data structure, no queue guarding application state — the main actor <em>is</em> the synchronization.
 
-This is a deliberate trade against custom actors for state. An actor would make every read from UI code asynchronous, for a problem `@MainActor` already solves without paying that tax. The one hazard `@MainActor` doesn't remove on its own is re-entrancy — what happens when the same method is called again while an earlier call is still suspended at an `await`. That's a concern for <a href="/guide/07-concurrency">Chapter 7</a>; for now, the rule is simply: <strong>state reads and writes happen on the main actor, everywhere, without exception.</strong>
+This is a deliberate trade against custom actors for state. An actor would make every read from UI code asynchronous, for a problem `@MainActor` already solves without paying that tax. The one hazard `@MainActor` doesn't remove on its own is re-entrancy — what happens when the same method is called again while an earlier call is still suspended at an `await`. That's a concern for <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>; for now, the rule is simply: <strong>state reads and writes happen on the main actor, everywhere, without exception.</strong>
 
 ## Walking the loop once
 
@@ -254,5 +254,5 @@ Nothing in that list required the sidebar to know about a detail view, or the de
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The Model layer's write funnel is <a href="/guide/05-model-layer">Chapter 5</a>. Actions, Validators, and Action Controllers get their own treatment in <a href="/guide/06-actions-and-controllers">Chapter 6</a>. Re-entrancy and the concurrency primitives referenced above land in <a href="/guide/07-concurrency">Chapter 7</a>.
+The Model layer's write funnel is <a href="/guide/05-model-layer">Chapter 5</a>. Actions, Validators, and Action Controllers get their own treatment in <a href="/guide/06-actions-and-controllers">Chapter 6</a>. Re-entrancy is <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>, and the runner and jobs referenced above are <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> and <a href="/guide/05-4-jobs-and-contexts">Chapter 5.4</a>.
 </div>

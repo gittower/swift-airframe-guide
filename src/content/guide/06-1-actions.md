@@ -9,7 +9,7 @@ The Action is the unit of user intent — a live operation with its own lifecycl
 
 ## An Action is the thing in flight
 
-An Action is `@Observable` and `@MainActor`, and it carries its own lifecycle — `title`, `status`, progress, and a `cancel()` that means it. The Action represents the live user operation: it spawns its own task in `main()` and stays alive until that task finishes. A manager job may also update shared activity state for a notebook, as shown in <a href="/guide/07-concurrency">Chapter 7</a>; that state lets multiple views observe progress without taking over execution or cancellation from the Action.
+An Action is `@Observable` and `@MainActor`, and it carries its own lifecycle — `title`, `status`, progress, and a `cancel()` that means it. The Action represents the live user operation: it spawns its own task in `main()` and stays alive until that task finishes. A manager job may also update shared activity state for a notebook, as shown in <a href="/guide/05-6-progress-and-activities">Chapter 5.6</a>; that state lets multiple views observe progress without taking over execution or cancellation from the Action.
 
 ```swift
 @Observable @MainActor
@@ -39,7 +39,7 @@ enum ActionStatus {
 
 Because state and only state needs to be reactive — not the imperative `cancel()` or `main()` calls themselves — `@Observable` is the cheapest way to let several independent UI surfaces (a progress window, an activity list, a status badge) bind to the same live value without any subscription ceremony.
 
-This is the same narrow exception <a href="/guide/05-model-layer">Chapter 5</a> makes for a settings object, for the same reason: an Action is never constructed or written to off the main actor, so `@Observable`'s guarantees are true of it and not just declared. Every model-layer type that has background work behind it — which is most of them, even the ones marked `@MainActor` — doesn't get the same pass, because that background work is exactly what `@Observable` can't honestly track.
+This is the same narrow exception <a href="/guide/05-1-the-model">Chapter 5.1</a> makes for a settings object, for the same reason: an Action is never constructed or written to off the main actor, so `@Observable`'s guarantees are true of it and not just declared. Every model-layer type that has background work behind it — which is most of them, even the ones marked `@MainActor` — doesn't get the same pass, because that background work is exactly what `@Observable` can't honestly track.
 
 ### Conflicts are declared, not checked ad hoc
 
@@ -92,7 +92,7 @@ final class MoveNoteAction: Action {
 }
 ```
 
-No composite "activity" type wraps the two manager calls. Cancelling the outer task cascades into whichever `await` is currently in flight, and progress reports through the same `status` every other Action uses. The two calls live here and not inside a `NoteManager.move` because managers never call each other — <a href="/guide/05-model-layer">Chapter 5</a>'s rule. The choreography of a move is this Action's to show, and the two notebooks' managers run on two different environments' queues.
+No composite "activity" type wraps the two manager calls. Cancelling the outer task cascades into whichever `await` is currently in flight, and progress reports through the same `status` every other Action uses. The two calls live here and not inside a `NoteManager.move` because managers never call each other — <a href="/guide/05-3-the-manager">Chapter 5.3</a>'s rule. The choreography of a move is this Action's to show, and the two notebooks' managers run on two different environments' queues.
 
 ### Smell checks
 

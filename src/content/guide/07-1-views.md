@@ -1,7 +1,7 @@
 ---
 title: "Views"
 description: "SwiftUI renders. AppKit controls. This subchapter states that split precisely, covers what a view component's interface looks like and how components compose, and lands on the one rule that makes a SwiftUI view hosted inside AppKit stay reactive instead of silently going stale."
-order: 8
+order: 7
 subOrder: 1
 ---
 
@@ -20,7 +20,7 @@ Use `NSHostingController` when a view controller's entire content is SwiftUI and
 
 ## Four objects, one of them the view
 
-Each meaningful piece of UI is four objects. A <strong>view state controller</strong> loads and shapes model data, and writes it into a <strong>view state model</strong> — pure, semantic data. A <strong>view component</strong> renders that model. A <strong>view controller</strong> assembles the components, owns the state pair, observes, and coordinates. The first two are <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller is <a href="/guide/08-3-view-controllers">Chapter 8.3</a>. This subchapter is about the view.
+Each meaningful piece of UI is four objects. A <strong>view state controller</strong> loads and shapes model data, and writes it into a <strong>view state model</strong> — pure, semantic data. A <strong>view component</strong> renders that model. A <strong>view controller</strong> assembles the components, owns the state pair, observes, and coordinates. The first two are <a href="/guide/07-2-view-state">Chapter 7.2</a>; the view controller is <a href="/guide/07-3-view-controllers">Chapter 7.3</a>. This subchapter is about the view.
 
 A view's interface has two halves and a private middle: semantic data in, intents out, and the mapping from one to pixels kept inside. It knows nothing about where its data came from or what happens after an intent leaves.
 
@@ -100,7 +100,7 @@ Note what's absent from the inputs: a manager. A shared instance is never thread
 
 Exposing the component as a property is one of two integration modes: a `make…()` method or a `let` component covers the common case where the controller creates the control, and an `attach(to:)` method covers a control that already exists — a toolbar item the window hands over, say. Either way the owner decides <em>where</em> the component goes; the component controller decides everything about how it behaves.
 
-Not being an `NSViewController` is the point, not a shortcut. There's no view hierarchy to own and no containment lifecycle to participate in, so an `NSViewController` would be ceremony around an object that is really just coordination. What a component controller <em>does</em> share with any other controller is observation: it conforms to `StateObserving` when it reacts to state, its owner activates it on the owner's own scope — or lists it in `childStateObservers` and lets a container do it — exactly as <a href="/guide/08-4-state-observing">Chapter 8.4</a> describes.
+Not being an `NSViewController` is the point, not a shortcut. There's no view hierarchy to own and no containment lifecycle to participate in, so an `NSViewController` would be ceremony around an object that is really just coordination. What a component controller <em>does</em> share with any other controller is observation: it conforms to `StateObserving` when it reacts to state, its owner activates it on the owner's own scope — or lists it in `childStateObservers` and lets a container do it — exactly as <a href="/guide/07-4-state-observing">Chapter 7.4</a> describes.
 
 <div class="rule">
 <span class="rule-label">The rule</span>
@@ -109,7 +109,7 @@ A view component controller owns exactly one component and the behavior around i
 
 </div>
 
-The most common specialization is the menu controller — a component controller whose component is a menu (or a button-plus-menu pair) — which gets its own treatment in <a href="/guide/08-5-menus">Chapter 8.5</a>.
+The most common specialization is the menu controller — a component controller whose component is a menu (or a button-plus-menu pair) — which gets its own treatment in <a href="/guide/07-5-menus">Chapter 7.5</a>.
 
 ## Hosting SwiftUI: read the model inside `body`
 
@@ -132,5 +132,5 @@ A <strong>Screen</strong> (or the AppKit view controller playing that role) owns
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-What a view is given — the view state controller and the model it writes — is next: <a href="/guide/08-2-view-state">Chapter 8.2</a>. The view controller that assembles views and owns that pair is <a href="/guide/08-3-view-controllers">Chapter 8.3</a>; the activation lifecycle behind `observeState()` and `@Tracked` is <a href="/guide/08-4-state-observing">Chapter 8.4</a>; menus — themselves just view components wired to Actions — are <a href="/guide/08-5-menus">Chapter 8.5</a>; the settings window, where all of it comes together in one place, is <a href="/guide/08-6-settings-window">Chapter 8.6</a>. Moving between screens without one view holding a reference to another is <a href="/guide/09-navigation">Chapter 9</a>.
+What a view is given — the view state controller and the model it writes — is next: <a href="/guide/07-2-view-state">Chapter 7.2</a>. The view controller that assembles views and owns that pair is <a href="/guide/07-3-view-controllers">Chapter 7.3</a>; the activation lifecycle behind `observeState()` and `@Tracked` is <a href="/guide/07-4-state-observing">Chapter 7.4</a>; menus — themselves just view components wired to Actions — are <a href="/guide/07-5-menus">Chapter 7.5</a>; the settings window, where all of it comes together in one place, is <a href="/guide/07-6-settings-window">Chapter 7.6</a>. Moving between screens without one view holding a reference to another is <a href="/guide/08-navigation">Chapter 8</a>.
 </div>

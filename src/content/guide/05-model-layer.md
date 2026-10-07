@@ -1,353 +1,200 @@
 ---
 title: "The Model Layer"
-description: "The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter explains why that funnel matters, the environment a domain's managers and jobs share, where the main thread fits, and how to pick the right shape for a given piece of state."
+description: "The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter shows how the pieces that make that funnel work fit together — the model and its queries, the environment that owns a domain's shared resources, the manager, the jobs it enqueues, the runner that orders them and the activities that report their progress — then nine subchapters go deeper on each."
 order: 5
 ---
 
-The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter explains why that funnel matters, the environment a domain's managers and jobs share, where the main thread fits, and how to pick the right shape for a given piece of state.
+The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter shows how the pieces that make that funnel work fit together — the model and its queries, the environment that owns a domain's shared resources, the manager, the jobs it enqueues, the runner that orders them and the activities that report their progress — then nine subchapters go deeper on each.
 
 ## The underlying principle
 
-Views read from the Model. They never write to it directly — every write, whether it originates from a button click, a background sync, or an automated process, converges on the same manager before it touches state.
+Views read from the Model. They never write to it directly — every write, whether it originates from a button click, a background sync or an automated pipeline, converges on the same manager before it touches state. That convergence is what makes the rest of the architecture possible: it does not matter <em>where</em> a change came from, because ordering, validation, persistence and notification all have exactly one place to live; and views can stay naive, reading current state and reacting to a change signal without reasoning about who else might be writing.
 
-That convergence is what makes the rest of the architecture possible:
+Everything else in this chapter is machinery in service of that one sentence. A notebook's model layer is six kinds of object, and each one exists to keep the funnel narrow while letting real work — network, disk, an assistant — happen off the main thread without ever letting that work touch state directly.
 
-- It doesn't matter <em>where</em> a change came from. Ordering, validation, persistence, and notification all have exactly one place to live, so adding a new source of mutation never reopens those questions.
-- Views can stay naive. They read current state, render it, and react to change notifications — they never need to reason about who else might be writing at the same time.
+## The pieces, and who owns what
 
-A manager always exists, even when it looks trivial. Sometimes it's a dedicated class; sometimes the model class acts as its own manager, when the mutation logic is simple enough that a wrapper would add nothing — a settings object's own setters, as in <a href="/guide/02-4-settings">Chapter 2.4</a>, <em>are</em> the funnel.
+<figure class="diagram">
+<svg viewBox="0 0 760 500" role="img" aria-label="Diagram of a notebook's model layer. At the top, two callers: an Action or Background Controller on the mutate path, and a View State Controller on the read path. Below the first caller, a dashed container labelled NotebookEnvironment, one per notebook, holds six boxes: NoteManager and TagManager in the first row, the Runner and NoteActivities in the second, NoteWorkContext and NoteMainContext in the third. The Action awaits a manager method; both managers enqueue onto the runner; the runner runs the job's perform against the work context and then its handlers against the main context; the main context writes progress into the activities and merges, saves and publishes into the Model box at the bottom. The View State Controller reads the Model directly through a query, bypassing the environment, and an accent-coloured arrow from the Model back up to the View State Controller is labelled notifies.">
+<defs>
+<marker id="arrPieces" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+<marker id="arrPiecesAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+</marker>
+</defs>
+<rect x="35" y="18" width="240" height="52" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="155" y="40" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">Action · Background Controller</text>
+<text x="155" y="57" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">mutate path · Chapters 4 and 6</text>
+<rect x="440" y="18" width="240" height="52" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="560" y="40" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">View State Controller</text>
+<text x="560" y="57" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">read path · Chapter 7.2</text>
+<rect x="50" y="104" width="420" height="290" rx="10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="6 5" opacity="0.8"/>
+<text x="458" y="121" text-anchor="end" font-family="var(--font-mono)" font-size="10" opacity="0.75">NotebookEnvironment · one per notebook</text>
+<rect x="70" y="134" width="170" height="46" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="155" y="153" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">NoteManager</text>
+<text x="155" y="169" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">public async surface</text>
+<rect x="280" y="134" width="170" height="46" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="365" y="153" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">TagManager</text>
+<text x="365" y="169" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">same runner, same contexts</text>
+<rect x="70" y="214" width="170" height="46" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="155" y="233" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">Runner</text>
+<text x="155" y="249" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">orders conflicting jobs</text>
+<rect x="280" y="214" width="170" height="46" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="365" y="233" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">NoteActivities</text>
+<text x="365" y="249" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">progress · @Observable</text>
+<rect x="70" y="294" width="170" height="46" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="155" y="313" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">NoteWorkContext</text>
+<text x="155" y="329" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">Sendable · seen by perform()</text>
+<rect x="280" y="294" width="170" height="46" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="365" y="313" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">NoteMainContext</text>
+<text x="365" y="329" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">@MainActor · seen by handlers</text>
+<text x="155" y="362" text-anchor="middle" font-family="var(--font-mono)" font-size="10" opacity="0.65">built once in init</text>
+<text x="155" y="376" text-anchor="middle" font-family="var(--font-mono)" font-size="10" opacity="0.65">registry in an extension</text>
+<text x="155" y="390" text-anchor="middle" font-family="var(--font-mono)" font-size="10" opacity="0.65">tests build their own</text>
+<rect x="50" y="424" width="630" height="54" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="365" y="446" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="15">Model</text>
+<text x="365" y="464" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" opacity="0.7">Notebook · Note · NoteStore · Note+Queries · source of truth, not @Observable</text>
+<line x1="155" y1="70" x2="155" y2="132" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<text x="163" y="98" font-family="var(--font-mono)" font-size="10.5">await pull()</text>
+<line x1="155" y1="180" x2="155" y2="212" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<text x="147" y="200" text-anchor="end" font-family="var(--font-mono)" font-size="10.5">enqueue(job)</text>
+<polyline points="365,180 365,196 190,196 190,212" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<line x1="155" y1="260" x2="155" y2="292" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<text x="147" y="280" text-anchor="end" font-family="var(--font-mono)" font-size="10.5">runs the job</text>
+<line x1="240" y1="317" x2="278" y2="317" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<text x="259" y="309" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5">then</text>
+<line x1="365" y1="292" x2="365" y2="262" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<text x="357" y="281" text-anchor="end" font-family="var(--font-mono)" font-size="10.5">progress · settle</text>
+<line x1="365" y1="340" x2="365" y2="422" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<text x="373" y="410" font-family="var(--font-mono)" font-size="10.5">merge · save · publish</text>
+<line x1="560" y1="70" x2="560" y2="422" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrPieces)"/>
+<text x="568" y="238" font-family="var(--font-mono)" font-size="10.5">Note.all(in: notebook)</text>
+<text x="568" y="254" font-family="var(--font-mono)" font-size="10.5" opacity="0.7">a query, never the manager</text>
+<path d="M680,451 C736,451 736,44 680,44" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#arrPiecesAccent)"/>
+<text x="748" y="247" transform="rotate(-90 748 247)" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent)">notifies</text>
+</svg>
+<figcaption>Everything a notebook's managers and jobs share lives in one environment: the runner that orders their work, the two contexts a job sees on either side of the actor boundary, and the activities that hold progress. Callers on the mutate path reach a manager; the manager hands a job to the runner; the job's handlers write through the main context into the Model. Callers on the read path never enter the environment at all — they query the Model directly, and the Model tells them when to look again.</figcaption>
+</figure>
 
-Ordinary display reads skip the manager: query the model directly. A read that must wait for an ongoing write to finish belongs to a coordinated workflow instead; it can go through a manager as a read job, as shown in <a href="/guide/07-concurrency">Chapter 7</a>. For plain lookups, the model exposes static queries:
+Each piece has one job, and one subchapter:
 
-```swift
-// Avoid — the manager has nothing to contribute to a read
-NoteManager.shared(for: notebook).note(id: id)
+- <strong>The model</strong> — `Note`, the `NoteStore` behind it, the queries in front of it. Plain data that is read through static queries and never written by anyone but the manager. It signals change with a notification, not by being `@Observable`. <a href="/guide/05-1-the-model">Chapter 5.1</a>.
+- <strong>The environment</strong> — `NotebookEnvironment`, one per notebook. It owns the runner, the store, the activities and the two job contexts, builds the managers and keeps them. It provides and never performs, and nothing outside the model package ever names it: callers see only `NoteManager.shared(for:)`. <a href="/guide/05-2-the-environment">Chapter 5.2</a>.
+- <strong>The manager</strong> — `NoteManager`, `TagManager`. The entry point for one group of operations: every public method is plain `async`, and every one is a single line that enqueues a job and awaits it. It owns nothing but its environment, and never calls another manager. <a href="/guide/05-3-the-manager">Chapter 5.3</a>.
+- <strong>Jobs and contexts</strong> — `PullNotesJob`, `RenameNoteJob`. One struct per operation, its intent frozen at submission. `perform` runs off the main actor and sees only the `Sendable` work context; the handlers run on the main actor and see only the main context. The job settles its own result. <a href="/guide/05-4-jobs-and-contexts">Chapter 5.4</a>.
+- <strong>The runner</strong> — `SerialTaskRunner`, or `GroupedTaskRunner` once reads should overlap. It closes the gap `@MainActor` leaves open across an `await`: a job's whole lifecycle, handlers included, finishes before a conflicting job starts. <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a>.
+- <strong>Activities</strong> — `NoteActivities`, `SyncActivity`, `DraftActivity`. The live state of one kind of operation, `@Observable` because only a job's main-actor handlers ever write it, read by whichever screens care. <a href="/guide/05-6-progress-and-activities">Chapter 5.6</a>.
 
-// Prefer — the model reads itself
-Note.note(id: id, in: notebook)
-```
+## One write, end to end
 
-Whatever the model needs to query — a database context, or a `*Store` for anything else (`NoteStore`) — stays an implementation detail behind the model, never something a caller reaches for directly. The store itself stays generic: `all()`, `find(id:)`, insert and remove — the small set of accessors every query builds on. Filtering logic lives one layer up, in a `Model+Queries.swift` extension, so the store never grows a bespoke method per filter:
+<figure class="diagram">
+<svg viewBox="0 0 760 420" role="img" aria-label="Sequence diagram of one pull. Two lanes separated by a dashed actor boundary: the main actor above, the cooperative thread pool below. Step 1, a caller awaits pull(). Step 2, NoteManager enqueues a PullNotesJob and returns a Task the caller suspends on. Step 3, below the boundary, the runner waits its turn. Step 4, the job's perform fetches with the work context only. Step 5, back above the boundary, handleProgress writes the pull activity, which any screen observes. Step 6, finalize merges, saves and publishes, after which step 7, Presentation re-reads the model through a query. A return arrow shows pull() returning to the caller only after the handler has finished.">
+<defs>
+<marker id="arrFlow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+</marker>
+<marker id="arrFlowAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/>
+</marker>
+</defs>
+<text x="16" y="120" transform="rotate(-90 16 120)" text-anchor="middle" font-family="var(--font-mono)" font-size="10" opacity="0.65">MAIN ACTOR</text>
+<text x="16" y="330" transform="rotate(-90 16 330)" text-anchor="middle" font-family="var(--font-mono)" font-size="10" opacity="0.65">THREAD POOL</text>
+<line x1="34" y1="225" x2="750" y2="225" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 5" opacity="0.6"/>
+<text x="40" y="218" font-family="var(--font-mono)" font-size="10" opacity="0.65">the await is the boundary</text>
+<rect x="34" y="40" width="120" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="94" y="61" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">1 · Caller</text>
+<text x="94" y="78" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">await pull()</text>
+<rect x="180" y="40" width="150" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="255" y="61" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">2 · NoteManager</text>
+<text x="255" y="78" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">enqueue(PullNotesJob)</text>
+<rect x="390" y="40" width="160" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="470" y="61" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">NoteActivities.pull</text>
+<text x="470" y="78" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">any screen observes it</text>
+<rect x="580" y="40" width="160" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="660" y="61" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">7 · Presentation</text>
+<text x="660" y="78" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">re-reads Note.all(in:)</text>
+<rect x="390" y="140" width="160" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="470" y="161" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">5 · handleProgress</text>
+<text x="470" y="178" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">writes the activity</text>
+<rect x="580" y="140" width="160" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="660" y="161" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">6 · finalize</text>
+<text x="660" y="178" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">merge · save · publish</text>
+<rect x="180" y="280" width="150" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="255" y="301" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">3 · Runner</text>
+<text x="255" y="318" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">waits its turn</text>
+<rect x="390" y="280" width="160" height="50" rx="8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+<text x="470" y="301" text-anchor="middle" font-family="var(--font-display)" font-weight="700" font-size="13">4 · perform(context:)</text>
+<text x="470" y="318" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5" opacity="0.7">fetch · work context only</text>
+<line x1="154" y1="65" x2="178" y2="65" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrFlow)"/>
+<line x1="255" y1="90" x2="255" y2="278" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrFlow)"/>
+<text x="263" y="118" font-family="var(--font-mono)" font-size="10.5">returns a Task</text>
+<text x="263" y="206" font-family="var(--font-mono)" font-size="10.5">the caller suspends on it</text>
+<line x1="330" y1="305" x2="388" y2="305" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrFlow)"/>
+<text x="359" y="298" text-anchor="middle" font-family="var(--font-mono)" font-size="9.5">its turn</text>
+<line x1="470" y1="280" x2="470" y2="192" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrFlow)"/>
+<text x="478" y="240" font-family="var(--font-mono)" font-size="10.5">progress · in order</text>
+<line x1="470" y1="140" x2="470" y2="92" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrFlow)"/>
+<text x="478" y="120" font-family="var(--font-mono)" font-size="10.5">begin · stage</text>
+<polyline points="550,305 660,305 660,192" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrFlow)"/>
+<text x="668" y="250" font-family="var(--font-mono)" font-size="10.5">result</text>
+<line x1="660" y1="140" x2="660" y2="92" stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="1 6" stroke-linecap="round" marker-end="url(#arrFlowAccent)"/>
+<text x="652" y="120" text-anchor="end" font-family="var(--font-mono)" font-size="10.5" fill="var(--accent)">notesDidChange</text>
+<path d="M740,165 L752,165 L752,22 L94,22 L94,38" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrFlow)"/>
+<text x="423" y="16" text-anchor="middle" font-family="var(--font-mono)" font-size="10.5">pull() returns only after the handler has finished</text>
+</svg>
+<figcaption>One pull, start to finish. The caller's <code>await</code> is the only thing waiting; the queue underneath is invisible from outside the manager. The job performs on the thread pool against the work context, every progress event and the result come back to the main actor against the main context, and the store's merge and the notification happen there — before the runner lets the next conflicting job start, and before the caller's call returns.</figcaption>
+</figure>
 
-```swift
-// Note+Queries.swift
-extension Note {
-    static func note(id: NoteID, in notebook: Notebook) -> Note? {
-        notebook.notes.note(id: id)
-    }
+What happens, step by step, when a caller does `try await NoteManager.shared(for: notebook).pull()`:
 
-    static func notes(taggedWith tag: Tag, in notebook: Notebook) -> [Note] {
-        notebook.notes.all().filter { $0.tags.contains(tag) }
-    }
-
-    static func all(in notebook: Notebook) -> [Note] {
-        notebook.notes.all()
-    }
-}
-```
-
-Singular name and return type for a single lookup, plural for a collection; the first argument label names what's being filtered on (`taggedWith:`) rather than a generic `where:`, so the call site reads like the question being asked out loud.
-
-These queries always answer with current state — `Note.all(in: notebook)` recomputes from whatever `notebook.notes` holds right now, never a result cached from an earlier call. That's what makes it safe to just call the query again after a change notification fires, rather than reasoning about whether the old result is still good: nothing about the query itself can be stale. If a particular query is expensive enough to want caching, the cache lives on the store, kept live by the same funnel that writes through it — never as a memo hidden inside the query function, guessing when to invalidate itself.
-
-<div class="rule">
-<span class="rule-label">The rule</span>
-
-The Model layer is always <strong>entered</strong> on the main actor. Jobs carry `Sendable` intent and stable identifiers; their work context supplies background-safe dependencies and storage access, and nothing else. Their main-actor handlers apply state, settle progress, and publish completed writes through a main context. Workers never reach back into a manager or view. Progress follows the same boundary through typed events, covered in <a href="/guide/07-concurrency">Chapter 7</a>.
-
-</div>
+1. `shared(for:)` finds the notebook's environment in the registry, or builds it on first use, and returns its manager.
+1. `pull` builds a `PullNotesJob` and hands it to `enqueue`, which reads the two contexts off the environment and returns immediately with a `Task`. The manager's bridge then suspends on that task, forwarding the caller's cancellation to it. The caller's own `await` is the one thing waiting.
+1. The runner schedules the job behind whatever else is already queued for this notebook, so a pull and a save on the same notebook never interleave.
+1. The job's `perform` runs on the cooperative thread pool with the work context, fetches from the network, and returns its result. It cannot reach the store, an activity or a manager — the work context does not carry them.
+1. Each progress event the worker reported reaches `handleProgress` on the main actor, in order, and lands in the pull activity any screen may be observing.
+1. `finalize` runs on the main actor with the main context: it merges the notes through the store, the database's own change tracking merges that save onto the main context, and the handler posts the change notification — only after the save succeeded.
+1. Presentation, still on the read path from <a href="/guide/01-getting-started">Chapter 1</a>, re-reads through `Note.all(in:)` without knowing a sync ever happened. The runner releases the job, the next conflicting job may start, and `pull()` returns.
 
 ## Choosing a shape
 
-Not every piece of state needs the same machinery. Six axes decide the shape: does it persist, does it load or mutate in the background, does the whole collection get replaced at once or do individual entries change, and how long does it live. Most of a model's design falls out of answering those questions rather than being decided from scratch.
+Not every piece of state needs all of that. The notebook's `Note` does, because something outside the app owns it. Most of the other state in a real app is lighter, and <a href="/guide/05-7-model-shapes">Chapter 5.7</a> works each shape through with a liftable example:
 
 <div class="table-wrap">
 <table>
-<thead><tr><th>Shape</th><th>Persists?</th><th>Background work</th><th>Use when</th></tr></thead>
+<thead><tr><th>Shape</th><th>Example</th><th>Needs</th></tr></thead>
 <tbody>
-<tr><td><strong>Synced, database-backed</strong></td><td>Yes</td><td>Background sync against an external source</td><td>State mirrors something outside the app — a server, another process — and must survive relaunch.</td></tr>
-<tr><td><strong>Persisted, main-thread only</strong></td><td>Yes</td><td>None</td><td>User-edited records with no external sync — small, infrequent, main-thread writes are enough.</td></tr>
-<tr><td><strong>Structured + async sources</strong></td><td>Yes (flat files)</td><td>Yes, mixed sources</td><td>Multiple asynchronous writers — a user and a background pipeline both append to the same collection.</td></tr>
-<tr><td><strong>In-memory, replaced wholesale</strong></td><td>No</td><td>Load only</td><td>Data reloaded fresh each session, not user-editable in place.</td></tr>
-<tr><td><strong>Preference-backed settings</strong></td><td>Yes (key-value)</td><td>None</td><td>User preferences — see <a href="/guide/02-4-settings">Chapter 2.4</a>.</td></tr>
-<tr><td><strong>In-memory app state</strong></td><td>No</td><td>None</td><td>Transient flags with no persistence and no cross-source coordination.</td></tr>
+<tr><td><strong>Synced, database-backed</strong></td><td><code>Note</code></td><td>Everything in 5.2–5.6</td></tr>
+<tr><td><strong>Persisted, main-thread only</strong></td><td><code>NoteTemplate</code></td><td>A store and a synchronous manager — no job, no runner</td></tr>
+<tr><td><strong>File-backed, mixed writers</strong></td><td><code>Suggestion</code></td><td>The environment's runner for its persist and pipeline jobs</td></tr>
+<tr><td><strong>In-memory, replaced wholesale</strong></td><td><code>TagIndex</code></td><td>One load job and one apply method</td></tr>
+<tr><td><strong>Preference-backed settings</strong></td><td><code>EditorSettings</code></td><td>Nothing — the object is its own manager</td></tr>
+<tr><td><strong>In-memory app state</strong></td><td><code>AppState</code></td><td>Nothing — the object is its own manager</td></tr>
 </tbody>
 </table>
 </div>
 
-Two deep dives below cover the two ends of that spectrum — a synced, database-backed model, and the settings shape already introduced. The others follow the same funnel principle with less machinery. Before the first deep dive, one object has to exist for any shape with background work behind it: the environment its managers and jobs share.
+## The shape of the chapter
 
-## The environment
+The first six subchapters build the heavy shape one object at a time, in the order the diagram above reads. <a href="/guide/05-1-the-model">The Model</a> covers plain data, the store behind it, the queries in front of it, who may write it, value versus reference entities, and the six cases for signalling change. <a href="/guide/05-2-the-environment">The Environment</a> covers the root object that owns a notebook's shared resources and that no caller ever sees, its registry, and how a test builds one of its own. <a href="/guide/05-3-the-manager">The Manager</a> covers the one shape every public method takes, the private plumbing under it, and the rule that managers never call each other. <a href="/guide/05-4-jobs-and-contexts">Jobs and Contexts</a> covers the job struct, why its two contexts are two types, a complete job, and the three things a job can do with its result. <a href="/guide/05-5-runners-and-scheduling">Runners and Scheduling</a> covers the serial runner in full, the grouped runner, group and access declarations, and deleting something with work in flight. <a href="/guide/05-6-progress-and-activities">Progress and Activities</a> covers typed progress events, streaming output, and giving one screen its own activity instead of a callback.
 
-A domain whose managers and jobs share resources — a runner that orders their work, a store they write into, the progress state they report to — has one root object that owns those resources: the domain's <strong>environment</strong>. It exists once per app when the resources are app-wide, and once per <em>key</em> when they aren't. In the notebook app the key is the notebook: every notebook has its own storage, its own queue of pending work, and its own sync progress, so every notebook has its own `NotebookEnvironment`, and the flat accessor from <a href="/guide/02-5-object-wiring">Chapter 2.5</a> takes the key — `NoteManager.shared(for: notebook)`.
+The last three apply all of it. <a href="/guide/05-7-model-shapes">Model Shapes</a> is the catalog above, with code for every row. <a href="/guide/05-8-execution-strategies">Execution Strategies</a> covers what "correct" means when the same operation fires twice — cancel-and-replace, serial, coalesce, gate — each worked through in the notebook app. <a href="/guide/05-9-cancellation">Cancellation</a> covers the caller's task as the one handle, what a cancelled job may leave behind, the three scopes, external processes, and how cancellation meets each strategy.
 
-Two things an environment is not. It is not a wrapper: a root object that merely holds a config, a store, and a manager and forwards to them is the shape Chapter 2.5 bans, because it adds a layer without adding behavior. An environment earns its place by owning resources that several managers and every job genuinely share. And it is not a worker: it provides, it never performs. The only functions on it manage the objects it holds. A method on the environment that fetches notes or saves one is a manager function in the wrong place.
-
-```swift
-// NotebookCore/Environment/NotebookEnvironment.swift
-@MainActor
-final class NotebookEnvironment {
-    let notebook: Notebook
-    let runner = SerialTaskRunner()        // one per notebook, shared by every manager in it
-    let store: NoteStore                   // the main-actor model the queries above read
-    let activities = NoteActivities()      // every progress sink for this notebook — Chapter 7
-    let workContext: NoteWorkContext       // what a job's perform() sees — built once
-    let mainContext: NoteMainContext       // what its main-actor handlers see — built once
-
-    lazy var noteManager = NoteManager(environment: self)
-    lazy var tagManager = TagManager(environment: self)
-
-    // Internal, not private: a test builds one over its own notebook and never touches the registry.
-    init(notebook: Notebook, client: SyncClient) {
-        self.notebook = notebook
-        self.store = notebook.notes
-        self.workContext = NoteWorkContext(notebookID: notebook.id, storage: notebook.notes.storage, client: client)
-        self.mainContext = NoteMainContext(notebook: notebook, store: notebook.notes, activities: activities)
-    }
-}
-```
-
-The `init` is the one place the notebook's graph is decided: which managers share the runner, what the jobs may see, where the store writes. Managers hold the environment strongly and reach everything through it. Nothing outside constructs a manager — the environment builds its managers and keeps them, which makes the graph a reference cycle by design. That is fine, because an environment is never torn down once created: in production the registry holds it for the life of the process, in a test it lives until the test ends.
-
-The registry and the public surface live in a second file, so the class file is exactly what a test constructs and the extension file is exactly what production reaches:
-
-```swift
-// NotebookCore/Environment/NotebookEnvironment+Shared.swift
-
-// MARK: - The production registry, one environment per notebook for the life of the process
-
-extension NotebookEnvironment {
-    private static var environments: [NotebookID: NotebookEnvironment] = [:]
-
-    static func shared(for notebook: Notebook) -> NotebookEnvironment {
-        if let existing = environments[notebook.id] { return existing }
-        let environment = NotebookEnvironment(notebook: notebook, client: SyncClient(config: .shared))
-        environments[notebook.id] = environment
-        return environment
-    }
-}
-
-// MARK: - The public surface, one-liners forwarding into the registry
-
-extension NoteManager {
-    /// Production: the one manager for this notebook.
-    static func shared(for notebook: Notebook) -> NoteManager {
-        NotebookEnvironment.shared(for: notebook).noteManager
-    }
-
-    /// Standalone: a manager over its own private environment, for tests and tools.
-    /// The client is the one external boundary a test swaps; the notebook's store is the other.
-    static func standalone(notebook: Notebook, client: SyncClient = SyncClient(config: .shared)) -> NoteManager {
-        NotebookEnvironment(notebook: notebook, client: client).noteManager
-    }
-}
-
-extension TagManager {
-    static func shared(for notebook: Notebook) -> TagManager {
-        NotebookEnvironment.shared(for: notebook).tagManager
-    }
-}
-
-extension NoteActivities {
-    static func shared(for notebook: Notebook) -> NoteActivities {
-        NotebookEnvironment.shared(for: notebook).activities
-    }
-}
-```
-
-`standalone` is a static factory and not a convenience initializer, on purpose. An initializer can only produce a new instance, so the environment's own `noteManager` would be a second write funnel beside it; the factory returns the environment's manager. A test that needs the sibling manager reaches `manager.environment.tagManager` rather than building a second graph — <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a> shows the test side.
-
-App-wide pieces stay plain shared statics. `SyncConfig`, `SyncStore` and `SyncManager` from Chapter 2.5 describe the account — signed in or not, the last sync, the base URL — and there is one account, so they are reached as `.shared`. Only the genuinely per-notebook components go through the environment.
+## The rules that hold across all nine
 
 <div class="rule">
-<span class="rule-label">The rule</span>
+<span class="rule-label">The rules</span>
 
-The environment provides; it never performs. It owns the runner, the store, the activities and the two job contexts, builds its managers and keeps them, and exposes nothing that does work. Its `init` is internal and is the only place the domain's graph is decided; its registry lives in an extension and is the only thing production touches.
+<strong>One funnel.</strong> Every mutation, from every source, goes through the model's one manager. Reads never do — they query the model directly, and the model signals change with a notification after the write lands. A model is <code>@Observable</code> only when nothing ever touches it off the main actor: settings, app state, and the activities an environment holds.
 
-</div>
+<strong>Entered on the main actor, confined off it.</strong> The model layer is always entered on the main actor. A job's intent is <code>Sendable</code> and frozen at submission; its <code>perform</code> sees only the work context; its handlers see only the main context and are the only place a result is applied, published or settled. Workers never reach back into a manager, an activity or a view.
 
-## Deep dive: synced, database-backed state
-
-Take the notebook app's `Note` type: it's edited locally, synced from a server in the background, and must survive a relaunch. The shape has three parts — the two <strong>contexts</strong> a job receives, one <strong>job</strong> per operation, and a thin <strong>manager</strong> that turns public calls into enqueued jobs on the environment's runner.
-
-A job sees two different values on the two sides of the actor boundary, and they are two types so the boundary is enforced rather than hoped for:
-
-```swift
-// NotebookCore/Notes/NoteWorkContext.swift
-/// Only background-safe dependencies cross into `perform`. No store, no activities, no managers.
-struct NoteWorkContext: Sendable {
-    let notebookID: NotebookID
-    let storage: NoteStorage
-    let client: SyncClient
-
-    /// The current record when the job runs — after earlier queued writes, not at submission.
-    func requireNote(_ id: NoteID) async throws -> Note {
-        guard let note = try await storage.note(id: id, in: notebookID) else { throw NoteError.notFound }
-        try Task.checkCancellation()
-        return note
-    }
-}
-```
-
-```swift
-// NotebookCore/Notes/NoteMainContext.swift
-/// What a job's main-actor handlers see: the model to apply to, the activities to settle, the way to publish.
-@MainActor
-struct NoteMainContext {
-    let notebook: Notebook
-    let store: NoteStore
-    let activities: NoteActivities
-
-    func notesDidChange() {
-        Note.notifications.postDidChange(in: notebook.id)
-    }
-}
-```
-
-A single struct could hold both, because a `@MainActor` class is `Sendable`. But then `perform` could reach the store and the activities with an explicit `await`, and confinement would be a review convention rather than something the type ensures. Two types make it impossible: the worker physically cannot see a manager, an activity, or a notification. Neither context carries a closure. A per-execution callback — "call me when the question is saved", "send progress to this sheet" — is a smell, because the job already has everything it needs through the context; progress goes to an activity in `activities`, and the interested screen observes that. Both values are built once, in the environment's `init`.
-
-```swift
-// NotebookCore/Notes/Jobs/PullNotesJob.swift
-/// One job, one operation. Intent is `let` — frozen at submission. This one has none:
-/// the notebook comes from the context, and a pull takes no other input.
-struct PullNotesJob: BackgroundJob {
-    nonisolated func perform(context: NoteWorkContext) async throws -> [Note] {
-        try await context.client.fetchNotes(in: context.notebookID)
-    }
-
-    @MainActor
-    func handleResult(_ result: Result<[Note], Error>, context: NoteMainContext) async throws {
-        try await context.store.merge(result.get())
-        context.notesDidChange()
-    }
-}
-```
-
-The job owns its whole lifecycle: the background work in `perform`, and what happens to the result in `handleResult`, on the main actor, before the runner lets the next conflicting job start. The manager that enqueued it does nothing with the result.
-
-```swift
-// NotebookCore/Notes/NoteManager.swift
-@MainActor
-final class NoteManager {
-    let environment: NotebookEnvironment   // strong — the environment keeps its managers, and they keep it
-
-    init(environment: NotebookEnvironment) {
-        self.environment = environment
-    }
-
-    func pull() async throws {
-        _ = try await awaitCancellable(enqueue(PullNotesJob()))
-    }
-
-    // Private plumbing — synchronous, hands back a raw `Task`. Never exposed past
-    // this point; every public method bridges it through `awaitCancellable` below.
-    private func enqueue<J: BackgroundJob>(_ job: J) throws -> Task<J.Output, Error>
-    where J.WorkContext == NoteWorkContext, J.MainContext == NoteMainContext {
-        try Task.checkCancellation()
-        let work = environment.workContext, main = environment.mainContext
-        return environment.runner.run { try await job.execute(work: work, main: main) }
-    }
-
-    private func awaitCancellable<T: Sendable>(_ task: Task<T, Error>) async throws -> T {
-        try await withTaskCancellationHandler {
-            try await task.value
-        } onCancel: {
-            task.cancel()
-        }
-    }
-}
-```
-
-`pull` is `async`, not a function that hands back a `Task` — that's the only sanctioned shape for a manager's public surface, covered in full in <a href="/guide/07-concurrency">Chapter 7</a>. `enqueue` stays `private` on purpose: it's the plumbing `pull` wraps, never something a caller sees directly, and its two `where` clauses are a compile-time fence — a job from another domain's family cannot be enqueued here. The manager owns nothing but its environment: no stored client, no stored store, no private runner. Two managers in one environment share one queue, so a pull and a tag-index rebuild on the same notebook can never interleave, and neither of them has to know the other exists.
-
-<div class="rule">
-<span class="rule-label">The rule</span>
-
-A manager groups related functions that perform model-layer work. <strong>It never calls another manager.</strong> Composing manager functions is reserved for the layer above — an Action's `main()` awaiting two managers in sequence, as `MoveNoteAction` does in <a href="/guide/06-1-actions">Chapter 6.1</a>, or a background controller calling one on a timer. A manager that calls a sibling on the same runner enqueues a conflicting job and waits for it from inside its own reservation, and it hides the choreography the Action exists to show. If two managers keep needing the same step, that step is a job both can enqueue, not a call across managers.
+<strong>One shape at the boundary.</strong> A manager's public methods are plain <code>async</code>, never a returned <code>Task</code>. A manager owns nothing but its environment, never calls another manager, and never does anything with a job's result. The environment provides and never performs, and is invisible to every caller of the layer.
 
 </div>
-
-What happens at runtime when a caller does `try await NoteManager.shared(for: notebook).pull()`:
-
-1. `shared(for:)` finds the notebook's environment in the registry, or builds it on first use, and returns its manager.
-1. `pull` hands the job to `enqueue`, which reads the two contexts off the environment and returns immediately with a `Task` — then `awaitCancellable` suspends on that task. The caller's own `await` is the one thing waiting; nothing about the queue underneath is visible from outside the manager.
-1. The runner schedules the job behind whatever else is already queued for this notebook, so a pull and a save on the same notebook never interleave.
-1. The job runs on the cooperative thread pool, fetches from the network, and returns its result. Its result handler resumes on the main actor to merge, persist, and publish the change.
-1. The store's write lands in the database; the database's own change tracking merges it back onto the main context automatically.
-1. Presentation, still on the read path from <a href="/guide/01-getting-started">Chapter 1</a>, refreshes from that main-actor notification without knowing a sync ever happened.
-
-The same skeleton supports multiple sync sources and independently testable jobs. The cancellation bridge forwards the caller's cancellation to queued work; the job and its dependencies must cooperate with it. Keep persistence and publication inside `handleResult`, so the next conflicting job cannot start before they finish. <a href="/guide/07-concurrency">Chapter 7</a> extends this example with grouped scheduling and live progress.
-
-### What happens after the job returns
-
-`PullNotesJob` shows one of three patterns for how a job's result lands, and the choice is made per operation. A main-actor result handler can await storage that performs the actual I/O in the background; it does not make database work run synchronously on the UI thread.
-
-<div class="table-wrap">
-<table>
-<thead><tr><th>Pattern</th><th>Job returns</th><th>Who applies</th></tr></thead>
-<tbody>
-<tr><td><strong>Result handler persists, database merges</strong></td><td>Typed data</td><td>The job's main-actor result handler writes through the store, then publishes only after the save succeeds. The pattern above — the default for persisted state.</td></tr>
-<tr><td><strong>Return data to the caller</strong></td><td>Typed data</td><td>The job keeps the default, empty handler; the manager's <code>async</code> method returns the value directly — no <code>.value</code> to unwrap — and nothing touches model state at all.</td></tr>
-<tr><td><strong>Result handler applies main-actor state</strong></td><td>Typed data</td><td>The job's result handler writes the result into in-memory model state on the main thread.</td></tr>
-</tbody>
-</table>
-</div>
-
-Some operations also need intermediate persistence in `perform`, such as saving a user's prompt before generating a summary. Report a saved acknowledgement only after that write succeeds, and publish the committed change even if generation later fails or is cancelled. The final result handler still owns completion and any remaining writes; cancellation does not undo earlier saves.
-
-The second pattern is bounded by transience: nothing about that returned value is stored anywhere the model can hand back out again. The moment some other consumer needs to ask for the same answer later — not just once, in response to this call — the data has become state, and state belongs in the model layer under one of the shapes from earlier in this chapter, read back through a query like the ones that opened it. A private cache tucked inside a manager to avoid re-fetching is the tell that this line got crossed without actually moving the data where it belongs. The one exception is a read-side manager whose cache holds content-addressed, immutable results — a rendered note body keyed by the content's hash — because that cache can never go stale.
-
-The third pattern carries its own rule: the result handler calls a <strong>dedicated `@MainActor` apply method on the model object</strong> — never inline mutation buried in a handler or a runner closure. The mutation logic stays testable and co-located with the state it modifies, and there's exactly one place to look when asking "what can change this?"
-
-```swift
-// In LoadTagIndexJob's @MainActor result handler — TagManager shares NoteManager's environment,
-// so it shares the same two contexts:
-@MainActor
-func handleResult(_ result: Result<[TagCount], Error>, context: NoteMainContext) throws {
-    try context.notebook.applyTagIndexUpdate(result.get())
-}
-
-// On Notebook — the one place this state mutates
-@MainActor
-func applyTagIndexUpdate(_ incoming: [TagCount]) {
-    let changes = tagIndex.changeset(against: incoming)
-    tagIndex.apply(changes)
-    if !changes.isEmpty { postTagIndexDidChangeNotification(changes) }
-}
-```
-
-The apply method runs inside `handleResult`; no extra actor hop or manager callback is needed.
-
-<div class="rule">
-<span class="rule-label">Sub-decision</span>
-
-Within this shape there's a genuine open choice: model entities as immutable structs that get replaced wholesale, or as plain reference classes that get mutated in place. Choose classes when identity across a mutation matters — a detail view holding a direct reference to a note should see an in-place edit without re-resolving it. Choose structs when Codable simplicity and value semantics matter more than identity — small entities nobody holds a long-lived reference to. Neither option is `@Observable` — identity preservation is about reference vs. value semantics, not reactivity; the notification below is what tells a consumer to re-read, either way.
-
-</div>
-
-## Six cases for signalling a change
-
-However the state is shaped, it has to tell interested views when it changes. The load-bearing question isn't whether the source happens to be a plain Swift object — it's <strong>whether the state is model layer, or view/window layer</strong>.
-
-<div class="table-wrap">
-<table>
-<thead><tr><th>Source</th><th>Signal</th></tr></thead>
-<tbody>
-<tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/08-2-view-state">Chapter 8.2</a>.</td></tr>
-<tr><td>Flat, ambient, app-wide settings or state with no per-view projection to make — the one narrow exception</td><td><code>@Observable</code>, read directly, as in <a href="/guide/02-4-settings">Chapter 2.4</a>.</td></tr>
-<tr><td>Any other model-layer state — in-memory domain data or database-backed</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read.</td></tr>
-<tr><td>Platform / framework events</td><td>Subscribe to the framework's own notification directly.</td></tr>
-</tbody>
-</table>
-</div>
-
-A model itself is <code>@Observable</code> only in that one narrow case — a value flat enough that every consumer wants it verbatim, with no shape or subset to decide on. Anything else stays off-limits: binding a view straight to a model couples the view's whole contract to the model (and is a non-starter for a database-backed model to begin with — its runtime-synthesized accessors leave nothing for the Observation macro to rewrite), and a view driven straight off model mutations reacts to every intermediate step of a multi-field change instead of rendering one settled state. The moment a settings-shaped value needs to be derived, combined, or filtered for a particular view, it has graduated to needing its own display object like everything else in the row above it.
-
-There's a mechanical reason underneath that design one, and it's what actually draws the line: `@Observable`'s guarantees only mean something for state that's exclusively touched on the main actor. A settings object like `EditorSettings` from <a href="/guide/02-4-settings">Chapter 2.4</a> qualifies because nothing ever writes to it from a background job — every other model-layer shape in this chapter, however trivial it looks today, has background work funneling through its manager, and that's disqualifying even when the model type itself carries a `@MainActor` annotation. The other two places this guide reaches for `@Observable` outside a view are the Action — see <a href="/guide/06-1-actions">Chapter 6.1</a> — and the activities an environment holds, for the identical reason: neither is ever constructed or touched off the main actor, full stop. A job writes to an activity only from its main-actor handlers.
-
-When a notification-based source has more than one consumer that wants to observe it reactively, the recipe is to bridge it once: a single handler copies the value into an `@Observable` object that everyone else reads, rather than every consumer subscribing to the raw notification independently.
 
 <div class="seealso">
-<strong>Ahead in this guide</strong>
-View-side consumption of all three signals — the `observations.track` / `observations.observe` mechanics — is <a href="/guide/08-4-state-observing">Chapter 8.4</a>; the view state controller and model those signals feed is <a href="/guide/08-2-view-state">Chapter 8.2</a>. What actually calls into the manager, and how a write earns the overhead of a full Action, is <a href="/guide/06-1-actions">Chapter 6.1</a>, next.
+<strong>Ahead in this chapter</strong>
+Start with what is being protected: <a href="/guide/05-1-the-model">Chapter 5.1, The Model</a>. What actually calls into a manager — and how a write earns the overhead of a full Action — is <a href="/guide/06-actions-and-controllers">Chapter 6</a>, after this one.
 </div>
