@@ -154,9 +154,8 @@ Use `@Tracked` for state a controller or view hosts and renders itself; state th
 
 ```swift
 @StateObserving
-final class NoteListViewController: NSViewController, StateObservingContainer {
+final class NoteListViewController: NSViewController {
     let list = NoteListStateController()   // writes the @Observable NoteListState the updaters read
-    var childStateObservers: [any StateObserving] { [list] }
 
     override func viewWillAppear() {
         super.viewWillAppear()
@@ -170,6 +169,11 @@ final class NoteListViewController: NSViewController, StateObservingContainer {
     }
 
     func observeState() {
+        // REACT — a note changed in the model.
+        observations.observe(NotificationCenter.default.publisher(for: .noteDidChange)) { [weak self] _ in
+            self?.list.reload()
+        }
+
         // REACT — the list may have changed while another window was main.
         observations.observe(
             NotificationCenter.default.publisher(for: NSWindow.didBecomeMainNotification, object: view.window)
@@ -177,7 +181,7 @@ final class NoteListViewController: NSViewController, StateObservingContainer {
             self?.list.reload()
         }
 
-        // TRACK — render the loader's state.
+        // TRACK — render the model the state controller writes.
         observations.track { [weak self] in self?.updateSpinner() }
         observations.track { [weak self] in self?.updateTable() }
     }
@@ -187,7 +191,7 @@ final class NoteListViewController: NSViewController, StateObservingContainer {
 }
 ```
 
-The async work lives on the state controller and the updaters read the model it writes, exactly as in <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller only decides <em>when</em> (activation, the notification) and <em>how it looks</em> (the two updaters). Listing the state controller in `childStateObservers` arms its own model-layer subscriptions on the view controller's scope — the container shape worked through below. Registering one `observations.track` call per updater, rather than one giant updater, is deliberate — their read sets are allowed to overlap freely, and each stays a small, single-purpose render pass.
+The async work lives on the state controller and the updaters read the model it writes, exactly as in <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller only decides <em>when</em> (activation, the two notifications) and <em>how it looks</em> (the two updaters). The state controller observes nothing itself — every signal that reloads it is declared here, which is why it isn't a `StateObserving` object and the view controller isn't a container for it. Registering one `observations.track` call per updater, rather than one giant updater, is deliberate — their read sets are allowed to overlap freely, and each stays a small, single-purpose render pass.
 
 ## Example: a self-rendering view
 
@@ -249,7 +253,7 @@ One call — `sidebar.activateObservation()` — arms the whole subtree; deactiv
 <div class="rule">
 <span class="rule-label">The rule</span>
 
-A container lists only the children on its own scope. A child that lives on a different scope — a window-lifetime object hanging off a controller that's only active while key/main, say — is driven by its owner directly; a parent with mixed-scope children isn't a container.
+A container lists only the children on its own scope. A child that lives on a different scope — a window-lifetime object hanging off a controller that's only active while key/main, say — is driven by its owner directly; a parent with mixed-scope children isn't a container. A view state controller is never a child: it observes nothing, so there is nothing to activate — <a href="/guide/08-2-view-state">Chapter 8.2</a>.
 
 </div>
 

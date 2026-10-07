@@ -1,11 +1,11 @@
 ---
 title: "View State: Controller and Model"
-description: "The read path of a screen is two objects, not one: a view state controller that subscribes, loads, and shapes, and the `@Observable` view state model it writes — which is all a view ever receives. This subchapter covers the pair: why it's two objects, the single-writer mechanics that keep a view previewable in any state, and the rule that a view takes a model and closures and nothing else."
+description: "The read path of a screen is two objects, not one: a view state controller that loads and shapes, and the `@Observable` view state model it writes — which is all a view ever receives. This subchapter covers the pair: why it's two objects, why the view controller does all the observing, the single-writer mechanics that keep a view previewable in any state, and the rule that a view takes a model and closures and nothing else."
 order: 8
 subOrder: 2
 ---
 
-The read path of a screen is two objects, not one: a view state controller that subscribes, loads, and shapes, and the `@Observable` view state model it writes — which is all a view ever receives. This subchapter covers the pair: why it's two objects, the single-writer mechanics that keep a view previewable in any state, and the rule that a view takes a model and closures and nothing else.
+The read path of a screen is two objects, not one: a view state controller that loads and shapes, and the `@Observable` view state model it writes — which is all a view ever receives. This subchapter covers the pair: why it's two objects, why the view controller does all the observing, the single-writer mechanics that keep a view previewable in any state, and the rule that a view takes a model and closures and nothing else.
 
 ## Four objects, two of them for state
 
@@ -15,10 +15,10 @@ Each meaningful piece of UI splits the same way: what's happening, how it looks,
 <table>
 <thead><tr><th>Layer</th><th>Concern</th><th>Knows about</th></tr></thead>
 <tbody>
-<tr><td><strong>View state controller</strong></td><td>Where state comes from — subscribes to model notifications, loads, shapes, writes the model</td><td>Managers, notifications, and the model it writes.</td></tr>
+<tr><td><strong>View state controller</strong></td><td>Where state comes from — loads and shapes when asked to reload, writes the model</td><td>Managers and the model it writes.</td></tr>
 <tr><td><strong>View state model</strong></td><td>What's happening — modes, loaded data, flags</td><td>Domain/model types only. Never a display string, image, or color. Never who fills it.</td></tr>
 <tr><td><strong>View component</strong></td><td>How it looks — strings, images, layout, color</td><td>The view state model, closures for its intents, and AppKit or SwiftUI itself. Nothing else.</td></tr>
-<tr><td><strong>View controller</strong></td><td>When things happen — lifecycle, coordination, actions</td><td>Controller, model, and views. Wires them together; formats nothing.</td></tr>
+<tr><td><strong>View controller</strong></td><td>When things happen — lifecycle, observation, coordination, actions</td><td>Controller, model, and views. Wires them together; formats nothing.</td></tr>
 </tbody>
 </table>
 </div>
@@ -58,45 +58,40 @@ final class NoteDetailState {
 }
 
 /// Where the state comes from. Foundation-only, never handed to a view.
-@MainActor @StateObserving
+/// It observes nothing: its owner decides when to reload, this decides what loading means.
+@MainActor
 final class NoteDetailStateController {
     let state = NoteDetailState()
     var noteID: NoteID? { didSet { reload() } }   // input, set by the owner
     private var loadTask: Task<Void, Never>?
 
-    func observeState() {
-        // Model-layer bridge: the note changed underneath us — reload.
-        observations.observe(NotificationCenter.default.publisher(for: .noteDidChange)) { [weak self] _ in
-            self?.reload()
-        }
+    func reload() {
+        loadTask?.cancel()   // a newer reload supersedes the one in flight
+        loadTask = Task { await load() }
     }
 
-    func reload() {
-        loadTask?.cancel()
-        loadTask = Task {
-            guard let noteID else { return }
-            state.isLoading = true
-            defer { state.isLoading = false }
-            guard let note = try? await NoteManager.shared.note(id: noteID), !Task.isCancelled else { return }
-            state.title = note.title
-            state.body = note.body
-        }
+    func load() async {
+        guard let noteID else { return }
+        state.isLoading = true
+        defer { state.isLoading = false }
+        guard let note = try? await NoteManager.shared.note(id: noteID), !Task.isCancelled else { return }
+        state.title = note.title
+        state.body = note.body
     }
 }
 ```
 
 
-The view controller owns the controller, activates it on its own scope, and reads the model:
+The view controller owns the controller, observes on its behalf, and reads the model:
 
 ```swift
 @StateObserving
-final class NoteDetailViewController: NSViewController, StateObservingContainer {
+final class NoteDetailViewController: NSViewController {
     let detail = NoteDetailStateController()
-    var childStateObservers: [any StateObserving] { [detail] }
 
     override func viewWillAppear() {
         super.viewWillAppear()
-        activateObservation()   // arms this controller and `detail`
+        activateObservation()   // arms this controller — `detail` has nothing to arm
         detail.reload()         // initial load, and catch-up after inactivity
     }
 
@@ -106,11 +101,14 @@ final class NoteDetailViewController: NSViewController, StateObservingContainer 
     }
 
     func observeState() {
-        // REACT — a UI-level signal; model-layer bridges live on `detail`.
+        // REACT — every signal that makes the detail stale, model-layer and UI-level alike.
+        observations.observe(NotificationCenter.default.publisher(for: .noteDidChange)) { [weak self] _ in
+            self?.detail.reload()   // the note changed underneath us
+        }
         observations.observe(
             NotificationCenter.default.publisher(for: NSWindow.didBecomeMainNotification, object: view.window)
         ) { [weak self] _ in
-            self?.detail.reload()
+            self?.detail.reload()   // it may have changed while another window was main
         }
         // RENDER — a pure function of the model.
         observations.track { [weak self] in self?.updateFields() }
@@ -124,7 +122,63 @@ final class NoteDetailViewController: NSViewController, StateObservingContainer 
 ```
 
 
-The view controller keeps the subscriptions that are about the UI — a window becoming main — and the state controller keeps the ones that are about the model. Both are armed by the one `activateObservation()` call, because the view controller lists its state controller in `childStateObservers`. The two consumption mechanisms in that example — `observations.track` to render, `observations.observe` to react — and the container shape behind `childStateObservers` are <a href="/guide/08-4-state-observing">Chapter 8.4</a>.
+The two consumption mechanisms in that example — `observations.track` to render, `observations.observe` to react — are <a href="/guide/08-4-state-observing">Chapter 8.4</a>. What the example settles is where they live: both of them on the view controller, none on the state controller.
+
+## Who observes
+
+A view state controller never subscribes and never observes. It has no `observeState()` and no activation lifecycle; it has `reload()`, and its owner calls it. Every signal that makes the screen stale — the note changing in the model, the window becoming main — is declared in the view controller's `observeState()`, and the handler is one line that reloads the controller concerned.
+
+The alternative is tempting, because the state controller knows what it loaded and so seems the natural place to watch for it changing. It costs three things:
+
+- <strong>Two inventories instead of one.</strong> A state controller is Foundation-only, so it cannot see the window becoming main. The view controller has to observe that and call `reload()` regardless — and once it does, "what makes this screen reload?" is answered in two files if the state controller subscribes as well.
+- <strong>No one to route.</strong> A view controller with several state controllers needs to say which signal reloads which of them. Controllers that subscribe for themselves each reload on their own, and the owner can neither group them nor leave one out.
+- <strong>A lifecycle with nothing behind it.</strong> A state controller that observes has to be activated, deactivated, and listed as its owner's child, for subscriptions that all end in `reload()`. One that doesn't is tested by setting its input, awaiting `load()`, and asserting on `state` — <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+
+What stays on the state controller is everything that isn't observation: its inputs, whose `didSet` reloads because the owner assigned a property, and the task it loads in, which a newer `reload()` cancels — so two signals arriving together cost one load, not two.
+
+With more than one pair, the view controller's `observeState()` reads as the routing table for the screen. The note list shows its notes and the progress of a sync; each has its own pair, and each signal reloads only what it stales:
+
+```swift
+@StateObserving
+final class NoteListViewController: NSViewController {
+    let list = NoteListStateController()               // writes NoteListState
+    let syncProgress = SyncProgressStateController()   // writes SyncProgressState
+
+    func observeState() {
+        let center = NotificationCenter.default
+
+        // REACT — each signal reloads the controllers it stales, and only those.
+        observations.observe(center.publisher(for: .noteDidChange)) { [weak self] _ in
+            self?.list.reload()
+        }
+        observations.observe(center.publisher(for: .syncStatusDidChange)) { [weak self] _ in
+            self?.syncProgress.reload()
+        }
+        observations.observe(
+            center.publisher(for: NSWindow.didBecomeMainNotification, object: view.window)
+        ) { [weak self] _ in
+            self?.reloadAll()
+        }
+
+        // RENDER — one updater per model.
+        observations.track { [weak self] in self?.updateTable() }
+        observations.track { [weak self] in self?.updateSyncBadge() }
+    }
+
+    private func reloadAll() {
+        list.reload()
+        syncProgress.reload()
+    }
+}
+```
+
+
+<div class="rule">
+<span class="rule-label">The rule</span>
+
+A state controller reloads and shapes; it never observes. No `observeState()`, no `@StateObserving`, no subscription of any kind. The view controller owns every observation on the screen and calls `reload()`.
+
+</div>
 
 ## One writer, any state
 
@@ -154,11 +208,11 @@ A view takes exactly two things: a view state model, by reference, and closures 
 
 - <strong>Naming.</strong> `<Screen>StateController` writes `<Screen>State` — `NoteDetailStateController` and `NoteDetailState`, `NoteListStateController` and `NoteListState`. A controller whose whole job is loading one list may be called a `*Loader`; it still writes a separate model.
 - <strong>Inputs live on the controller.</strong> A selected note, a scoped identifier — the owner sets a plain property, and its `didSet` invalidates and reloads. The model never has inputs; it has results.
-- <strong>One pair per concern.</strong> A view controller may own several pairs for independent concerns and read all their models in its updaters. Concerns that cascade — one input invalidating another's data — belong in the same pair.
+- <strong>One pair per concern.</strong> A view controller may own several pairs for independent concerns, route its signals to their `reload()`s, and read all their models in its updaters. Concerns that cascade — one input invalidating another's data — belong in the same pair.
 - <strong>One file, next to the screen.</strong> `UI/Screens/NoteDetail/NoteDetailStateController.swift`, per <a href="/guide/01-1-project-layout">Chapter 1.1</a>. The controller is Foundation-only, so it stays testable without a window; it lives in the app target rather than a package because it belongs to exactly one screen.
-- <strong>When there is no controller.</strong> A model whose writer is the view controller itself is fine when nothing is loaded or subscribed to fill it — navigation state in <a href="/guide/09-navigation">Chapter 9</a> is the standing example. The moment loading or a model-layer subscription appears, the writer becomes a state controller.
+- <strong>When there is no controller.</strong> A model whose writer is the view controller itself is fine when nothing is loaded to fill it — navigation state in <a href="/guide/09-navigation">Chapter 9</a> is the standing example. The moment loading or shaping appears, the writer becomes a state controller.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The view controller that owns the pair, assembles the components, and coordinates is next: <a href="/guide/08-3-view-controllers">Chapter 8.3</a>. The activation lifecycle that arms the controller's subscriptions — and `@Tracked`, for the values a controller renders itself without a pair — is <a href="/guide/08-4-state-observing">Chapter 8.4</a>. Testing a state controller on the model it writes is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
+The view controller that owns the pair, assembles the components, and coordinates is next: <a href="/guide/08-3-view-controllers">Chapter 8.3</a>. The activation lifecycle behind the view controller's `observeState()` — and `@Tracked`, for the values a controller renders itself without a pair — is <a href="/guide/08-4-state-observing">Chapter 8.4</a>. Testing a state controller on the model it writes is <a href="/guide/10-6-testing-each-layer">Chapter 10.6</a>.
 </div>

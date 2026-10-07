@@ -105,7 +105,7 @@ An event-driven controller is the same skeleton with a subscription in place of 
 <table>
 <thead><tr><th>Channel</th><th>When</th></tr></thead>
 <tbody>
-<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and view state controllers consume it by tracking — <a href="/guide/08-4-state-observing">Chapter 8.4</a>.</td></tr>
+<tr><td>An <code>@Observable</code> property on the controller</td><td>Views and view controllers consume it by tracking — <a href="/guide/08-4-state-observing">Chapter 8.4</a>.</td></tr>
 <tr><td>A posted notification</td><td>Broad fan-out to consumers that don't hold a reference.</td></tr>
 <tr><td>A write into a manager</td><td>The controller's whole job is refreshing data the manager already owns.</td></tr>
 </tbody>

@@ -20,7 +20,7 @@ final class NotebookNavigationState {
 }
 ```
 
-A navigation state object is a view state model whose writer is the parent view controller. There's no view state controller in front of it because nothing is loaded or subscribed to fill it — the parent sets it from a child's intent closure, and children read it as a plain input.
+A navigation state object is a view state model whose writer is the parent view controller. There's no view state controller in front of it because nothing is loaded to fill it — the parent sets it from a child's intent closure, and children read it as a plain input.
 
 ```swift
 @StateObserving

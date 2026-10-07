@@ -1,7 +1,7 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-09-27",
+  "lastSync": "2026-09-29",
   "documents": {
     "manager-architecture": {
       "updated_at": "2026-09-13T12:23:36.751+00:00",
@@ -47,8 +47,8 @@
       "scope": "cookbook-candidate"
     },
     "view-state-management-observable-state-objects": {
-      "updated_at": "2026-09-26T15:17:43.687+00:00",
-      "sha256": "0feb6cab13b851bf636cd051f6c63183332ac9e03fe1f4e057397e3ace44c54c",
+      "updated_at": "2026-09-29T05:21:46.401+00:00",
+      "sha256": "097fc212d8b2d1700fa91ae3cbbd6e073a7331b9ce5dccf346af40d2ebf29f31",
       "chapters": [
         "08-1-views",
         "08-2-view-state",
@@ -56,8 +56,8 @@
       ]
     },
     "view-state-management-patterns-and-lifecycle": {
-      "updated_at": "2026-09-26T15:18:05.063+00:00",
-      "sha256": "4d7c7219cc1f6e09a4853ad02463e6a6881fd9c6c11fc4ecffb2876ce6e4b313",
+      "updated_at": "2026-09-29T05:20:05.984+00:00",
+      "sha256": "95f752d56918e4078f68bc21b66006ec3b5021248cf39ca785283f2bfceaea63",
       "chapters": [
         "08-1-views",
         "08-2-view-state",
@@ -113,8 +113,8 @@
       "scope": "out-of-scope"
     },
     "swiftui-integration-strategy": {
-      "updated_at": "2026-09-26T15:18:48.935+00:00",
-      "sha256": "cda34f4c24783f331b6bb1a93814d9df3a4c2e076f7ea460de9ee2e1838dc26e",
+      "updated_at": "2026-09-29T05:20:56.749+00:00",
+      "sha256": "67a66bca3b5ad9adf7a883f4e88e72fa89198a743e3ead875138c401723b0dc6",
       "chapters": [
         "01-getting-started",
         "08-1-views",
@@ -326,8 +326,8 @@
       ]
     },
     "programmatic-views-three-layer-architecture": {
-      "updated_at": "2026-09-26T15:17:08.261+00:00",
-      "sha256": "77d7e30085f050265c8f6ba3d03fa967f5aafa797831efb0eb2c55f727c8ca03",
+      "updated_at": "2026-09-29T05:20:15.991+00:00",
+      "sha256": "5fd297bd9e73199dfac6dce74a17aa4bff4377e3be6b0d960af6b6307be52100",
       "chapters": [
         "08-1-views",
         "08-2-view-state"

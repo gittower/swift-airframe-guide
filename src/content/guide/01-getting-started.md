@@ -248,7 +248,7 @@ Take a note-taking app as the running example for this guide. A user renames a n
 1. The user commits an inline rename. An `Action Controller` validates the new name isn't empty, builds a `RenameNotebookAction`, and dispatches it — the mutate path begins.
 1. The Action calls into the Model's write funnel, which updates the notebook's title and persists it.
 1. The Model broadcasts a change notification. It does not know or care that the sidebar exists.
-1. The sidebar's state controller — and any other view observing notebooks, including one that doesn't exist yet — refreshes in response.
+1. The sidebar view controller observes the notification and asks its state controller to reload — as does any other view observing notebooks, including one that doesn't exist yet.
 
 Nothing in that list required the sidebar to know about a detail view, or the detail view to know about the sidebar. That decoupling is the entire point of routing every mutation through one layer: views can be added, removed, or rebuilt in SwiftUI without the Model layer changing at all.
 

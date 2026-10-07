@@ -20,7 +20,7 @@ Use `NSHostingController` when a view controller's entire content is SwiftUI and
 
 ## Four objects, one of them the view
 
-Each meaningful piece of UI is four objects. A <strong>view state controller</strong> subscribes, loads, and shapes model data, and writes it into a <strong>view state model</strong> — pure, semantic data. A <strong>view component</strong> renders that model. A <strong>view controller</strong> assembles the components, owns the state pair, and coordinates. The first two are <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller is <a href="/guide/08-3-view-controllers">Chapter 8.3</a>. This subchapter is about the view.
+Each meaningful piece of UI is four objects. A <strong>view state controller</strong> loads and shapes model data, and writes it into a <strong>view state model</strong> — pure, semantic data. A <strong>view component</strong> renders that model. A <strong>view controller</strong> assembles the components, owns the state pair, observes, and coordinates. The first two are <a href="/guide/08-2-view-state">Chapter 8.2</a>; the view controller is <a href="/guide/08-3-view-controllers">Chapter 8.3</a>. This subchapter is about the view.
 
 A view's interface has two halves and a private middle: semantic data in, intents out, and the mapping from one to pixels kept inside. It knows nothing about where its data came from or what happens after an intent leaves.
 

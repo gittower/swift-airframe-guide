@@ -10,7 +10,7 @@ Views read from the Model. This chapter introduces the read/render side of the a
 
 A SwiftUI view hosted inside AppKit is deliberately dumb: given a view state model, it draws it and emits intents through closures. <a href="/guide/08-1-views">Views</a> covers the view's side of that contract — its interface, how components compose, and the one rule that keeps a hosted SwiftUI view reactive instead of silently going stale.
 
-Where that model comes from is the other half. <a href="/guide/08-2-view-state">View State</a> covers the pair behind every screen — a view state controller that subscribes, loads, and shapes, and the `@Observable` model it writes, which the view never sees past — why it's two objects, and the single-writer mechanics that keep a view previewable in any state.
+Where that model comes from is the other half. <a href="/guide/08-2-view-state">View State</a> covers the pair behind every screen — a view state controller that loads and shapes, and the `@Observable` model it writes, which the view never sees past — why it's two objects, why the view controller does all the observing, and the single-writer mechanics that keep a view previewable in any state.
 
 Something still has to assemble those views into a hierarchy and scope them into coherent, independently testable pieces. <a href="/guide/08-3-view-controllers">View Controllers</a> covers that — the four jobs a view controller does, and when a piece of UI has earned a view controller of its own rather than staying embedded in its parent's.
 
