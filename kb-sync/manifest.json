@@ -1,7 +1,7 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-10-07",
+  "lastSync": "2026-10-12",
   "documents": {
     "manager-architecture": {
       "updated_at": "2026-10-07T15:25:07.513+00:00",
@@ -162,8 +162,8 @@
       ]
     },
     "model-layer-organization": {
-      "updated_at": "2026-09-19T11:13:51.005+00:00",
-      "sha256": "9944a82afd4d4c7483bdaf6afb787a0fa79d10da38a7eafce3e9cda74346ad62",
+      "updated_at": "2026-10-12T11:53:06.515+00:00",
+      "sha256": "d91cde604afda4c685018122404a9d32aac3a049e5db59055d76f0c472d47af7",
       "chapters": [
         "02-4-settings",
         "05-1-the-model",
@@ -199,8 +199,8 @@
       "scope": "out-of-scope"
     },
     "model-state-cases-for-change-notification": {
-      "updated_at": "2026-09-19T11:13:49.183+00:00",
-      "sha256": "2f175ef15fc2300cb9c0e4c3c2b0e726b4e27bb6bcd0f8d20dcab74d4f0a6480",
+      "updated_at": "2026-10-12T11:51:06.538+00:00",
+      "sha256": "573effbc787847b3b1d9d2601b15985235712908b93dc63d5129803934cc0e34",
       "chapters": [
         "05-1-the-model"
       ]
@@ -392,8 +392,8 @@
       ]
     },
     "user-preferences-window-toolbar-tabs-swiftui-panes-and-settings-controllers": {
-      "updated_at": "2026-09-27T16:09:20.644+00:00",
-      "sha256": "780ebdaa109d9c586b0256435a9857b1cf24bc10dfcd1d96b598584f7a2a006e",
+      "updated_at": "2026-10-12T11:54:09.653+00:00",
+      "sha256": "434b8ac8646f5a01c1d05491210d0f0964726b421c46a2ce60678ce2f6b80299",
       "chapters": [
         "07-6-settings-window"
       ]
