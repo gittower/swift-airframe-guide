@@ -20,7 +20,7 @@ The window is the System Settings shape: a row of toolbar tabs, one pane per tab
 <tr><td><strong>&lt;Pane&gt;SettingsScreen</strong></td><td>SwiftUI <code>Screen</code></td><td>The pane's root. Owns one controller per section and stacks the section views. Plays the view-controller role for the pane.</td></tr>
 <tr><td><strong>&lt;Section&gt;SectionView</strong></td><td>SwiftUI <code>View</code></td><td>Renders one section from a plain content value; emits every edit as an action. Previewable with a literal.</td></tr>
 <tr><td><strong>&lt;Section&gt;SectionController</strong></td><td><code>@MainActor</code> class</td><td>Shapes the section's content from the settings objects and applies the section's actions to them.</td></tr>
-<tr><td><strong>Settings objects</strong></td><td><code>@Observable</code>, from <a href="/guide/02-4-settings">2.4</a></td><td>The model. The only thing any section controller writes.</td></tr>
+<tr><td><strong>Settings objects</strong></td><td><code>@MainActor</code> class on <code>@UserDefault</code>, from <a href="/guide/02-4-settings">2.4</a></td><td>The model. The only thing any section controller writes.</td></tr>
 </tbody>
 </table>
 </div>
@@ -163,7 +163,7 @@ struct GeneralSettingsScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            EditorSectionView(settings: EditorSettings.shared)
+            EditorSectionView()
             Divider()
                 .padding(.horizontal, 20)
             SyncSectionView(content: sync.content, perform: sync.handle)
@@ -176,28 +176,34 @@ Two sections, wired two different ways, and the difference is the subject of the
 
 ## A section that binds directly
 
-The Editor section is the `EditorSettings` object from <a href="/guide/02-4-settings">Chapter 2.4</a>, edited in place. Every control maps one-to-one onto a property of the settings object; nothing is derived, filtered, or validated; writing the property <em>is</em> the whole effect. That is the one exception <a href="/guide/07-2-view-state">Chapter 7.2</a> grants to the model-and-closures rule — a flat settings object is its own manager, so there is no controller to go around — and the section takes the settings object by reference and binds to it:
+The Editor section is the `EditorSettings` object from <a href="/guide/02-4-settings">Chapter 2.4</a>, edited in place. Every control maps one-to-one onto a property of the settings object; nothing is derived, filtered, or validated; writing the property <em>is</em> the whole effect. That is the one exception <a href="/guide/07-2-view-state">Chapter 7.2</a> grants to the model-and-closures rule — a flat settings object is its own manager, so there is no controller to go around — and the section reads the shared settings object and binds to it:
 
 ```swift
 // UI/Screens/Settings/General/EditorSectionView.swift
 
 struct EditorSectionView: View {
-    @Bindable var settings: EditorSettings
-
     var body: some View {
         SettingsForm {
             SettingsRow(label: "Font size") {
-                Stepper("\(settings.fontSize) pt", value: $settings.fontSize, in: 10...24)
+                Stepper("\(EditorSettings.shared.fontSize) pt", value: fontSize, in: 10...24)
             }
             SettingsRow {
-                Toggle("Show line numbers", isOn: $settings.showLineNumbers)
+                Toggle("Show line numbers", isOn: showLineNumbers)
             }
         }
+    }
+
+    private var fontSize: Binding<Int> {
+        Binding(get: { EditorSettings.shared.fontSize }, set: { EditorSettings.shared.fontSize = $0 })
+    }
+
+    private var showLineNumbers: Binding<Bool> {
+        Binding(get: { EditorSettings.shared.showLineNumbers }, set: { EditorSettings.shared.showLineNumbers = $0 })
     }
 }
 ```
 
-Reactivity is free: the properties are read inside `body`, the object is `@Observable`, and a change from anywhere — this window, a menu item, a script — re-renders the section. It is also as far as this shape goes. The moment a section needs to do anything but read and write flat values, it graduates.
+Reactivity is free: the properties are read inside `body`, each `@UserDefault` property registers that read with Observation, and a change from anywhere — this window, a menu item, a script — re-renders the section. It is also as far as this shape goes. The moment a section needs to do anything but read and write flat values, it graduates.
 
 ## A section with a controller
 
@@ -250,7 +256,7 @@ final class SyncSectionController {
 }
 ```
 
-`content` is computed, not stored, and the controller is not `@Observable` — deliberately. The settings object it reads <em>is</em> observable, and the Screen reads `sync.content` inside its own `body`, so every settings property the computation touches is tracked right there. A write from `handle`, from another window, or from outside the app re-renders the section with no seeding, no copies, and no subscription to keep current. That is what an `@Observable` settings object buys; a controller in front of a settings store that <em>isn't</em> observable would have to seed private copies from it and re-read after every write, and would still miss changes made anywhere else.
+`content` is computed, not stored, and the controller is not `@Observable` — deliberately. Every property of the settings object it reads is tracked by its `@UserDefault` wrapper, and the Screen reads `sync.content` inside its own `body`, so every setting the computation touches is tracked right there. A write from `handle`, from another window, or from outside the app re-renders the section with no seeding, no copies, and no subscription to keep current. That is what tracked settings properties buy; a controller in front of a settings store whose reads <em>aren't</em> tracked would have to seed private copies from it, make itself `@Observable` so mutating them re-renders, and subscribe to every key so it still saw changes made anywhere else.
 
 This is <a href="/guide/07-2-view-state">Chapter 7.2</a>'s pair with its model collapsed to a value: `SyncSectionController` is the writer, `SyncSectionContent` is the state, and the view never sees the controller. The one difference from a state controller in an AppKit screen is that there is nothing to load, so the controller carries no `Task`. If a section ever needs one — an options list fetched from a server, say — it grows into a full state controller writing an `@Observable` model, and the Screen hands that model down by reference instead. The view is the same either way:
 

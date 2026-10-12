@@ -39,7 +39,7 @@ enum ActionStatus {
 
 Because state and only state needs to be reactive — not the imperative `cancel()` or `main()` calls themselves — `@Observable` is the cheapest way to let several independent UI surfaces (a progress window, an activity list, a status badge) bind to the same live value without any subscription ceremony.
 
-This is the same narrow exception <a href="/guide/05-1-the-model">Chapter 5.1</a> makes for a settings object, for the same reason: an Action is never constructed or written to off the main actor, so `@Observable`'s guarantees are true of it and not just declared. Every model-layer type that has background work behind it — which is most of them, even the ones marked `@MainActor` — doesn't get the same pass, because that background work is exactly what `@Observable` can't honestly track.
+This is the same narrow exception <a href="/guide/05-1-the-model">Chapter 5.1</a> makes for settings and app state, for the same reason: an Action is never constructed or written to off the main actor, so `@Observable`'s guarantees are true of it and not just declared. Every model-layer type that has background work behind it — which is most of them, even the ones marked `@MainActor` — doesn't get the same pass, because that background work is exactly what `@Observable` can't honestly track.
 
 ### Conflicts are declared, not checked ad hoc
 

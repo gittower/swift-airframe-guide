@@ -36,7 +36,7 @@ final class SyncActivity {
 }
 ```
 
-An activity is `@Observable` for the same reason a settings object is in <a href="/guide/05-1-the-model">Chapter 5.1</a>: nothing ever touches it off the main actor. A job's `perform` cannot see it — the work context does not carry activities — and its handlers run on the main actor. That is what lets a screen render an activity with a one-line tracked read, where a plain model value such as `SyncStore.shared.status` in <a href="/guide/07-3-view-controllers">Chapter 7.3</a> needs a notification bridged into tracked state first.
+An activity is `@Observable` for the same reason a settings object may be read directly in <a href="/guide/05-1-the-model">Chapter 5.1</a>: nothing ever touches it off the main actor. A job's `perform` cannot see it — the work context does not carry activities — and its handlers run on the main actor. That is what lets a screen render an activity with a one-line tracked read, where a plain model value such as `SyncStore.shared.status` in <a href="/guide/07-3-view-controllers">Chapter 7.3</a> needs a notification bridged into tracked state first.
 
 ## A job that reports progress
 

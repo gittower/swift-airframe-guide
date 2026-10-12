@@ -186,7 +186,7 @@ The last three apply all of it. <a href="/guide/05-7-model-shapes">Model Shapes<
 <div class="rule">
 <span class="rule-label">The rules</span>
 
-<strong>One funnel.</strong> Every mutation, from every source, goes through the model's one manager. Reads never do — they query the model directly, and the model signals change with a notification after the write lands. A model is <code>@Observable</code> only when nothing ever touches it off the main actor: settings, app state, and the activities an environment holds.
+<strong>One funnel.</strong> Every mutation, from every source, goes through the model's one manager. Reads never do — they query the model directly, and the model signals change with a notification after the write lands. A model is tracked directly only when nothing ever touches it off the main actor: settings, through their <code>@UserDefault</code> properties, and app state and the activities an environment holds, which are <code>@Observable</code>.
 
 <strong>Entered on the main actor, confined off it.</strong> The model layer is always entered on the main actor. A job's intent is <code>Sendable</code> and frozen at submission; its <code>perform</code> sees only the work context; its handlers see only the main context and are the only place a result is applied, published or settled. Workers never reach back into a manager, an activity or a view.
 

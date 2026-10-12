@@ -19,7 +19,7 @@ Six questions classify a piece of state, and most of a model's design falls out 
 <tr><td><a href="#persisted-main-thread-only"><strong>Persisted, main-thread only</strong></a></td><td>Yes</td><td>None</td><td>Notification</td><td><code>NoteTemplate</code></td></tr>
 <tr><td><a href="#file-backed-mixed-writers"><strong>File-backed, mixed writers</strong></a></td><td>Yes, flat files</td><td>A pipeline appends, the user decides</td><td>Notification</td><td><code>Suggestion</code></td></tr>
 <tr><td><a href="#in-memory-replaced-wholesale"><strong>In-memory, replaced wholesale</strong></a></td><td>No</td><td>Load only</td><td>Notification</td><td><code>TagIndex</code></td></tr>
-<tr><td><a href="#preference-backed-settings"><strong>Preference-backed settings</strong></a></td><td>Yes, key-value</td><td>None</td><td><code>@Observable</code></td><td><code>EditorSettings</code></td></tr>
+<tr><td><a href="#preference-backed-settings"><strong>Preference-backed settings</strong></a></td><td>Yes, key-value</td><td>None</td><td>Tracked by <code>@UserDefault</code></td><td><code>EditorSettings</code></td></tr>
 <tr><td><a href="#in-memory-app-state"><strong>In-memory app state</strong></a></td><td>No</td><td>None</td><td><code>@Observable</code></td><td><code>AppState</code></td></tr>
 </tbody>
 </table>
@@ -303,7 +303,7 @@ Who asks for the rebuild is not the model's concern. In the notebook app it is `
 
 <strong>Use when</strong> the values are user preferences: lightweight key-value data that persists across launches and changes infrequently. `EditorSettings` from <a href="/guide/02-4-settings">Chapter 2.4</a> is the shape in full — a `@UserDefault`-backed object whose setters <em>are</em> the funnel, so no separate manager exists.
 
-This is the one deliberate exception to "models signal by notification". The values are flat and ambient — a font size, a toggle — with no per-view projection to make, so every consumer wants them verbatim and `@Observable` costs nothing. It holds only while two things stay true: nothing ever writes to the object from a background job, and no screen needs to derive, combine or filter what it holds. A setting that starts syncing from a server graduates out of the exception into the first shape; a screen that derives from several settings builds its own view state model like everything else — <a href="/guide/07-6-settings-window">Chapter 7.6</a> shows where that line falls in a real settings window.
+This is the one deliberate exception to "models signal by notification". The values are flat and ambient — a font size, a toggle — with no per-view projection to make, so every consumer wants them verbatim and reads them straight off the object. The class itself is not `@Observable`: each `@UserDefault` property registers its own reads with Observation, so the tracking is already there, property by property. The exception holds only while two things stay true: nothing ever writes to the object from a background job, and no screen needs to derive, combine or filter what it holds. A setting that starts syncing from a server graduates out of the exception into the first shape; a screen that derives from several settings builds its own view state model like everything else — <a href="/guide/07-6-settings-window">Chapter 7.6</a> shows where that line falls in a real settings window.
 
 ## In-memory app state
 
@@ -322,7 +322,7 @@ final class AppState {
 }
 ```
 
-The class plays the manager role — its setters are the funnel — and with nothing to coordinate, a separate manager class would add nothing. It is `@Observable` under the same exception as settings, for the same reason: only main-actor code ever touches it. Graduate it the moment either condition fails — to settings if a value should persist, to a manager-fronted shape if a value gains validation or a background writer.
+The class plays the manager role — its setters are the funnel — and with nothing to coordinate, a separate manager class would add nothing. Consumers read it directly under the same exception as settings, for the same reason: only main-actor code ever touches it. With nothing but plain stored properties and no wrapper to do the tracking, the macro is what supplies it here. Graduate it the moment either condition fails — to settings if a value should persist, to a manager-fronted shape if a value gains validation or a background writer.
 
 <strong>Don't use when</strong> the state belongs to one window or screen. That is a view state model written by a view state controller — <a href="/guide/07-2-view-state">Chapter 7.2</a> — not app state.
 
@@ -339,7 +339,7 @@ Some manager calls do not produce model state: a draft summary the user may or m
 5. <strong>Not persisted, flat, app-wide, main-actor only?</strong> In-memory app state.
 6. <strong>Fetched once and handed back?</strong> Not a shape. An `async` manager method returning the value.
 
-Shapes are chosen per model type, not per app, and a type moves between them as its requirements change: a template that starts syncing to other devices becomes the first shape, a setting that gains a background writer stops being `@Observable`. Each shape's "don't use when" names the neighbour it most often graduates into.
+Shapes are chosen per model type, not per app, and a type moves between them as its requirements change: a template that starts syncing to other devices becomes the first shape, a setting that gains a background writer stops being read directly. Each shape's "don't use when" names the neighbour it most often graduates into.
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
