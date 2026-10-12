@@ -133,8 +133,8 @@
       ]
     },
     "actions-and-activities": {
-      "updated_at": "2026-09-13T15:27:39.52+00:00",
-      "sha256": "c4d020dcc3ff79712a79d819baa8c612c0637d0e6594c33fc9eec09be5e8599e",
+      "updated_at": "2026-10-12T12:33:43.348+00:00",
+      "sha256": "70f6752c03e59cda61a7070cc343d9fae38027dcc5fc4349d2b44a8a158d2172",
       "chapters": [
         "06-1-actions"
       ]
@@ -162,8 +162,8 @@
       ]
     },
     "model-layer-organization": {
-      "updated_at": "2026-10-12T11:53:06.515+00:00",
-      "sha256": "d91cde604afda4c685018122404a9d32aac3a049e5db59055d76f0c472d47af7",
+      "updated_at": "2026-10-12T12:32:27.171+00:00",
+      "sha256": "8c46a3f2751d70472a420366a6de374b4bbfaa94966ed412e5fb7f48b2d94cc1",
       "chapters": [
         "02-4-settings",
         "05-1-the-model",
@@ -199,8 +199,8 @@
       "scope": "out-of-scope"
     },
     "model-state-cases-for-change-notification": {
-      "updated_at": "2026-10-12T11:51:06.538+00:00",
-      "sha256": "573effbc787847b3b1d9d2601b15985235712908b93dc63d5129803934cc0e34",
+      "updated_at": "2026-10-12T12:33:00.901+00:00",
+      "sha256": "55419a9683136fc2aeb3f02390697686ef4e2ff516202a3481aeccbebaf924da",
       "chapters": [
         "05-1-the-model"
       ]
