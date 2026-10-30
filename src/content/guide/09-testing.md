@@ -24,9 +24,9 @@ A test earns its place only if it can fail for a reason you care about. <a href=
 
 Most testing happens in two contexts: fixing a bug and building a feature. <a href="/guide/09-2-testing-workflows">Testing Workflows</a> covers the discipline for each, worked through as a sync bug and an archive feature in the notebook app, and the habit of investing in test infrastructure the moment a scenario is hard to set up.
 
-A test target has a fixed shape, and a test is one of four kinds. <a href="/guide/09-3-suite-layout-and-test-kinds">Suite Layout and Test Kinds</a> covers the module-named mirror, the three infrastructure folders, the precise meaning of fixture, factory and builder, and the live, performance and contract suites that don't run on every `Cmd+U`.
+A test target has a fixed shape, and a test is one of four kinds. <a href="/guide/09-3-suite-layout-and-test-kinds">Suite Layout and Test Kinds</a> covers the module-named mirror, the three infrastructure folders, the precise meaning of fixture, factory and builder, and the live integration, performance and contract suites — with the plans and environment gates that keep them off every `Cmd+U`.
 
-Test data is built, not loaded. <a href="/guide/09-4-factories-builders-and-fixtures">Factories, Builders and Fixtures</a> covers the two factory shapes and why there's no third, the defaults a factory carries, payload builders that produce the wire shape, the narrow case where a fixture file is right, and the rule of two that decides when a private helper becomes a shared one.
+Test data is built, not loaded. <a href="/guide/09-4-factories-builders-and-fixtures">Factories, Builders and Fixtures</a> covers the two factory shapes and why there's no third, the defaults a factory carries, payload builders that produce the wire shape, the narrow case where a fixture file is right, and when a helper is shared: a value factory from its first use, a scenario factory only once a second file needs it.
 
 Inside a class, every test builds its own state and reads in one place. <a href="/guide/09-5-inside-a-test-class">Inside a Test Class</a> covers that — no shared setup, what a private helper may hide, assertions as free functions, the one allowed base class, naming, grouping tests by what they prove, and where a behavior is tested once and merely pinned everywhere else.
 

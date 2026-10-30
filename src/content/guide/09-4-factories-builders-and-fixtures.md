@@ -1,11 +1,11 @@
 ---
 title: "Factories, Builders and Fixtures"
-description: "Test data is built, not loaded. This subchapter covers the two shapes a factory takes and why there's no third, the defaults a factory carries and the rule that a test never asserts on one, payload builders that produce the wire shape, the narrow case where a fixture file is right, and the rule of two that decides when a private helper becomes a shared one."
+description: "Test data is built, not loaded. This subchapter covers the two shapes a factory takes and why there's no third, the defaults a factory carries and the rule that a test never asserts on one, payload builders that produce the wire shape, the narrow case where a fixture file is right, and when a helper is shared — a value factory at once, a scenario only once a second file needs it."
 order: 9
 subOrder: 4
 ---
 
-Test data is built, not loaded. This subchapter covers the two shapes a factory takes and why there's no third, the defaults a factory carries and the rule that a test never asserts on one, payload builders that produce the wire shape, the narrow case where a fixture file is right, and the rule of two that decides when a private helper becomes a shared one.
+Test data is built, not loaded. This subchapter covers the two shapes a factory takes and why there's no third, the defaults a factory carries and the rule that a test never asserts on one, payload builders that produce the wire shape, the narrow case where a fixture file is right, and when a helper is shared — a value factory at once, a scenario only once a second file needs it.
 
 ## Two kinds, and nothing in between
 
@@ -119,10 +119,12 @@ func testImport_NestedListsWithCheckboxes() throws {
 }
 ```
 
-## Sharing: the rule of two
+## Sharing: value factories at once, scenarios by the rule of two
 
-- A helper that builds state for <strong>one test file</strong> is a `private func make<Scenario>()` in that file. It stays tailored and can change freely.
-- The moment a <strong>second file</strong> needs it, move it to `Factories/` unchanged. Not before: premature promotion turns a convenience into an API.
+- A <strong>value factory for a model type</strong> — `Note.make(...)`, `Tag.make(...)` — goes into `Factories/` the first time a test needs it, even if only one test file uses it yet. It is generic, every parameter is defaulted, and the chance that another test needs the same model is high, so a private copy per file only breeds near-duplicates that drift apart.
+- A helper that builds a <strong>scenario</strong> for one test file is a `private func make<Scenario>()` in that file. It stays tailored and can change freely.
+- The moment a <strong>second file</strong> needs a scenario helper, move it to `Factories/` unchanged. Not before: a scenario is tailored to the test it serves, and premature promotion turns a convenience into an API.
+- Infrastructure that sets up the environment a test runs in — a temporary storage root, isolated user defaults — isn't a factory at all. It goes to `Support/` from its first use; <a href="/guide/09-5-inside-a-test-class">Chapter 9.5</a>.
 - Once in `Factories/`, a scenario factory's <strong>shape is frozen</strong>. Need a variation? Add `makeThreeNotesWithPendingEdit()`; don't add a parameter to `makeThreeNotes()`. The doc comment is the contract, and every caller relies on exactly that shape.
 - A test file with more than two or three private scenario factories, or with private helpers that build state the module under test doesn't know about — writing store rows by hand, hand-assembling a sync response — is a signal: either the builder is missing a primitive (add it) or the test class covers too much (split it).
 

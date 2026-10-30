@@ -51,13 +51,15 @@ Accepted exceptions:
 ## Private helpers
 
 - A private helper that builds <strong>state of the module under test</strong> is a scenario factory and follows the rule of two in <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a>. Two or three per file at most.
-- A private helper that is <strong>infrastructure</strong> — temp directories, reading a setting, capturing output — doesn't belong in a test file at all. If it doesn't mention the subject under test, it's `Support/`.
+- A <strong>value factory for a model type</strong> is never private: it goes into `Factories/` from its first use, per the same subchapter.
+- <strong>Infrastructure that sets up the environment</strong> a test runs in — temp directories, a temporary storage root, isolated user defaults, capturing output — goes into `Support/` from its first use, even if only one test file uses it yet. It is generic, and every test that needs the same environment should build it the same way.
+- <strong>Test doubles and harnesses tailored to one test class</strong> — a gate that holds a job until the test releases it, a locked event log, a stub that answers one class's requests — follow the rule of two. Used by one test file, they stay in that file as `fileprivate` types or functions at file scope, below the test class, so the test reads in one place and their generic names stay out of the rest of the target. When a second file needs one, it moves to `Support/` unchanged. The same holds for a special builder or a custom assertion only one file uses.
 - A <strong>wrapper that invokes the subject</strong> — `private func resolve(noteCount: Int, isSyncing: Bool) -> NoteListPlaceholder`, `private func parse(_ text: String)` — is fine and common: one per file, it saves the boilerplate the test isn't about.
 
 ## Assertions
 
 - Custom assertions are <strong>free functions</strong> with `file: StaticString = #filePath, line: UInt = #line` (XCTest) or `sourceLocation: SourceLocation = #_sourceLocation` (Swift Testing), never methods on a base class. That's what makes a failure point at the test's line, not the helper's.
-- One test class needs it: `fileprivate` in that file. Generic enough for a second file: `Support/Assertions.swift`.
+- One test class needs it: `fileprivate` in that file. Needed by a second file: `Support/Assertions.swift`.
 - An assertion helper earns its place by removing real noise — canonical JSON comparison, async throws, reading a store's state. Don't wrap `XCTAssertEqual(request.httpMethod, "GET")`.
 - Several assertions in one test are fine when they inspect one result from several angles. Check the whole result object in one test rather than one property per test.
 
@@ -92,7 +94,7 @@ A base class holds wiring only, never factories, helpers or assertions. Those st
 
 Test methods: `test<What>_<Condition>`, camelCase inside each part, base case without the condition — `testPull`, `testPull_EmptyNotebook`, `testArchive_LastActiveNotebook`. The expected result lives in the assertions, not in the name; the three-part `_ReturnsTrue` / `_ThrowsError` form isn't used because it restates the assertion, lengthens every name and describes implementation rather than behavior. Swift Testing keeps the same function names; the `@Suite` string is the subject (`"NoteManager.pull"`), `@Test` carries no label.
 
-File names: `<Subject>Tests.swift`, `<Type>+<Extension>Tests.swift`. Class names name the subject, never the technique — `SyncClientTests`, not `SyncClientHTTPPipelineTests`.
+File names: `<Subject>Tests.swift`, `<Type>+<Extension>Tests.swift`. Class names name the subject, never the technique — `SyncClientTests`, not `SyncClientHTTPPipelineTests`. The one kind suffix is for the special-run suites: `LiveIntegrationTests`, `PerformanceTests`, `ContractTests` (<a href="/guide/09-3-suite-layout-and-test-kinds">Chapter 9.3</a>).
 
 ## Comments
 
@@ -114,6 +116,7 @@ This answers every question about testing the same thing twice.
 - Each <strong>boundary it must survive</strong> — the request, the manager's thrown error, the printed output — gets <strong>one exemplary test</strong> proving it arrives there, on one caller, not every caller. The comment on that test says what it adds beyond the mechanism's tests.
 - A <strong>higher-level component</strong> over an extensively tested lower one gets its happy path plus the cases where <strong>it adds a decision</strong>. It never re-enumerates the lower component's matrix. If it adds no decision, it may need no test at all.
 - When correctness depends on checks running in an <strong>order</strong> a later change could flip, test both orders even though today only one is reachable; the test guards the reordering.
+- When the only way to reach a behavior is through a type's <strong>private helper</strong>, the helper is the layer the bug lives in, and it's missing a home. Give it one — a value type, a member on a model instance — and test it there. Never widen the helper's visibility for the test.
 
 Concretely: `SyncErrorMappingTests` covers every status code once — 401 to `.unauthorized`, 404 to `.notebookNotFound`, 409 to `.conflict`, and so on. Then one test in `NoteManagerTests` pins the boundary:
 
@@ -124,7 +127,7 @@ func testPull_Unauthorized_SurfacesSyncError() async throws {
     let notebook = try Notebook.makeThreeNotes()
     stub(.get, "/notebooks/\(notebook.id)/notes") { _ in .status(401) }
 
-    let environment = NotebookEnvironment.make(notebook: notebook)
+    let environment = NotebookEnvironment(notebook: notebook)
 
     await XCTAssertAsyncThrowsError(try await environment.noteManager.pull()) { error in
         XCTAssertEqual(error as? SyncError, .unauthorized)
@@ -145,8 +148,11 @@ Flag a test or test file when any of these hold:
 - State the test asserts on comes from a factory default the test did not pass.
 - The test can only be understood by reading `setUp()` or a second helper file besides one factory.
 - A shared scenario factory grew a parameter that changes its shape.
-- More than three private helpers, or any private helper that doesn't mention the subject under test.
-- A live test that returns instead of skipping, or asserts content that drifts.
+- More than three private scenario factories in one test file.
+- A value factory for a model type, or infrastructure that sets up the test environment — temp directories, storage roots, isolated defaults — defined privately in a test file. It belongs in `Factories/` or `Support/`.
+- A scenario factory, test double, harness or assertion in `Support/` (or a `Support/` subfolder) or `Factories/` that only one test file uses. It belongs in that file, `fileprivate` at file scope.
+- A private helper whose visibility was widened so a test could reach it.
+- A live integration test that returns instead of skipping, runs without its gate, or asserts content that drifts.
 - A case matrix appears at two layers.
 - A per-operation, per-provider or per-endpoint class with no rule of its own.
 - A fixture file used where the test asserts on specific values, or a set of fixture files differing in one field.
