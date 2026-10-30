@@ -22,7 +22,6 @@ Here is the notebook app on disk, every type the chapters define placed where it
 ```
 NotebookApp/
 ├── Packages/                        local-only Swift packages: in-repo, committed with the app
-│   ├── Concurrency/                 SerialTaskRunner, GroupedTaskRunner, BackgroundJob, ProgressReportingJob   5.4, 5.5
 │   ├── TestSupport/                 StubURLProtocol, temp directories                       9.4
 │   ├── NotebookSync/                SyncClient — the library below the model                5
 │   ├── MarkdownImport/              another library below the model
@@ -30,12 +29,13 @@ NotebookApp/
 │   ├── NotebookCore/                THE MODEL LAYER                                          5
 │   │   ├── Sources/NotebookCore/
 │   │   │   ├── Environment/         NotebookEnvironment, NotebookEnvironment+Shared, NotebookManaging   5.2, 5.3
-│   │   │   ├── Notes/               Note, NoteManager, NoteStore, Note+Queries, NoteWorkContext, NoteMainContext, NoteJobGroup, NoteActivities   5.1–5.6
+│   │   │   ├── Notes/               Note, NoteManager, NoteStore, Note+Queries, NoteJob, NoteJobGroup   5.1–5.5
 │   │   │   │   └── Jobs/            PullNotesJob, RenameNoteJob, SaveNoteJob, DeleteNoteJob, ExportNotebookJob, DraftSummaryJob   5.4–5.8
 │   │   │   ├── Notebooks/           Notebook, NotebookManager, NotebookStore, ExportManager
 │   │   │   ├── Tags/                Tag, TagIndex, Tag+Queries, TagManager, LoadTagIndexJob  5.7
 │   │   │   ├── Suggestions/         Suggestion, SuggestionStore, Suggestion+Queries, SuggestionManager, PersistSuggestionJob, ProposeSuggestionsJob   5.7
 │   │   │   ├── Templates/           NoteTemplate, TemplateStore, NoteTemplate+Queries, TemplateManager   5.7
+│   │   │   ├── Activities/          ActivityStore, Activity, ActivityDescribing              5.6
 │   │   │   ├── Sync/                SyncManager, SyncStore, SyncConfig, SyncState           2.5, 5
 │   │   │   └── Persistence/         the database stack PersistenceInitializer opens
 │   │   └── Tests/NotebookCoreTests/ NotebookCore/ mirror + Factories/ + Support/            9.3
@@ -60,7 +60,7 @@ NotebookApp/
 │   │   ├── Notes/                   NoteActionController
 │   │   └── Notebooks/               NotebookActionController
 │   ├── BackgroundControllers/       "What keeps the app current with no gesture behind it?" 4
-│   │                                StaleDraftReaper, TagUsageProjector, AppearanceApplier
+│   │                                StaleActivityPruner, TagUsageProjector, AppearanceApplier
 │   ├── Integrations/                "What does the app bridge to outward?"
 │   │                                the user's tools and OS surfaces — a URL scheme handler feeding Chapter 8 would be the first occupant
 │   ├── UI/                          "What does the user see?"                               7
@@ -161,7 +161,7 @@ The facade rule is a lint, not a convention. For every folder containing a `<Fol
 
 <strong>Libraries below the model may be remote.</strong> `NotebookSync` or `MarkdownImport` could as well be pinned packages from their own repositories, with a gitignored override slot for tandem development. `NotebookCore` and `NotebookActions` are always local: they are an enforced module boundary for this app, not a library anyone else consumes.
 
-<strong>Airframe is the one dependency on both sides of the boundary.</strong> The framework (<a href="/guide/10-the-airframe-package">Chapter 10</a>) is a pinned remote dependency carved into products along the same Foundation/AppKit line this layout is built on. `NotebookCore` and `NotebookActions` import the individual Foundation-only products they need — `AirframeActions` for the Action and validator bases, `AirframeFoundation` for the shared helpers — and the app target imports the `Airframe` umbrella, which re-exports everything. A Foundation-only product never links AppKit, so the compiler holds the line through the framework the same way it holds it through your own packages. The framework is also why there is no `FoundationExtensions`, `StateObserving` or observation package of your own under `Packages/`: Airframe ships that generic code, and what remains there is either a library below the model or domain code.
+<strong>Airframe is the one dependency on both sides of the boundary.</strong> The framework (<a href="/guide/10-the-airframe-package">Chapter 10</a>) is a pinned remote dependency carved into products along the same Foundation/AppKit line this layout is built on. `NotebookCore` and `NotebookActions` import the individual Foundation-only products they need — `AirframeActions` for the Action and validator bases, `AirframeFoundation` for the shared helpers and the job machinery: the two runners, `BackgroundJob`, `ProgressReportingJob` and the enqueuing protocols managers adopt — and the app target imports the `Airframe` umbrella, which re-exports everything. A Foundation-only product never links AppKit, so the compiler holds the line through the framework the same way it holds it through your own packages. The framework is also why there is no `FoundationExtensions`, `StateObserving`, concurrency or observation package of your own under `Packages/`: Airframe ships that generic code, and what remains there is either a library below the model or domain code.
 
 <strong>Sibling targets sit beside the app target.</strong> A command-line helper embedded in the bundle, a dock tile plug-in, a Quick Look extension each get their own folder at the repository root, with their own test target laid out per <a href="/guide/09-3-suite-layout-and-test-kinds">Chapter 9.3</a>. Code compiled into two targets is a local package, never a folder added to both.
 

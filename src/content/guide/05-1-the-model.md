@@ -1,11 +1,11 @@
 ---
 title: "The Model"
-description: "A model type is plain data with a store behind it and a query in front of it. This subchapter covers what a model looks like, how reads reach it without going through a manager, who is allowed to write it, whether its entities are values or references, and how it tells the rest of the app that something changed."
+description: "A model type is plain data with a store behind it and a query in front of it. This subchapter covers what a model looks like, how reads reach it without going through a manager, who is allowed to write it, why its mutating methods never save, which statics it may carry, whether its entities are values or references, and how it tells the rest of the app that something changed."
 order: 5
 subOrder: 1
 ---
 
-A model type is plain data with a store behind it and a query in front of it. This subchapter covers what a model looks like, how reads reach it without going through a manager, who is allowed to write it, whether its entities are values or references, and how it tells the rest of the app that something changed.
+A model type is plain data with a store behind it and a query in front of it. This subchapter covers what a model looks like, how reads reach it without going through a manager, who is allowed to write it, why its mutating methods never save, which statics it may carry, whether its entities are values or references, and how it tells the rest of the app that something changed.
 
 ## Plain data, a store, a query
 
@@ -29,18 +29,19 @@ Behind it sits the store, which is where persistence lives and where the collect
 /// The main-actor face: what queries read. Owned by the notebook, reached as `notebook.notes`.
 @MainActor
 final class NoteStore {
-    let storage: NoteStorage                       // the background face, handed to jobs through their work context
-
     func all() -> [Note] { … }
     func note(id: NoteID) -> Note? { … }
 
-    /// Module-internal: only a job's main-actor handler calls this. The database's own change
+    /// Module-internal: only a job's `finalize` calls this. The database's own change
     /// tracking merges the background save onto the main context, so the next query sees it.
     func merge(_ incoming: [Note]) async throws { … }
 }
 
 /// The background face: `Sendable`, safe to call off the main actor, knows nothing about views or managers.
+/// A job reaches it as `NoteStorage.shared` inside `perform`, where the hop is visible.
 struct NoteStorage: Sendable {
+    static let shared = NoteStorage()
+
     func note(id: NoteID, in notebookID: NotebookID) async throws -> Note? { … }
     func deleteNote(id: NoteID, in notebookID: NotebookID) async throws { … }
     func exportNotebook(id: NotebookID) async throws -> Data { … }
@@ -93,7 +94,7 @@ Views read from the model. They never write to it directly — every write, whet
 - It does not matter <em>where</em> a change came from. Ordering, validation, persistence and notification all have exactly one place to live, so adding a new source of mutation never reopens those questions.
 - Views can stay naive. They read current state, render it, and react to change notifications — they never need to reason about who else might be writing at the same time.
 
-On the model's side this shows up as access control. The store's mutators — `merge`, `insert`, `remove` — are module-internal, and the model layer is its own package, `NotebookCore`, per <a href="/guide/01-1-project-layout">Chapter 1.1</a>. So "only the manager writes" is not a convention a reviewer has to catch: the app target and the Actions package physically cannot call a store mutator, because nothing but the manager's public `async` methods is public. Inside the package the discipline is still a convention — a job's handler calls `store.merge`, nothing else does — but the surface the rest of the app sees is exactly the funnel.
+On the model's side this shows up as access control. The store's mutators — `merge`, `insert`, `remove` — are module-internal, and the model layer is its own package, `NotebookCore`, per <a href="/guide/01-1-project-layout">Chapter 1.1</a>. So "only the manager writes" is not a convention a reviewer has to catch: the app target and the Actions package physically cannot call a store mutator, because nothing but the manager's public `async` methods is public. Inside the package the discipline is still a convention — a job's `finalize` calls `store.merge`, nothing else does — but the surface the rest of the app sees is exactly the funnel.
 
 A manager always exists, even when it looks trivial. Sometimes it is a dedicated class; sometimes the model class acts as its own manager, when the mutation logic is simple enough that a wrapper would add nothing — a settings object's own setters, as in <a href="/guide/02-4-settings">Chapter 2.4</a>, <em>are</em> the funnel. And the funnel can run entirely on the main thread: a model with no background work still gets a manager, so that saving, validation and any cross-entity coordination have one home. The funnel is about <em>who</em> writes, not <em>which thread</em> writes. <a href="/guide/05-7-model-shapes">Chapter 5.7</a> works through both kinds.
 
@@ -103,6 +104,37 @@ A manager always exists, even when it looks trivial. Sometimes it is a dedicated
 Every mutation, from every source, goes through the model's one manager. Reads never do: a view, a view state controller or a validator asks the model through a static query, which answers with current state every time. The store's mutators are module-internal, so outside the model package the funnel is enforced by the compiler, not by review.
 
 </div>
+
+## Mutating methods never save
+
+The funnel says who decides to write. It does not say every write is a manager method. A persisted entity that is a reference type — the notebook itself, whose title and sync state are stored alongside its notes — may well carry mutating methods: a status change, a rename that also bumps a timestamp, keeping a relationship in step. Those are the pieces a manager or a job builds a unit of work from, and they share one rule: <strong>none of them saves</strong>, directly or through a helper.
+
+```swift
+// NotebookCore/Notebooks/Notebook+Sync.swift — grouped by concern, synchronous, save-free
+extension Notebook {
+    /// Marks the notebook unreachable after a failed sync. Returns whether anything changed.
+    func markOffline(after error: Error) -> Bool {
+        guard syncState != .offline else { return false }
+        syncState = .offline
+        lastSyncError = error.localizedDescription
+        return true
+    }
+}
+```
+
+The owner of the unit of work saves, once: the job on its background write in the synced shape, the manager on the main context in the main-only shape — <a href="/guide/05-7-model-shapes">Chapter 5.7</a> shows both. One save means the change lands all-or-nothing, the database merges it once, and exactly one notification follows. Only the caller knows which context or storage the change is being made on, so only the caller can save it. And the method stays trivially testable on the object itself, with no store behind it.
+
+The shape that follows from that: a synchronous instance method, no `async`, no hop, no notification, no I/O. It may throw, and it may return what changed — a `Bool`, a changeset — so the caller knows whether there is anything to save and announce. An operation that must persist on its own is not a model method at all; it is a manager or job operation. Normalisation the store applies on every save — trimming whitespace, assigning identifiers — is unaffected: that runs regardless of who changed what.
+
+## What a model's statics are for
+
+A model type carries three kinds of static, and no others:
+
+- <strong>Queries</strong>, as above. They read no instance and hide only a store lookup.
+- <strong>Change announcements</strong> — `Notebook.notesDidChange(in:)`, below. They hide only the transport.
+- <strong>A resolve helper that takes the storage the caller names</strong> — `Note.withNote(_ id:, in: notebookID, on: storage) { note in … }`, which looks the record up on the storage the caller passes and runs a body with it there. It saves a lookup every step of a job would otherwise repeat, and the call site still says where the work runs.
+
+What a model type does not carry is <strong>ID-keyed operations</strong>: `static func storeNotes(_:forNotebookWith:) async`, `static func markOffline(notebookWith:) async`. Each of them picks where the work runs for the caller, hides the hop, and does work that belongs on an instance; a few of them and the model type has become a namespace of jobs-in-disguise, and the job calling them can no longer show where its steps run. The operation is an instance member instead — synchronous and save-free, as above — and the caller hops to the storage it names and saves there.
 
 ## Value or reference
 
@@ -132,7 +164,7 @@ However the state is shaped, it has to tell interested views when it changes. Th
 <tbody>
 <tr><td>View/window-owned display or loader state, built by a controller from whatever model data it needs — not the model itself</td><td><code>@Observable</code> — consumers read a property, re-render when it changes. See <a href="/guide/07-2-view-state">Chapter 7.2</a>.</td></tr>
 <tr><td>Flat, ambient, app-wide settings or state with no per-view projection to make — the one narrow exception</td><td>Read directly, tracked at the source — by the <code>@UserDefault</code> wrapper for settings, as in <a href="/guide/02-4-settings">Chapter 2.4</a>; by <code>@Observable</code> for in-memory app state, as in <a href="/guide/05-7-model-shapes">Chapter 5.7</a>.</td></tr>
-<tr><td>Any other model-layer state — in-memory domain data or database-backed</td><td>The manager posts a <code>Notification</code> after the write lands; consumers subscribe and re-read through a query.</td></tr>
+<tr><td>Any other model-layer state — in-memory domain data or database-backed</td><td>Whoever applies the write announces it through a static on the owning model after the write lands; consumers subscribe to the <code>Notification</code> and re-read through a query.</td></tr>
 <tr><td>Platform / framework events</td><td>Subscribe to the framework's own notification directly.</td></tr>
 </tbody>
 </table>
@@ -148,7 +180,7 @@ Why domain models signal by notification instead of being tracked:
 - <strong>One mechanism for every backend.</strong> A database-backed model can't be tracked at all — its runtime-synthesized accessors leave nothing for the Observation macro to rewrite — so it needs notifications regardless. Giving every domain model the same signal means a consumer doesn't care which backend sits behind a model, and a model can move between the shapes in <a href="/guide/05-7-model-shapes">Chapter 5.7</a> without its consumers changing.
 - <strong>The payload.</strong> A notification says which notebook and which notes changed, and a consumer checks that before doing any work. A tracked property can only say that something changed.
 
-The exception earns tracking for the opposite reasons. A settings object like `EditorSettings`, in-memory app state, and the activities an environment holds (<a href="/guide/05-6-progress-and-activities">Chapter 5.6</a>) are never written off the main actor — a job writes to an activity only from its main-actor handlers — so tracking describes them honestly. And they're flat: making every consumer seed a private copy and re-seed it from a publisher would add a file and a stale-copy bug per consumer, for a value each of them reads verbatim. "Flat" is about what consumers read, not about the object's insides — a settings object may combine two keys in a computed property. The moment a <em>view</em> needs a derived, combined or filtered shape, it builds its own display object like everything else in the first row. The Action is the one other place this guide reaches for `@Observable` outside a view — <a href="/guide/06-1-actions">Chapter 6.1</a> — for the same main-actor reason.
+The exception earns tracking for the opposite reasons. A settings object like `EditorSettings`, in-memory app state, and the app's activity store (<a href="/guide/05-6-progress-and-activities">Chapter 5.6</a>) are never written off the main actor — a job writes to the activity store only from its main-actor `handle` — so tracking describes them honestly. And they're flat: making every consumer seed a private copy and re-seed it from a publisher would add a file and a stale-copy bug per consumer, for a value each of them reads verbatim. "Flat" is about what consumers read, not about the object's insides — a settings object may combine two keys in a computed property. The moment a <em>view</em> needs a derived, combined or filtered shape, it builds its own display object like everything else in the first row. The Action is the one other place this guide reaches for `@Observable` outside a view — <a href="/guide/06-1-actions">Chapter 6.1</a> — for the same main-actor reason.
 
 Three alternatives were weighed and rejected:
 
@@ -156,23 +188,26 @@ Three alternatives were weighed and rejected:
 - <strong>Observation everywhere.</strong> The database can't be tracked, so there would be two mechanisms anyway; multi-step applies would leak half-applied state; and views would start binding to models directly, eroding the view-state layer.
 - <strong>A tracked revision counter on each store instead of a notification.</strong> One mechanism and no Combine, but it drops the payload, and the database still needs notifications. The counter stays a consumer-side tool: a view controller bumps a `@Tracked` counter from a notification handler when a tracked updater has to re-run on that notification.
 
-The notification is posted by whoever applies the write — a job's main-actor result handler, or a main-thread manager method — after the write has landed, never before. Consumers subscribe, re-read whatever slice they need through a query, and republish that as their own small, purpose-built `@Observable` view state model, which is what a view actually reads. When a notification has more than one consumer that wants to observe it reactively, bridge it once: a single handler copies the value into an `@Observable` object everyone else reads, rather than every consumer subscribing to the raw notification independently.
+The notification is posted by whoever applies the write — a job's `finalize`, or a main-thread manager method — after the write has landed, never before. Consumers subscribe, re-read whatever slice they need through a query, and republish that as their own small, purpose-built `@Observable` view state model, which is what a view actually reads. When a notification has more than one consumer that wants to observe it reactively, bridge it once: a single handler copies the value into an `@Observable` object everyone else reads, rather than every consumer subscribing to the raw notification independently.
+
+It is posted through an <strong>announcement</strong>: a static on the root model that owns the changed objects, named in the model's vocabulary. Notes belong to their notebook, so the notebook announces their changes — the announcement goes on the owner, not on the owned type:
 
 ```swift
-// NotebookCore/Notes/Note+Notifications.swift — one name per model, posted with the notebook as the object
-extension Note {
-    enum notifications {
-        static let didChange = Notification.Name("Note.didChange")
+// NotebookCore/Notebooks/Notebook+Announcements.swift — the owner announces; the transport stays in here
+extension Notification.Name {
+    static let noteDidChange = Notification.Name("Notebook.noteDidChange")
+}
 
-        @MainActor
-        static func postDidChange(in notebookID: NotebookID) {
-            NotificationCenter.default.post(name: didChange, object: notebookID)
-        }
+extension Notebook {
+    /// The notes of a notebook changed. Posted once, after the write has landed.
+    @MainActor
+    static func notesDidChange(in notebookID: NotebookID) {
+        NotificationCenter.default.post(name: .noteDidChange, object: notebookID)
     }
 }
 ```
 
-Posting with the notebook's identifier as the object lets a screen that shows one notebook subscribe to exactly that notebook's changes, and the "re-read through a query" half of the recipe means the notification carries no payload a consumer could get stale by caching.
+The job or manager calls `Notebook.notesDidChange(in: notebookID)` and never names `NotificationCenter`: the center behind the announcement is transport, and it stays inside the announcement. Posting with the notebook's identifier as the object lets a screen that shows one notebook subscribe to exactly that notebook's changes, and the "re-read through a query" half of the recipe means the notification carries no payload a consumer could get stale by caching.
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>

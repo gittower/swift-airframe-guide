@@ -41,7 +41,7 @@ func testPull_RenamedRemotelyWhileEditedLocally_KeepsLocalBody() async throws {
         ]))
     }
 
-    try await NotebookEnvironment.make(notebook: notebook).noteManager.pull()
+    try await NotebookEnvironment(notebook: notebook).noteManager.pull()
 
     let merged = try XCTUnwrap(Note.note(id: note.id, in: notebook))
     XCTAssertEqual(merged.title, "Renamed")

@@ -48,34 +48,38 @@ Inside a manager this strategy is never hand-rolled — the environment's runner
 
 ```swift
 // NotebookCore/Notes/Jobs/SaveNoteJob.swift
-struct SaveNoteJob: BackgroundJob, TaskAccess {
+struct SaveNoteJob: NoteJob {
+    let notebookID: NotebookID
     let noteID: NoteID
     let body: String                       // the text as the editor had it when it asked — intent
 
     var groups: Set<NoteJobGroup> { [.note(noteID)] }
     let access: TaskAccessMode = .write
 
-    nonisolated func perform(context: NoteWorkContext) async throws -> Note {
-        var note = try await context.requireNote(noteID)   // the baseline, read after the previous save finished
+    nonisolated func perform() async throws -> Note {
+        // The baseline, read after the previous save finished.
+        guard var note = try await NoteStorage.shared.note(id: noteID, in: notebookID) else {
+            throw NoteError.notFound
+        }
         note.body = body
         note.modifiedAt = .now
         return note
     }
 
     @MainActor
-    func finalize(_ result: Result<Note, Error>, context: NoteMainContext) async throws {
-        try await context.store.merge([result.get()])
-        context.notesDidChange()
+    func finalize(_ result: Result<Note, Error>) async throws {
+        try await NoteStore.shared(for: notebookID).merge([result.get()])
+        Notebook.notesDidChange(in: notebookID)
     }
 }
 
 // In NoteManager:
 func save(noteID: NoteID, body: String) async throws {
-    _ = try await awaitCancellable(enqueue(SaveNoteJob(noteID: noteID, body: body)))
+    _ = try await enqueue(SaveNoteJob(notebookID: environment.notebook.id, noteID: noteID, body: body))
 }
 ```
 
-Two saves of the same note queue; a save of a different note runs alongside. The detail that makes serial correct is <em>when the baseline is read</em>: `requireNote` runs inside `perform`, after the previous job has finished, so the second save sees the state the first one left. A snapshot taken at submission would capture stale state and the first save's title change would vanish.
+Two saves of the same note queue; a save of a different note runs alongside. The detail that makes serial correct is <em>when the baseline is read</em>: the read runs inside `perform`, after the previous job has finished, so the second save sees the state the first one left. A snapshot taken at submission would capture stale state and the first save's title change would vanish.
 
 If you ever need the strategy outside a manager, this is what the runner does for you, reduced to one property:
 
@@ -100,14 +104,16 @@ The same reload is asked for twice before the first has started. The second requ
 A pull is the notebook app's case: `SyncUpdater`, a timer-driven background controller from <a href="/guide/04-background-controllers">Chapter 4</a>, pulls every notebook on an interval, and the user can press Sync Now at any moment. With a serial runner alone, the second pull would queue and run a redundant fetch the instant the first finished. The runner's coalescing key from <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> shares the queued one, and `pull()` stays one line:
 
 ```swift
-// NotebookCore/Notes/Jobs/PullNotesJob.swift — add Hashable to the declaration from Chapter 5.4, so the job is its own key
-struct PullNotesJob: BackgroundJob, TaskAccess, Hashable { /* unchanged */ }
+// PullNotesJob is already Hashable (Chapter 5.4): its only stored property is its intent, so equality is synthesised.
 
 // In NoteManager — replaces the pull() from Chapter 5.3. The manager holds no in-flight state.
 func pull() async throws {
-    _ = try await awaitShared(enqueueCoalescing(PullNotesJob()))
+    let job = PullNotesJob(notebookID: environment.notebook.id)
+    _ = try await enqueue(job, coalescing: job)
 }
 ```
+
+The job is its own key: `PullNotesJob(notebookID:)` equals every other pull of the same notebook, and a `force` flag on the job would keep a forced pull from joining an unforced one. A pull whose run is visible gets its run ID from the runner, once per run, so every caller that shares the run sees one activity row with one start and one end — the ID never goes on the job (<a href="/guide/05-6-progress-and-activities">Chapter 5.6</a>).
 
 <strong>What a caller is promised.</strong> When `pull()` returns, the model reflects the sync service as of no earlier than the moment `pull()` was called, and every job enqueued before that call has run. FIFO gives the second half for free. Coalescing may only share work that still satisfies both halves, and three rules protect that:
 
@@ -135,9 +141,9 @@ Worked through for the serial runner, with a new pull request arriving in each r
 
 The conservative serial rows cost at most one redundant pull. A missed pull would be a bug, so the serial runner stays coarse and the grouped runner gets its precision from the groups it already has.
 
-<strong>Cancellation.</strong> `awaitShared` has no bridge on purpose. Cancelling one caller must not cancel work another caller is waiting on, so no waiter forwards cancellation to the shared task. A pull runs to completion once started — it is a mutation that must land, exactly the category <a href="/guide/05-9-cancellation">Chapter 5.9</a> says is not worth cancelling. A caller that needs to bail checks cancellation after the await, which `awaitShared` does before handing back the value.
+<strong>Cancellation.</strong> `enqueue(_:coalescing:)` does not forward one caller's cancellation, on purpose. Cancelling one caller must not cancel work another caller is waiting on, so a caller cancelled while it shares a run throws `CancellationError` once the run has ended, and the other callers keep the output. The run itself is cancelled only through the runner, which ends it for every caller. A pull runs to completion once started — it is a mutation that must land, exactly the category <a href="/guide/05-9-cancellation">Chapter 5.9</a> says is not worth cancelling.
 
-<strong>Sharing a running job</strong> is the weaker variant: a private handle on the manager that later callers join whether or not the job has started. It answers a Sync Now pressed mid-pull with data fetched before the change the user is waiting for, and it is in-flight state on the manager, which <a href="/guide/05-3-the-manager">Chapter 5.3</a> says not to keep. It is right only where freshness within the call's duration does not matter — two screens that both want the current export right now — and in this architecture those reads go through queries on the store, so a manager rarely sees them.
+<strong>Sharing a running job</strong> — a private `inFlightTask` handle on the manager that later callers join whether or not the job has started — is the form this replaces. Don't use it. It answers a Sync Now pressed mid-pull with data fetched before the change the user is waiting for, and it is in-flight state on the manager, which <a href="/guide/05-3-the-manager">Chapter 5.3</a> says not to keep. The runner never shares a running job, and where freshness within the call's duration does not matter, a queued run is almost always there to share anyway.
 
 <strong>Use when</strong> the result is the same regardless of who triggered the request: idempotent refreshes that several paths can request at once — a timer and a gesture, two windows opening on the same notebook, a launch-time reload of everything overlapping a gesture.
 
@@ -159,7 +165,7 @@ public final class SyncManager {
 
         let session = try await client.signIn(credentials)       // network
         SyncStore.shared.applySession(session)                    // back on the main actor
-        SyncStore.notifications.postAccountDidChange()
+        SyncStore.statusDidChange()
     }
 }
 ```
@@ -194,5 +200,5 @@ Every method that reads state, suspends, and writes state has chosen a strategy,
 
 <div class="seealso">
 <strong>Ahead in this chapter</strong>
-Each strategy meets cancellation differently — and a cancelled operation is not a rolled-back one. Both, with how cancellation flows from a caller's task through the bridge into a job and out to an external process, are next: <a href="/guide/05-9-cancellation">Chapter 5.9, Cancellation</a>.
+Each strategy meets cancellation differently — and a cancelled operation is not a rolled-back one. Both, with how cancellation flows from a caller's task through `enqueue` into a job and out to an external process, are next: <a href="/guide/05-9-cancellation">Chapter 5.9, Cancellation</a>.
 </div>

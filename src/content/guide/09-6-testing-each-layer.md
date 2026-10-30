@@ -11,7 +11,7 @@ Every example follows the layer table from <a href="/guide/09-1-which-tests-to-w
 
 ## Models and managers
 
-Test the manager's public interface, never the job it enqueues or the store underneath. The test owns its graph: it constructs a private `NotebookEnvironment` from <a href="/guide/05-2-the-environment">Chapter 5.2</a> over the test's own notebook — the environment is internal to the package, and the test target is inside it — so nothing touches the production registry, and the only double is at the HTTP boundary: a `URLProtocol` stub registered on the session `SyncClient` uses, handed a payload in the server's wire shape.
+Test the manager's public interface, never the job it enqueues or the store underneath. The test owns its graph: it constructs a private `NotebookEnvironment` from <a href="/guide/05-2-the-environment">Chapter 5.2</a> over the test's own notebook — the environment is internal to the package, and the test target is inside it — so nothing touches the production registry, and the only double is at the HTTP boundary: a `URLProtocol` stub registered on the session the sync configuration hands every `SyncClient`, given a payload in the server's wire shape.
 
 ```swift
 @MainActor
@@ -25,7 +25,7 @@ final class NoteManagerTests: TestCase {
             ]))
         }
 
-        let environment = NotebookEnvironment.make(notebook: notebook)
+        let environment = NotebookEnvironment(notebook: notebook)
 
         try await environment.noteManager.pull()
 
@@ -35,25 +35,16 @@ final class NoteManagerTests: TestCase {
 }
 ```
 
-`make(notebook:)` is a one-line factory in `Factories/`, per the rule of two in <a href="/guide/09-4-factories-builders-and-fixtures">Chapter 9.4</a>: it calls the internal initializer with the default clients, whose sessions `TestCase` has already pointed at the stub protocol.
+The test calls the environment's internal initializer directly, and there's nothing to hand it. The environment owns only its runner and the store; the jobs reach their own clients from their intent, so the stub `TestCase` registered on the sync configuration's session is what `PullNotesJob` meets when it builds its `SyncClient` inside `perform`. No factory wraps the construction — it would only forward one argument.
 
-```swift
-// NotebookCoreTests/Factories/NotebookEnvironment+Factory.swift
-extension NotebookEnvironment {
-    static func make(notebook: Notebook) -> NotebookEnvironment {
-        NotebookEnvironment(notebook: notebook, client: SyncClient(config: .shared), assistant: AssistantClient(config: .shared))
-    }
-}
-```
-
-Everything between the stub and the assertion runs for real: the environment builds its runner and both job contexts, `SyncClient` builds the request and decodes the response, `PullNotesJob` performs on the runner and merges in `finalize`, the store writes to the in-memory database, and the model's query reads it back. A test that needs the sibling manager reaches `environment.tagManager` from the graph it already holds, rather than building a second one. Because the database merges background saves onto the main context automatically, the query sees the merged notes without a manual refresh — the same guarantee <a href="/guide/05-model-layer">Chapter 5</a> describes at runtime.
+Everything between the stub and the assertion runs for real: the environment builds its runner, `PullNotesJob` performs on it and builds its `SyncClient`, the client builds the request and decodes the response, the job merges and announces in `finalize`, the store writes to the in-memory database, and the model's query reads it back. A test that needs the sibling manager reaches `environment.tagManager` from the graph it already holds, rather than building a second one. Because the database merges background saves onto the main context automatically, the query sees the merged notes without a manual refresh — the same guarantee <a href="/guide/05-model-layer">Chapter 5</a> describes at runtime.
 
 ```swift
 // ✅ Test the interface
 try await environment.noteManager.pull()
 
 // ❌ Don't test the job directly
-let job = PullNotesJob()
+let job = PullNotesJob(notebookID: notebook.id)
 ```
 
 Model behavior that lives in the database itself — cascades, relationships, validation — is tested the same way, through the model's API against the in-memory stack:
@@ -183,15 +174,17 @@ Exercise real jobs through the manager entry point, with temporary storage and a
 
 - Queue a rename behind a note update, then verify both changes survive. This catches a job capturing its editable baseline too early.
 - Export while a save is pending and verify the export sees the completed save.
-- Request a pull while one is queued behind a held job, then verify one fetch serves both callers. Queue a save behind the pull and request again, then verify a second fetch runs after the save.
+- Request a pull while one is queued behind a held job, then verify one fetch serves both callers and the notebook shows one activity row for it — one run, one start and one end. Queue a save behind the pull and request again, then verify a second fetch runs after the save.
+- Cancel one of two callers sharing a queued pull. Verify that caller throws `CancellationError` only once the run has ended, and the other caller still gets the result.
 - Delete a note during ongoing work, then submit a delayed edit. Verify the edit reports the missing note and cannot recreate it.
-- Emit progress and then fail or cancel. Verify accepted progress precedes the final activity state, and a late callback cannot revive it.
-- Fail persistence after a successful download. Verify the activity reports failure and no successful-save notification is published. If an earlier step already saved data, verify that committed change is published accurately.
-- Start a second draft while one is running. Verify the first settles on the draft activity before the second begins, and a cancelled request leaves the activity finished rather than generating.
+- Emit progress and then fail or cancel. Verify the run's activity row went through its accepted progress before its final state, and a late callback cannot revive it.
+- Cancel a job while it is still queued. Verify it leaves no activity row — a run that never started gets no events — and that its `finalize` still ran once with the cancellation.
+- Fail persistence after a successful download. Verify the activity row reports failure and no change announcement is published. If an earlier step already saved data, verify that committed change is published accurately.
+- Start a second draft while one is running. Verify the first run's row settles before the second run's row starts, and a cancelled request leaves its row cancelled rather than generating.
 
-For a worker-only test, call `job.perform(context: environment.workContext)`; progress-reporting jobs inherit that overload with reporting disabled, and it does not run result handling. To test progress and persistence together, use the manager entry point or `job.execute(work: environment.workContext, main: environment.mainContext)` on the environment the test built. Assert the final accumulated text and meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
+For a worker-only test, build the job from its intent and call `job.perform()` — there is nothing else to hand it. A progress-reporting job gets that overload with reporting disabled, and it runs neither `finalize` nor `handle`. To test run events and persistence together, go through the manager entry point, or call `job.execute()` directly, and assert on the rows the job's `handle` wrote: `ActivityStore.shared.activities(in: notebook.id)`, scoped by the test's own fresh notebook so rows from other tests never interfere. Assert the row's final state, its accumulated text and the meaningful event order rather than an exact number of UI updates, since pending text deltas may be coalesced.
 
-The coalescing rule itself is a small, directly testable value operation:
+The coalescing rule is a small, directly testable value operation, and so is the job's mapping from what it reports to what its row shows, `activityProgress(for:)`:
 
 ```swift
 // DraftSummaryJob.Progress is Equatable in this example.
@@ -200,7 +193,7 @@ XCTAssertEqual(
     .text("Hello world")
 )
 XCTAssertNil(DraftSummaryJob.coalesceProgress(.text("Hello"), .stage("Saving")))
-XCTAssertNil(DraftSummaryJob.coalesceProgress(.started, .text("Hello")))
+XCTAssertNil(DraftSummaryJob.coalesceProgress(.stage("Summarising"), .text("Hello")))
 ```
 
 ## Temporary directories
