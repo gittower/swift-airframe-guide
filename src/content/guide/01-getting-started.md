@@ -163,6 +163,29 @@ Every one of those layers can be described in a sentence, and none of them do th
 
 The four layers are also the shape of the project on disk — which of them are Swift packages, what the app target's root folders are, and how to decide where a file goes. That is <a href="/guide/01-1-project-layout">Project Layout</a>, the one subchapter of this chapter; read it once the layers below make sense.
 
+## How far down a type goes
+
+"Downward only" says which way references point. A second rule says how far down a type may go: <strong>a type lives in the lowest layer that uses it, and no lower.</strong> A lower layer's API never takes or returns a value that only a higher layer needs. A model type's initializers, methods and properties use model types and plain values, nothing else — because the moment a model API takes a parameter of some type, that type has to live in the model too, even if the model never stores or uses it.
+
+Take the note editor. While the user is typing, the editor holds a `NoteDraft` — a title that may still be empty, a body, the tags picked so far — which is view state: <a href="/guide/07-2-view-state">Chapter 7.2</a>. It is tempting to give the model a `NoteManager.create(from: NoteDraft)`. That one signature pulls `NoteDraft` down into `NotebookCore`, where nothing else needs it, and the model now knows the shape of a screen. Instead the draft stays in the layer that builds it, and that layer converts it into the model's own types when it calls the model:
+
+```swift
+// NotebookApp/UI/Screens/NoteEditor/Note+Draft.swift — the conversion lives with the type it converts from
+extension Note {
+    /// A note from a finished draft, or `nil` while the draft isn't one yet.
+    init?(draft: NoteDraft) {
+        let title = draft.title.trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty else { return nil }
+        self.init(id: NoteID(), title: title, body: draft.body, tags: draft.tags, modifiedAt: .now)
+    }
+}
+
+// The model's API takes only model values.
+try await NoteManager.shared(for: notebook).create(note)
+```
+
+The conversion is an initializer on the target type, labelled with the source's role — `Note(draft:)`, never `draft.toNote()` or `makeNote(from:)` — failable because not every draft is a note yet, and declared in the higher layer's target so the package never learns the app's types. <strong>The test</strong>: if a type in a lower layer is only constructed, held or read by higher layers, and the lower layer only converts it into something else, it belongs upstairs, along with the conversion. The same goes for the lower layer's documentation: the model's describes the model, never a screen, a control or a window that shows it. And the rule holds between every pair of layers — Actions and the Model, the Model and the packages below it. Code moves down when a lower layer needs it, never because a higher layer would find it convenient there.
+
 ## Two paths, one boundary
 
 Data only moves through the stack two ways: a <strong>read path</strong>, from Presentation down through a View State Controller to the Model, and a <strong>mutate path</strong>, from Presentation through an Action Controller into an Action and Validator, down to the Model. Both paths converge on the same layer and the Model closes the loop by notifying Presentation when something changes — nothing above it has to ask. One writer has no gesture behind it: a <strong>Background Controller</strong> — <a href="/guide/04-background-controllers">Chapter 4</a> — sits beside the Action Controller and calls into the Model on a timer or a system event, entering the same write funnel from the side.
@@ -254,5 +277,5 @@ Nothing in that list required the sidebar to know about a detail view, or the de
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The Model layer's write funnel is <a href="/guide/05-model-layer">Chapter 5</a>. Actions, Validators, and Action Controllers get their own treatment in <a href="/guide/06-actions-and-controllers">Chapter 6</a>. Re-entrancy is <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>, and the runner and jobs referenced above are <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> and <a href="/guide/05-4-jobs-and-contexts">Chapter 5.4</a>.
+The Model layer's write funnel is <a href="/guide/05-model-layer">Chapter 5</a>. Actions, Validators, and Action Controllers get their own treatment in <a href="/guide/06-actions-and-controllers">Chapter 6</a>. Re-entrancy is <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>, and the runner and jobs referenced above are <a href="/guide/05-5-runners-and-scheduling">Chapter 5.5</a> and <a href="/guide/05-4-jobs">Chapter 5.4</a>.
 </div>
