@@ -1,29 +1,29 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-10-12",
+  "lastSync": "2026-10-30",
   "documents": {
     "manager-architecture": {
-      "updated_at": "2026-10-07T15:25:07.513+00:00",
-      "sha256": "0811593ac62b2d6bcb2a873206f4aaf09f8654e086784e213b63129ea976fbd0",
+      "updated_at": "2026-10-30T07:52:31.258+00:00",
+      "sha256": "c51acf23b21cf86d5b1aec01f53fc0aab45a38267f2c427bc3744d096eda101d",
       "chapters": [
         "05-model-layer",
         "05-2-the-environment",
         "05-3-the-manager",
-        "05-4-jobs-and-contexts"
+        "05-4-jobs"
       ]
     },
     "async-cancellation-patterns": {
-      "updated_at": "2026-09-19T11:13:57.834+00:00",
-      "sha256": "41ac79a01f1fcd05dc921a91890c44cdd373ae1821f92a7d280c30879ebf3f6d",
+      "updated_at": "2026-10-29T18:24:32.911+00:00",
+      "sha256": "bc5d8991c3b0e2916cb5d0fead466cb4813f3cd6c554bad24822a0461816e558",
       "chapters": [
         "05-3-the-manager",
         "05-9-cancellation"
       ]
     },
     "object-wiring-shared-instances-and-configure": {
-      "updated_at": "2026-10-07T15:21:08.118+00:00",
-      "sha256": "231e1fb147c3fcbcc8d00c60aac1d49edc9f87e03329237fbd85ec68e79f99ee",
+      "updated_at": "2026-10-29T18:23:19.708+00:00",
+      "sha256": "63c225d4b7e332862e327e8bbc682c5567c7bfcbf2de9ebaf7c84da4c5b67ffb",
       "chapters": [
         "02-5-object-wiring",
         "05-2-the-environment"
@@ -38,8 +38,8 @@
       ]
     },
     "model-queries-static-accessors-via-model-queries-swift": {
-      "updated_at": "2026-09-13T12:23:57.83+00:00",
-      "sha256": "7de0af9f3d76a7584b2d69cb7f3a221a76317f229eb0c0fb06b6cf9b816d7515",
+      "updated_at": "2026-10-30T15:27:13.444+00:00",
+      "sha256": "d341561f4b3cb1bfba4fd527889acba30ff1a597d40c50ffdfd3fa8c04c8607e",
       "chapters": [
         "05-1-the-model"
       ]
@@ -69,41 +69,41 @@
       ]
     },
     "toolbar-item-management-item-classes-and-the-badge-model": {
-      "updated_at": "2026-09-01T09:24:33.212+00:00",
-      "sha256": "6070dcdc9446c73637e8f69e498d0f4e246eb087b15d17b484eb2b1a1a4ab6e6",
+      "updated_at": "2026-09-19T13:58:04.847+00:00",
+      "sha256": "71d410511d6553d22358e991c1def2ae6f11d5088408b8b7a757e4c84c17f034",
       "chapters": [],
       "scope": "cookbook-candidate"
     },
     "git-version-compatibility-when-adding-git-commands-or-options": {
-      "updated_at": "2026-08-25T19:07:46.049+00:00",
+      "updated_at": "2026-09-19T11:14:23.207+00:00",
       "sha256": "02fcfc2119a0a4cdaf33e87fec003773848503ad80184b11c41eec3e6fb0df42",
       "chapters": [],
       "scope": "out-of-scope"
     },
     "test-class-structure-and-grouping": {
-      "updated_at": "2026-09-17T06:08:21.187+00:00",
-      "sha256": "3e9d5ba171be59f6a9ea9e04dd73134f20eddea10c31ee444f26f29b42fca9d8",
+      "updated_at": "2026-10-24T06:43:05.717+00:00",
+      "sha256": "5ef12c1dc3aa3185897f11d7750211d1f565b4707b71734c3ad9c53cd6802c68",
       "chapters": [
         "09-5-inside-a-test-class"
       ]
     },
     "test-factories-builders-and-fixtures": {
-      "updated_at": "2026-09-17T06:07:57.154+00:00",
-      "sha256": "c0e700d3acd7f18db3441d22a874846adb804cb2d6639de70138d88385c9dabd",
+      "updated_at": "2026-10-24T06:42:16.239+00:00",
+      "sha256": "0deab1343343241cbf6f101a5c000326196b3e242beb888c59114a9eb6db2a87",
       "chapters": [
         "09-4-factories-builders-and-fixtures"
       ]
     },
     "test-suite-layout-and-test-kinds": {
-      "updated_at": "2026-09-17T06:07:33.717+00:00",
-      "sha256": "8443b03d34f09800ac9893a78584e9d189dafca61e5cf7499f4e58c8fb7849fa",
+      "updated_at": "2026-10-24T06:42:47.603+00:00",
+      "sha256": "3a43393e2f046f9c633eea9aa3d01af214b63974f7de9e7afe37dadc9e144c32",
       "chapters": [
         "09-3-suite-layout-and-test-kinds"
       ]
     },
     "unit-testing-conventions": {
-      "updated_at": "2026-09-17T06:10:33.838+00:00",
-      "sha256": "b46058966b7b2f234a0f1db30d3d2965fe702d86fb676ccf369bb90581c12f0f",
+      "updated_at": "2026-09-19T13:58:01.512+00:00",
+      "sha256": "3f872d970a87052b79d99add379209940ce92c527f3a2c5e2090ed6cd1ed0310",
       "chapters": [
         "09-1-which-tests-to-write",
         "09-5-inside-a-test-class",
@@ -111,8 +111,8 @@
       ]
     },
     "what-s-new-feature-architecture-and-content-guidelines": {
-      "updated_at": "2026-07-27T09:19:39.059+00:00",
-      "sha256": "69e7f2873749ffeeeb674597d4db7248c8a0f9cfb74a23e72a84f1b9290ea831",
+      "updated_at": "2026-09-19T11:14:25.099+00:00",
+      "sha256": "afd0bdd881eaa77bfb0525ce32444580f258f13e1ce8d5f85edd8b57fc134cbf",
       "chapters": [],
       "scope": "out-of-scope"
     },
@@ -140,15 +140,15 @@
       ]
     },
     "manager-function-vs-action": {
-      "updated_at": "2026-06-28T13:41:05.373+00:00",
-      "sha256": "6d21d5693baa8277b2afc97edf08d7f101fc92b59d8ca1af62da950d2990c427",
+      "updated_at": "2026-09-19T11:14:28.111+00:00",
+      "sha256": "b76daa4313cfcf6fff79e56eb9315e4fe0f0568a4a9ce253c4c8d61b21e164ad",
       "chapters": [
         "06-1-actions"
       ]
     },
     "actions-and-actioncontrollers": {
-      "updated_at": "2026-06-28T13:40:45.527+00:00",
-      "sha256": "862586025a8b553585bc08ef6532c0838c1b2dc7a5fb52cb173f01db9ddf645a",
+      "updated_at": "2026-09-19T11:14:31.668+00:00",
+      "sha256": "37cc51adac4bb784a330b75f4393ace0594f5322c64dcd2895913e69eefc4d6f",
       "chapters": [],
       "scope": "out-of-scope"
     },
@@ -162,8 +162,8 @@
       ]
     },
     "model-layer-organization": {
-      "updated_at": "2026-10-12T12:32:27.171+00:00",
-      "sha256": "8c46a3f2751d70472a420366a6de374b4bbfaa94966ed412e5fb7f48b2d94cc1",
+      "updated_at": "2026-10-30T06:18:21.046+00:00",
+      "sha256": "1055d843dc5af56cd31cc195c93863a89462220db6e902018e8a0bd1e276cf89",
       "chapters": [
         "02-4-settings",
         "05-1-the-model",
@@ -171,43 +171,43 @@
       ]
     },
     "repository-queue": {
-      "updated_at": "2026-10-07T18:34:44.444+00:00",
-      "sha256": "f0e228689ecc31c9b1b0393d470798446526700e025c2881998b4f57ddb5152e",
+      "updated_at": "2026-10-29T18:25:51.558+00:00",
+      "sha256": "4b084f9a0e34da697840635c03b09323238e7912cc36884c1bc73e97d36156c4",
       "chapters": [
         "05-5-runners-and-scheduling"
       ]
     },
     "serial-task-runner": {
-      "updated_at": "2026-10-07T18:33:19.498+00:00",
-      "sha256": "1f7149ad7e79dda63ee00074a51dc28b529f75953d5affa629998a81bbaf7ba1",
+      "updated_at": "2026-10-29T18:23:56.025+00:00",
+      "sha256": "75bc63dc5c6768109af5522de1b4f8453ddc34f02d76f044c86a2656146590db",
       "chapters": [
         "05-5-runners-and-scheduling"
       ]
     },
     "background-task-structs": {
-      "updated_at": "2026-10-07T15:21:51.052+00:00",
-      "sha256": "e551c1291845024faa70a3fc0647cc2baa7eb9660404cf20d8eba126ae9cf5e4",
+      "updated_at": "2026-10-30T07:50:25.844+00:00",
+      "sha256": "853104285d35a1ac1010268ce0b3f89a7ed893f9f11ccbb9ffc5278e8fdc54be",
       "chapters": [
-        "05-4-jobs-and-contexts",
+        "05-4-jobs",
         "05-6-progress-and-activities"
       ]
     },
     "swiftlint-pre-commit-hook": {
-      "updated_at": "2026-05-27T13:57:47.576+00:00",
+      "updated_at": "2026-09-19T11:14:37.263+00:00",
       "sha256": "b826d7cd1d4a3eb546f58dccb3a61fdb2875c2bbfc62b915ac61e995fbea02e0",
       "chapters": [],
       "scope": "out-of-scope"
     },
     "model-state-cases-for-change-notification": {
-      "updated_at": "2026-10-12T12:33:00.901+00:00",
-      "sha256": "55419a9683136fc2aeb3f02390697686ef4e2ff516202a3481aeccbebaf924da",
+      "updated_at": "2026-10-30T15:26:46.966+00:00",
+      "sha256": "a0c73f86c54aeffa5ce6bfef33c0cb2c1fb0921646d7b09b3ba78b5f7cebc49f",
       "chapters": [
         "05-1-the-model"
       ]
     },
     "architecture-overview": {
-      "updated_at": "2026-09-26T14:16:50.369+00:00",
-      "sha256": "2b5afcc10c9067f6079a497062ca735da6de41acf90f11f7f9ba90104935c266",
+      "updated_at": "2026-10-28T10:48:54.331+00:00",
+      "sha256": "ae6dbcb5a0909f2d51ae3d006c59270f6dfdd87aee0f413ae2abf5b70c933894",
       "chapters": [
         "01-getting-started",
         "03-the-controller-layer",
@@ -215,8 +215,8 @@
       ]
     },
     "background-controllers": {
-      "updated_at": "2026-09-26T14:14:22.379+00:00",
-      "sha256": "a2d5df1f98c63cdb8bb541d2845369dcf6d48b90593abdded48db87877fb8110",
+      "updated_at": "2026-10-30T07:54:04.445+00:00",
+      "sha256": "c18d314bfc2aa74c72bbb3de51b51387034e98bff7fbd6df3d93100abca4be66",
       "chapters": [
         "04-background-controllers",
         "03-the-controller-layer",
@@ -224,27 +224,27 @@
       ]
     },
     "versioning-policy": {
-      "updated_at": "2026-05-08T12:41:32.838+00:00",
+      "updated_at": "2026-09-19T11:14:44.382+00:00",
       "sha256": "e839a87f79c700642e4303b9908f13fdc23731bb80ea90622c5af5c4964ee557",
       "chapters": [],
       "scope": "out-of-scope"
     },
     "creating-internal-test-builds-mac": {
-      "updated_at": "2026-05-08T12:41:02.673+00:00",
+      "updated_at": "2026-09-19T11:14:46.018+00:00",
       "sha256": "d2de004a0e17fc229d65d5a70d3470f30f5aed9f67dde60628cb16372d69d32a",
       "chapters": [],
       "scope": "out-of-scope"
     },
     "test-driven-development-in-swift-apps": {
-      "updated_at": "2026-05-03T14:31:25.971+00:00",
-      "sha256": "c795aee71d46efe1c6496b228016162da4ba92d88cbc76745bcd96ca721e6154",
+      "updated_at": "2026-09-19T11:14:49.647+00:00",
+      "sha256": "1a17e6ca7ab058fd7e1302b9a9aff2da5cd3a324552a7af52f5388ad64c21590",
       "chapters": [
         "09-testing",
         "09-2-testing-workflows"
       ]
     },
     "performance-tests-conventions-and-setup": {
-      "updated_at": "2026-04-29T11:51:10.024+00:00",
+      "updated_at": "2026-09-19T11:14:51.502+00:00",
       "sha256": "ddbde81406fe71235b063c720026df01655ed5e101866a2a1d2765c66a009aff",
       "chapters": [
         "09-3-suite-layout-and-test-kinds"
@@ -252,82 +252,82 @@
       "scope": "cookbook-candidate"
     },
     "rest-api-client-test-infrastructure-stuburlprotocol-and-fixture-builders": {
-      "updated_at": "2026-04-27T13:00:04.597+00:00",
+      "updated_at": "2026-09-19T11:14:53.827+00:00",
       "sha256": "c31bf745e2882e2cc5fd7625419bc39cc8207ade3fe6d2aac578fe90766dd958",
       "chapters": [],
       "scope": "cookbook-candidate"
     },
     "execution-strategies": {
-      "updated_at": "2026-10-07T18:33:46.737+00:00",
-      "sha256": "8a5060659cd724072d06a4cd320e9c16ea382dda5f8dd200a55108cb64881aea",
+      "updated_at": "2026-10-29T18:24:49.373+00:00",
+      "sha256": "604ad02d3ecc490e882cc3cb2b9a2166273589b44af23c4356ba41883d16e7db",
       "chapters": [
         "05-8-execution-strategies"
       ]
     },
     "http-client-library-guidelines": {
-      "updated_at": "2026-04-24T17:30:56.234+00:00",
-      "sha256": "51412f126fc1ff590233ed6ab78a7c0c3dfddbcdea6b6a2d134a6fdeda2d7f16",
+      "updated_at": "2026-09-19T11:14:41.35+00:00",
+      "sha256": "4d37e458eaa6fa80bab15f044c44c5f13b2b60da502d3aa776919d737f09bdf7",
       "chapters": [],
       "scope": "out-of-scope"
     },
     "transporting-values-in-menu-items": {
-      "updated_at": "2026-03-24T14:21:04.507+00:00",
-      "sha256": "ab9c2d721c2cc41bfc1229be3c6b59eeb9a8498d0d626cda590b405f2387292a",
+      "updated_at": "2026-09-19T13:57:58.182+00:00",
+      "sha256": "c89e416cd0ea6fefc53902b55037f946cd861dd1a3769579d99934bff1bf8e65",
       "chapters": [
         "07-5-menus"
       ]
     },
     "managing-menus": {
-      "updated_at": "2026-03-24T14:02:05.897+00:00",
-      "sha256": "4acda763ce2e3e54a8e275523c4eced463fd610fb54452fba9d7a7db60317ef8",
+      "updated_at": "2026-09-19T11:14:44.938+00:00",
+      "sha256": "c3c4a338042efa05352fcfab767af1f657e42f525e7260b918f2ef09639811ad",
       "chapters": [
         "07-5-menus"
       ]
     },
     "text-plugin-system-architecture": {
-      "updated_at": "2026-03-19T16:45:32.156+00:00",
+      "updated_at": "2026-09-19T11:14:46.582+00:00",
       "sha256": "8d1be62400c6d931f682ec283a9d62fffa38ab78423ac0898f5232e090feb6d5",
       "chapters": [],
       "scope": "out-of-scope"
     },
     "programmatic-views-view-controller-scoping": {
-      "updated_at": "2026-03-13T07:04:03.482+00:00",
-      "sha256": "66d26f045280ff2813173d742c3fccfab3bfd8b17a7a5efd145b5ff2c39c2594",
+      "updated_at": "2026-09-19T11:14:49.887+00:00",
+      "sha256": "aec3a8287535cd2e8b610bdb34deb0c3fbe9f3433a8f50b26ef89cdf6b3ea74d",
       "chapters": [
         "07-3-view-controllers"
       ]
     },
     "programmatic-views-view-controller-assembly": {
-      "updated_at": "2026-03-13T06:50:13.317+00:00",
-      "sha256": "beb1abf1148f9b2516125d1750a6a29f03ec78e208d5e240dd9092d3d8600095",
+      "updated_at": "2026-09-19T11:14:51.595+00:00",
+      "sha256": "683765371045b73bbc37a4cf3fe783c727e1f99d84d5b680f174100b259ab89d",
       "chapters": [
         "07-3-view-controllers"
       ]
     },
     "nshostingcontroller-vs-nshostingview-choosing-the-right-approach": {
-      "updated_at": "2026-03-10T06:14:20.845+00:00",
+      "updated_at": "2026-09-19T11:14:53.512+00:00",
       "sha256": "7bef2e37a3e7a4263d2c455df27a79fbe4c40ddb734c7928d58475da36f299bd",
       "chapters": [
         "07-1-views"
       ]
     },
     "programmatic-views-view-composition-and-swapping": {
-      "updated_at": "2026-03-08T19:34:20.864+00:00",
-      "sha256": "3379430e0e4f1812604e8af41014b2cd9767bc1ae2b36295756cdbae0a06ec18",
+      "updated_at": "2026-09-19T11:14:55.08+00:00",
+      "sha256": "789f740bdd7f2add8dd0f3e7b31a325eacbe40b70a14e2852b96caf9260a8b90",
       "chapters": [
         "07-1-views"
       ]
     },
     "programmatic-views-layout-constraints": {
-      "updated_at": "2026-03-08T19:33:22.944+00:00",
-      "sha256": "25fab3517b40bfcbcaa543c6a80d8775d36485454f8257b71c3829ff9c6358cd",
+      "updated_at": "2026-09-19T11:14:58.677+00:00",
+      "sha256": "1e6b82ea3770e0407a71d75ce020248fd76fe66e1d1ad2ea347d2f757aa3bff0",
       "chapters": [
         "07-1-views"
       ]
     },
     "programmatic-views-view-components": {
-      "updated_at": "2026-03-08T19:32:53.797+00:00",
-      "sha256": "2be5945e4d6726dc922d7282ff8ea0c1b9fa22bdf6299e99c97f5fef8f4e4177",
+      "updated_at": "2026-09-19T11:15:00.748+00:00",
+      "sha256": "3a7466237558d1f75bf04ea6935720ad258edd8b8f77ec4ed75b58e16adbc4ba",
       "chapters": [
         "07-1-views"
       ]
@@ -341,20 +341,20 @@
       ]
     },
     "view-styling-guideline-replacing-viewstyles-with-local-definitions": {
-      "updated_at": "2026-03-08T19:15:49.612+00:00",
+      "updated_at": "2026-09-19T11:15:04.155+00:00",
       "sha256": "5ba978c0946ab8239f4f6595c2e0c94939788628ae0c114e22657ce2ed6b2eba",
       "chapters": [],
       "scope": "cookbook-candidate"
     },
     "towercore-model-layer": {
-      "updated_at": "2026-03-07T13:32:31.329+00:00",
-      "sha256": "5b68ec529e007571bf55fe90badf849e515e7f7e5b76f8e2f9f26a69fe0f070f",
+      "updated_at": "2026-09-19T13:57:54.142+00:00",
+      "sha256": "c09bfca9f9f94c2443ab71956d5d3e31b8518d50eb63d3baf2351564993b361c",
       "chapters": [],
       "scope": "out-of-scope"
     },
     "application-startup-process": {
-      "updated_at": "2026-03-07T12:28:29.699+00:00",
-      "sha256": "33a7c3d26420f3f0617dd9a0bcb3d822b5c3a135a08120fa53fd842e9cb3971a",
+      "updated_at": "2026-09-19T11:15:09.758+00:00",
+      "sha256": "4a5ab4708c6d21cf9cfa686e61b5bc25adc988a9ecae53856f159028a77f50ec",
       "chapters": [
         "02-1-app-delegate",
         "02-2-startup",
@@ -362,22 +362,22 @@
       ]
     },
     "action-validation-and-action-sender-validation": {
-      "updated_at": "2026-03-07T12:24:16.903+00:00",
-      "sha256": "70e491cff076b4c182abd7c1f903895847150be9f2ae17735bb3598a6917a877",
+      "updated_at": "2026-09-19T11:15:11.718+00:00",
+      "sha256": "21152f42b1e21482ba27d8b5410acc66139f89ee6f66957307dd3d7415efe90a",
       "chapters": [
         "06-3-action-validation"
       ]
     },
     "swiftui-composition-guidelines": {
-      "updated_at": "2026-03-07T12:14:24.377+00:00",
-      "sha256": "8c9ff4848a2ad1efd19e1bd7d01a13490da82d210a314b085816bf22c298ce08",
+      "updated_at": "2026-09-19T11:15:13.63+00:00",
+      "sha256": "57cf7851dfadc3f731364615a0de147f852caee42f1eb45bfef91605710c1d7c",
       "chapters": [
         "07-1-views"
       ]
     },
     "swiftui-naming-conventions-screen-page-view": {
-      "updated_at": "2026-03-07T12:04:04.633+00:00",
-      "sha256": "e86a2040786176f53b35978b8ee62393ab4d894c7bba749a6baf273d74196838",
+      "updated_at": "2026-09-19T11:15:15.243+00:00",
+      "sha256": "e163a56f4aa1b08c72da771ee28d0a7196338e34ee31851694ca454b94e866b4",
       "chapters": [
         "07-1-views"
       ]
@@ -399,8 +399,8 @@
       ]
     },
     "auditable-components-and-layers-audit-skill-map": {
-      "updated_at": "2026-09-22T12:48:49.296+00:00",
-      "sha256": "235d587017c70153f17fbd6cc1391281945ed4fcea936534a4be779d42edcf2a",
+      "updated_at": "2026-10-28T10:55:35.996+00:00",
+      "sha256": "40aff158f4b48e8c832a11f59b56d0581e15025cc85a583f2e9378ff7514919f",
       "chapters": [],
       "scope": "out-of-scope"
     },
@@ -409,6 +409,33 @@
       "sha256": "38005db980e329dec9eb4361716044e981f1ec77be75bda9b3a38429cd371905",
       "chapters": [],
       "scope": "cookbook-candidate"
+    },
+    "creating-instances-initializers-make-factories-and-type-conversions": {
+      "updated_at": "2026-10-30T15:12:34.975+00:00",
+      "sha256": "3517a04c0fe35f3fddb5b4be78857623ac1a2c67d4e30014150317fdacc55658",
+      "chapters": [],
+      "scope": "cookbook-candidate"
+    },
+    "core-data-models-mutating-methods-never-save": {
+      "updated_at": "2026-10-30T14:43:15.476+00:00",
+      "sha256": "87be3229536144023b4a9fe0a0090d746923e898582afe2a2f1de3e7d23d3909",
+      "chapters": [
+        "05-1-the-model",
+        "05-7-model-shapes"
+      ]
+    },
+    "json-storage-format-conventions": {
+      "updated_at": "2026-10-28T10:57:43.303+00:00",
+      "sha256": "c0c99c67863f7ae7ce622ed47cabb2fa14566b1fcd5ade9a94a1e608c5d1d8e3",
+      "chapters": [
+        "05-7-model-shapes"
+      ]
+    },
+    "sentry-crash-reporting-setup-and-configuration-mac": {
+      "updated_at": "2026-10-12T08:23:46.1+00:00",
+      "sha256": "1900652d1d52fcb814bbb6a1c35cb81fb69ca958a6568905de0696fbd25b8666",
+      "chapters": [],
+      "scope": "out-of-scope"
     }
   },
   "otherDomains": {
@@ -424,15 +451,15 @@
           ]
         },
         "which-tests-to-write": {
-          "updated_at": "2026-09-17T06:09:24.163+00:00",
-          "sha256": "255282b7ad08a9aa4e28b21d09d8d603ec79fb53130b2f743152ccb996e3795f",
+          "updated_at": "2026-09-30T14:59:17.029+00:00",
+          "sha256": "f2d07dba7804a1cd5a5d79fbbc4501ad7a11e8e21371cb8cb0735bc57628b254",
           "chapters": [
             "09-1-which-tests-to-write"
           ]
         },
         "test-design-principles": {
-          "updated_at": "2026-09-17T06:08:48.633+00:00",
-          "sha256": "a03cfeb653d77bb9790e3acc8d80d7b73cc4d101ea74add1d4e63753162ec1bb",
+          "updated_at": "2026-10-30T15:27:35.204+00:00",
+          "sha256": "96f35534ccac9e9d26d3784f536576f762c7fed7bd46d35fc290baa2ce5e971b",
           "chapters": [
             "09-3-suite-layout-and-test-kinds",
             "09-4-factories-builders-and-fixtures",
