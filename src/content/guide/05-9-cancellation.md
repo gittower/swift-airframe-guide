@@ -168,5 +168,5 @@ Not worth it: a fast fire-and-forget call that completes in milliseconds; a muta
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-That completes the Model layer. What actually calls into a manager — and how a write earns the overhead of a full Action — is <a href="/guide/06-actions-and-controllers">Chapter 6</a>, next. The view state controller that owns and cancels its loading task, the consumer side of everything above, is <a href="/guide/07-2-view-state">Chapter 7.2</a>; testing async, job-based code through its application behavior is <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
+The last subchapter of the Model layer names the database: <a href="/guide/05-10-core-data-models">Chapter 5.10, Core Data Models</a>. What actually calls into a manager — and how a write earns the overhead of a full Action — is <a href="/guide/06-actions-and-controllers">Chapter 6</a>, after it. The view state controller that owns and cancels its loading task, the consumer side of everything above, is <a href="/guide/07-2-view-state">Chapter 7.2</a>; testing async, job-based code through its application behavior is <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
 </div>

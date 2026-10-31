@@ -99,11 +99,12 @@ Why the job is not handed its dependencies — a "work context" with the client 
 - <strong>The actor boundary doesn't need them.</strong> `perform` is `nonisolated`; `finalize` is `@MainActor`. Anything `perform` touches on the main actor needs an explicit `await`, which is exactly what a reviewer looks for. A job's intent is a `Sendable` value, so the compiler still enforces what crosses.
 - <strong>Equality stays meaningful.</strong> With only intent stored, a job is trivially constructible in tests and comparable by value — which is what lets a job be its own coalescing key in <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>. Every `PullNotesJob(notebookID:)` for one notebook equals every other.
 
-Four rules follow:
+Five rules follow:
 
 - <strong>Store intent, not dependencies.</strong> A `let client`, `let store` or `let activities` on a job is a dependency in disguise, and it breaks equality. Store the key the dependency is found by.
 - <strong>Read the baseline in `perform`.</strong> Read the current record when the job runs, not when it was submitted, so an edit queued behind another edit sees the earlier one's result, and a delayed edit cannot recreate a deleted note.
 - <strong>Name every hop where it happens.</strong> Each step of `perform` names what it talks to — `SyncClient(config: .shared)`, `NoteStorage.shared` — on the line that uses it. No helper that decides for the caller where a step runs (`performInBackground { … }`), and no helper whose whole content is one call for one call site. A resolve helper that takes what the caller names as a parameter is fine; <a href="/guide/05-1-the-model">Chapter 5.1</a> lists the few statics a model type carries.
+- <strong>The job saves what it changed.</strong> A step that writes saves where it named, once, around the model methods it composes. The model methods change records and return what changed; they never save, because they didn't choose where they run — <a href="/guide/05-10-core-data-models">Chapter 5.10</a> shows the rule with Core Data contexts.
 - <strong>No closures in the intent.</strong> A per-execution callback — "call me when the draft is saved", "send progress to this sheet" — is a smell. Progress goes to an activity through the job's run events (<a href="/guide/05-6-progress-and-activities">Chapter 5.6</a>); results go through `finalize` or the return value.
 
 ## A complete job

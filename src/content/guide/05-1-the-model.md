@@ -48,7 +48,7 @@ struct NoteStorage: Sendable {
 }
 ```
 
-The store stays generic: `all()`, `note(id:)`, insert, merge and remove — the small set of accessors every query builds on. It never grows a bespoke method per filter. Filtering lives one layer up, in a `Model+Queries.swift` extension, which is what the rest of the app actually calls.
+When the database is Core Data, the entity itself is the model and the two faces are the main context and a background context; <a href="/guide/05-10-core-data-models">Chapter 5.10</a> shows that version. The store stays generic: `all()`, `note(id:)`, insert, merge and remove — the small set of accessors every query builds on. It never grows a bespoke method per filter. Filtering lives one layer up, in a `Model+Queries.swift` extension, which is what the rest of the app actually calls.
 
 ## Reads skip the manager
 
@@ -134,7 +134,7 @@ A model type carries three kinds of static, and no others:
 - <strong>Change announcements</strong> — `Notebook.notesDidChange(in:)`, below. They hide only the transport.
 - <strong>A resolve helper that takes the storage the caller names</strong> — `Note.withNote(_ id:, in: notebookID, on: storage) { note in … }`, which looks the record up on the storage the caller passes and runs a body with it there. It saves a lookup every step of a job would otherwise repeat, and the call site still says where the work runs.
 
-What a model type does not carry is <strong>ID-keyed operations</strong>: `static func storeNotes(_:forNotebookWith:) async`, `static func markOffline(notebookWith:) async`. Each of them picks where the work runs for the caller, hides the hop, and does work that belongs on an instance; a few of them and the model type has become a namespace of jobs-in-disguise, and the job calling them can no longer show where its steps run. The operation is an instance member instead — synchronous and save-free, as above — and the caller hops to the storage it names and saves there.
+What a model type does not carry is <strong>ID-keyed operations</strong>: `static func storeNotes(_:forNotebookWith:) async`, `static func markOffline(notebookWith:) async`. Each of them picks where the work runs for the caller, hides the hop, and does work that belongs on an instance; a few of them and the model type has become a namespace of jobs-in-disguise, and the job calling them can no longer show where its steps run. The operation is an instance member instead — synchronous and save-free, as above — and the caller hops to the storage it names and saves there. A Core Data model may carry one more kind, a shared `save…` helper several callers reuse; <a href="/guide/05-10-core-data-models">Chapter 5.10</a> gives the rules that keep it from becoming one of these.
 
 ## Value or reference
 

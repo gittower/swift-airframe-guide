@@ -37,7 +37,7 @@ NotebookApp/
 │   │   │   ├── Templates/           NoteTemplate, TemplateStore, NoteTemplate+Queries, TemplateManager   5.7
 │   │   │   ├── Activities/          ActivityStore, Activity, ActivityDescribing              5.6
 │   │   │   ├── Sync/                SyncManager, SyncStore, SyncConfig, SyncState           2.5, 5
-│   │   │   └── Persistence/         the database stack PersistenceInitializer opens
+│   │   │   └── Persistence/         PersistentStack, NSManagedObjectContext+Stack — opened by PersistenceInitializer   5.10
 │   │   └── Tests/NotebookCoreTests/ NotebookCore/ mirror + Factories/ + Support/            9.3
 │   └── NotebookActions/             ACTIONS AND VALIDATORS, depends on NotebookCore          6.1, 6.3
 │       ├── Sources/NotebookActions/

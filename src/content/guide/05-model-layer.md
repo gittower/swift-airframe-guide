@@ -1,10 +1,10 @@
 ---
 title: "The Model Layer"
-description: "The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter shows how the pieces that make that funnel work fit together — the model and its queries, the environment that owns a domain's shared resources, the manager, the jobs it enqueues, the runner that orders them and the activity store their runs report to — then nine subchapters go deeper on each."
+description: "The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter shows how the pieces that make that funnel work fit together — the model and its queries, the environment that owns a domain's shared resources, the manager, the jobs it enqueues, the runner that orders them and the activity store their runs report to — then ten subchapters go deeper on each."
 order: 5
 ---
 
-The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter shows how the pieces that make that funnel work fit together — the model and its queries, the environment that owns a domain's shared resources, the manager, the jobs it enqueues, the runner that orders them and the activity store their runs report to — then nine subchapters go deeper on each.
+The Model is the source of truth, and it stays trustworthy because of one rule applied without exception: every mutation, from every source, funnels through a single manager. This chapter shows how the pieces that make that funnel work fit together — the model and its queries, the environment that owns a domain's shared resources, the manager, the jobs it enqueues, the runner that orders them and the activity store their runs report to — then ten subchapters go deeper on each.
 
 ## The underlying principle
 
@@ -177,9 +177,11 @@ Not every piece of state needs all of that. The notebook's `Note` does, because 
 
 The first six subchapters build the heavy shape one object at a time, in the order the diagram above reads. <a href="/guide/05-1-the-model">The Model</a> covers plain data, the store behind it, the queries in front of it, who may write it, mutating methods that never save, which statics a model may carry, value versus reference entities, and the six cases for signalling change. <a href="/guide/05-2-the-environment">The Environment</a> covers the root object that owns a notebook's runner and store, hands its jobs nothing and is seen by no caller, its registry, and how a test builds one of its own. <a href="/guide/05-3-the-manager">The Manager</a> covers the one shape every public method takes, the framework protocol that supplies the plumbing under it, and the rule that managers never call each other. <a href="/guide/05-4-jobs">Jobs</a> covers the job struct, why it stores only its intent and reaches everything else itself, a complete job, and the three things a job can do with its result. <a href="/guide/05-5-runners-and-scheduling">Runners and Scheduling</a> covers the serial runner's API and why it is a struct, the grouped runner, the groups and access a job declares, coalescing a reload that is already queued, and deleting something with work in flight. <a href="/guide/05-6-progress-and-activities">Progress and Activities</a> covers the run events the runner delivers to a job, typed progress and streaming output, the app's activity store, and giving one screen its progress without a callback.
 
-The last three apply all of it. <a href="/guide/05-7-model-shapes">Model Shapes</a> is the catalog above, with code for every row. <a href="/guide/05-8-execution-strategies">Execution Strategies</a> covers what "correct" means when the same operation fires twice — cancel-and-replace, serial, coalesce, gate — each worked through in the notebook app. <a href="/guide/05-9-cancellation">Cancellation</a> covers the caller's task as the one handle, what a cancelled job may leave behind, the three scopes, external processes, and how cancellation meets each strategy.
+The next three apply all of it. <a href="/guide/05-7-model-shapes">Model Shapes</a> is the catalog above, with code for every row. <a href="/guide/05-8-execution-strategies">Execution Strategies</a> covers what "correct" means when the same operation fires twice — cancel-and-replace, serial, coalesce, gate — each worked through in the notebook app. <a href="/guide/05-9-cancellation">Cancellation</a> covers the caller's task as the one handle, what a cancelled job may leave behind, the three scopes, external processes, and how cancellation meets each strategy.
 
-## The rules that hold across all nine
+The last one names the database. <a href="/guide/05-10-core-data-models">Core Data Models</a> covers the two database-backed shapes when the database is Core Data: the stack and its two contexts, the entity as the model, queries on the main context, crossing into background work by object ID, where the save goes, the one static that may save, normalisation and validation, and testing on the in-memory stack.
+
+## The rules that hold across all ten
 
 <div class="rule">
 <span class="rule-label">The rules</span>
