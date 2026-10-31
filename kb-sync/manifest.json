@@ -1,7 +1,7 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-10-30",
+  "lastSync": "2026-10-31",
   "documents": {
     "manager-architecture": {
       "updated_at": "2026-10-30T07:52:31.258+00:00",
@@ -41,7 +41,8 @@
       "updated_at": "2026-10-30T15:27:13.444+00:00",
       "sha256": "d341561f4b3cb1bfba4fd527889acba30ff1a597d40c50ffdfd3fa8c04c8607e",
       "chapters": [
-        "05-1-the-model"
+        "05-1-the-model",
+        "05-10-core-data-models"
       ]
     },
     "migrating-objective-c-observer-classes-to-combine-publishers": {
@@ -107,7 +108,8 @@
       "chapters": [
         "09-1-which-tests-to-write",
         "09-5-inside-a-test-class",
-        "09-6-testing-each-layer"
+        "09-6-testing-each-layer",
+        "05-10-core-data-models"
       ]
     },
     "what-s-new-feature-architecture-and-content-guidelines": {
@@ -167,7 +169,8 @@
       "chapters": [
         "02-4-settings",
         "05-1-the-model",
-        "05-7-model-shapes"
+        "05-7-model-shapes",
+        "05-10-core-data-models"
       ]
     },
     "repository-queue": {
@@ -185,11 +188,12 @@
       ]
     },
     "background-task-structs": {
-      "updated_at": "2026-10-30T07:50:25.844+00:00",
-      "sha256": "853104285d35a1ac1010268ce0b3f89a7ed893f9f11ccbb9ffc5278e8fdc54be",
+      "updated_at": "2026-10-31T13:41:29.077+00:00",
+      "sha256": "3af67ee137ed5b4efbda7ffa3813db2e58ef83cc0016d1d3cef72959f29406ce",
       "chapters": [
         "05-4-jobs",
-        "05-6-progress-and-activities"
+        "05-6-progress-and-activities",
+        "05-10-core-data-models"
       ]
     },
     "swiftlint-pre-commit-hook": {
@@ -417,11 +421,12 @@
       "scope": "cookbook-candidate"
     },
     "core-data-models-mutating-methods-never-save": {
-      "updated_at": "2026-10-30T14:43:15.476+00:00",
-      "sha256": "87be3229536144023b4a9fe0a0090d746923e898582afe2a2f1de3e7d23d3909",
+      "updated_at": "2026-10-31T13:40:34.467+00:00",
+      "sha256": "2aa5a4a7f814e8ab5880d37deb89397deae3486ce62a07e34038dd9932b903bb",
       "chapters": [
         "05-1-the-model",
-        "05-7-model-shapes"
+        "05-7-model-shapes",
+        "05-10-core-data-models"
       ]
     },
     "json-storage-format-conventions": {
