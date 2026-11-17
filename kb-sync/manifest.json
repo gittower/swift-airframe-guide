@@ -1,7 +1,7 @@
 {
   "domain": "tower-mac-dev",
   "note": "See CLAUDE.md > KB sync tracking. Snapshots are local-only (gitignored).",
-  "lastSync": "2026-10-31",
+  "lastSync": "2026-11-17",
   "documents": {
     "manager-architecture": {
       "updated_at": "2026-10-30T07:52:31.258+00:00",
@@ -52,8 +52,8 @@
       "scope": "cookbook-candidate"
     },
     "view-state-management-observable-state-objects": {
-      "updated_at": "2026-09-29T05:21:46.401+00:00",
-      "sha256": "097fc212d8b2d1700fa91ae3cbbd6e073a7331b9ce5dccf346af40d2ebf29f31",
+      "updated_at": "2026-11-17T11:02:43.192+00:00",
+      "sha256": "11365a534482020ba35023ec6efdd2b921227cf7a59455bd066ce9dca611bc35",
       "chapters": [
         "07-1-views",
         "07-2-view-state",
@@ -61,12 +61,13 @@
       ]
     },
     "view-state-management-patterns-and-lifecycle": {
-      "updated_at": "2026-09-29T05:20:05.984+00:00",
-      "sha256": "95f752d56918e4078f68bc21b66006ec3b5021248cf39ca785283f2bfceaea63",
+      "updated_at": "2026-11-17T11:02:00.189+00:00",
+      "sha256": "b3d0ca7e5193ab88fe85afa5fc6a6aeecc6310da3e8198c34e324f5d68aa5a32",
       "chapters": [
         "07-1-views",
         "07-2-view-state",
-        "07-4-state-observing"
+        "07-4-state-observing",
+        "08-navigation"
       ]
     },
     "toolbar-item-management-item-classes-and-the-badge-model": {
@@ -119,8 +120,8 @@
       "scope": "out-of-scope"
     },
     "swiftui-integration-strategy": {
-      "updated_at": "2026-09-29T05:20:56.749+00:00",
-      "sha256": "67a66bca3b5ad9adf7a883f4e88e72fa89198a743e3ead875138c401723b0dc6",
+      "updated_at": "2026-11-17T11:03:31.175+00:00",
+      "sha256": "8985cedb99643fa27d600d12602188406986c554d5675daa4c12625490ebf583",
       "chapters": [
         "01-getting-started",
         "07-1-views",
@@ -403,8 +404,8 @@
       ]
     },
     "auditable-components-and-layers-audit-skill-map": {
-      "updated_at": "2026-10-28T10:55:35.996+00:00",
-      "sha256": "40aff158f4b48e8c832a11f59b56d0581e15025cc85a583f2e9378ff7514919f",
+      "updated_at": "2026-11-17T11:05:15.701+00:00",
+      "sha256": "91ad7a71a0d5f2c7a59affbb60ccd112b11d8a60bef3554539dc6b5bc5459b88",
       "chapters": [],
       "scope": "out-of-scope"
     },
@@ -441,6 +442,71 @@
       "sha256": "1900652d1d52fcb814bbb6a1c35cb81fb69ca958a6568905de0696fbd25b8666",
       "chapters": [],
       "scope": "out-of-scope"
+    },
+    "choosing-between-stateobserving-tracked-and-observable": {
+      "updated_at": "2026-11-17T11:00:32.643+00:00",
+      "sha256": "e1a81e50e94e5f3ccc59025640255ff89846352b6bfe6fd932ec6cd6eecfc6bc",
+      "chapters": [
+        "07-4-state-observing"
+      ]
+    },
+    "screen-example-parent-and-child-view-controllers": {
+      "updated_at": "2026-11-17T11:00:13.101+00:00",
+      "sha256": "19c1deaba6dd8bf8257e195ae83d86e9c40013a8d3316f95c3ccd01da512414c",
+      "chapters": [
+        "07-7-screen-examples",
+        "07-3-view-controllers",
+        "08-navigation"
+      ]
+    },
+    "screen-example-several-concerns-on-one-screen": {
+      "updated_at": "2026-11-17T11:00:05.53+00:00",
+      "sha256": "eb4e011d71f4da79a54b9a54cd34d37413e07cdb79a1bb134cb0679a95b18aa8",
+      "chapters": [
+        "07-7-screen-examples"
+      ]
+    },
+    "screen-example-long-running-operation": {
+      "updated_at": "2026-11-17T10:59:52.995+00:00",
+      "sha256": "8e5e4a87c8123012a9a44d7bac8d3cd406849ac3d5c2609692de9cd903b31c13",
+      "chapters": [
+        "07-7-screen-examples",
+        "09-6-testing-each-layer"
+      ]
+    },
+    "screen-example-derived-values": {
+      "updated_at": "2026-11-17T10:59:44.08+00:00",
+      "sha256": "11154ecd99884045287b31f6f2389d3e89c8db3c864658c75cec704f4708eeab",
+      "chapters": [
+        "07-7-screen-examples"
+      ]
+    },
+    "screen-example-form-with-an-async-submit": {
+      "updated_at": "2026-11-17T10:59:36.691+00:00",
+      "sha256": "4594bf554209d101de000e2734366ec01847cbf4c30067551b72afc99f85d09e",
+      "chapters": [
+        "07-7-screen-examples",
+        "07-1-views"
+      ]
+    },
+    "screen-example-loaded-data": {
+      "updated_at": "2026-11-17T10:59:23.349+00:00",
+      "sha256": "36577e3ac31088be262438014292bc891f4c27efcfd994a83709fc3f0c0de802",
+      "chapters": [
+        "07-2-view-state"
+      ]
+    },
+    "structuring-a-screen-view-controller-view-and-state": {
+      "updated_at": "2026-11-17T10:59:16.109+00:00",
+      "sha256": "58955f7a90281bec42a2cd48d6cbdd5fbb757f1dab8c8e87f50659dee4a6480b",
+      "chapters": [
+        "07-the-view-layer",
+        "07-2-view-state",
+        "07-3-view-controllers",
+        "03-the-controller-layer",
+        "09-1-which-tests-to-write",
+        "09-6-testing-each-layer"
+      ]
     }
   },
   "otherDomains": {
