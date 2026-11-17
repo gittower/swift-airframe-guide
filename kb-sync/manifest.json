@@ -165,9 +165,10 @@
       ]
     },
     "model-layer-organization": {
-      "updated_at": "2026-10-30T06:18:21.046+00:00",
-      "sha256": "1055d843dc5af56cd31cc195c93863a89462220db6e902018e8a0bd1e276cf89",
+      "updated_at": "2026-11-01T12:12:10.272+00:00",
+      "sha256": "d46f1b34fdcc49270031a665759ae23ea5783a002eb26d33bacf249ae8895285",
       "chapters": [
+        "05-model-layer",
         "02-4-settings",
         "05-1-the-model",
         "05-7-model-shapes",
@@ -204,8 +205,8 @@
       "scope": "out-of-scope"
     },
     "model-state-cases-for-change-notification": {
-      "updated_at": "2026-10-30T15:26:46.966+00:00",
-      "sha256": "a0c73f86c54aeffa5ce6bfef33c0cb2c1fb0921646d7b09b3ba78b5f7cebc49f",
+      "updated_at": "2026-11-01T12:13:18.201+00:00",
+      "sha256": "b6cd20db5c6f08c9c0c338d3acfc36df32d4a37f624e3341634f0df97779fac3",
       "chapters": [
         "05-1-the-model"
       ]
@@ -422,8 +423,8 @@
       "scope": "cookbook-candidate"
     },
     "core-data-models-mutating-methods-never-save": {
-      "updated_at": "2026-10-31T13:40:34.467+00:00",
-      "sha256": "2aa5a4a7f814e8ab5880d37deb89397deae3486ce62a07e34038dd9932b903bb",
+      "updated_at": "2026-11-01T12:04:26.532+00:00",
+      "sha256": "ed37a12c50255f82f94311634454fb4cb668835d3b7aadbd8ed4539476117876",
       "chapters": [
         "05-1-the-model",
         "05-7-model-shapes",
@@ -431,8 +432,8 @@
       ]
     },
     "json-storage-format-conventions": {
-      "updated_at": "2026-10-28T10:57:43.303+00:00",
-      "sha256": "c0c99c67863f7ae7ce622ed47cabb2fa14566b1fcd5ade9a94a1e608c5d1d8e3",
+      "updated_at": "2026-11-01T12:12:40.223+00:00",
+      "sha256": "6811dbb455c0e91668e3cb365681ebf96bd7b50728ea5fb747779ed197e6de69",
       "chapters": [
         "05-7-model-shapes"
       ]
@@ -507,6 +508,40 @@
         "09-1-which-tests-to-write",
         "09-6-testing-each-layer"
       ]
+    },
+    "model-layer-patterns-e-f-settings-and-app-state": {
+      "updated_at": "2026-11-01T12:11:19.587+00:00",
+      "sha256": "8020368e29ecef2c4a49919278b53f7bfa4c728af29483725a05bc473a7cd61f",
+      "chapters": [
+        "02-4-settings",
+        "05-7-model-shapes"
+      ]
+    },
+    "model-layer-patterns-c-d-core-data-models": {
+      "updated_at": "2026-11-01T12:10:54.111+00:00",
+      "sha256": "fdeade7aba61292c7a728940090f9af82ccbe8e548761d6b3c6a14059cd45ef8",
+      "chapters": [
+        "05-7-model-shapes",
+        "05-10-core-data-models"
+      ]
+    },
+    "model-layer-patterns-a-b-json-persisted-and-in-memory-models": {
+      "updated_at": "2026-11-01T12:10:21.737+00:00",
+      "sha256": "61438685abe7eda9e3bcadab117c0cfc46b336fe1e5d72897769cd2a4a4a0416",
+      "chapters": [
+        "05-1-the-model",
+        "05-7-model-shapes"
+      ]
+    },
+    "managers-and-models-who-owns-which-mutation": {
+      "updated_at": "2026-11-01T12:03:50.618+00:00",
+      "sha256": "57ee96e0f5bcb501006edc67b66169b8cd94639922da6de002b24beefef20a25",
+      "chapters": [
+        "05-model-layer",
+        "05-1-the-model",
+        "05-3-the-manager",
+        "05-10-core-data-models"
+      ]
     }
   },
   "otherDomains": {
@@ -522,15 +557,15 @@
           ]
         },
         "which-tests-to-write": {
-          "updated_at": "2026-09-30T14:59:17.029+00:00",
-          "sha256": "f2d07dba7804a1cd5a5d79fbbc4501ad7a11e8e21371cb8cb0735bc57628b254",
+          "updated_at": "2026-10-30T17:07:21.269+00:00",
+          "sha256": "ee47f9786179d5afd7da877e7aa711adc9ae021066ee38bacdbd5debfb9aacc8",
           "chapters": [
             "09-1-which-tests-to-write"
           ]
         },
         "test-design-principles": {
-          "updated_at": "2026-10-30T15:27:35.204+00:00",
-          "sha256": "96f35534ccac9e9d26d3784f536576f762c7fed7bd46d35fc290baa2ce5e971b",
+          "updated_at": "2026-10-30T17:07:44.475+00:00",
+          "sha256": "69cfbd65402f68add7c2db5cb11c3628b6165174ed56eb7d77efbe9f1bcd3dbe",
           "chapters": [
             "09-3-suite-layout-and-test-kinds",
             "09-4-factories-builders-and-fixtures",
