@@ -20,7 +20,9 @@ final class NotebookNavigationState {
 }
 ```
 
-A navigation state object is a view state model whose writer is the parent view controller. There's no view state controller in front of it because nothing is loaded to fill it — the parent sets it from a child's intent closure, and children read it as a plain input.
+A navigation state object is a view state model whose writer is the parent view controller. There's no view state controller in front of it because nothing is loaded to fill it — the parent sets it from a child's closure, and children receive what they need from it as plain inputs. Children never share it: the sidebar doesn't write something the detail reads. One child reports to the parent, and the parent sets the other's input.
+
+It doesn't have to be an object, either. A parent routing on a single value — one selection, or a mode that picks which child shows — holds it as a `@Tracked` property and nothing more, which is the <em>Parent and child view controllers</em> example in <a href="/guide/07-7-screen-examples">Chapter 7.7</a>. The object earns its place once the selection is several values that belong together, as here, or has to be restored on relaunch.
 
 ```swift
 @StateObserving
@@ -73,5 +75,5 @@ Because the navigation state stores identifiers and not the objects themselves, 
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Testing a navigation state object — a plain `@Observable` class with no AppKit dependency — follows the same rules as testing any other view state model; see <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
+Testing a navigation state object — a plain <code>@Observable</code> class with no AppKit dependency — follows the same rules as testing any other view state model; see <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
 </div>

@@ -33,7 +33,8 @@ The Foundation/AppKit boundary from <a href="/guide/01-getting-started">Chapter 
 <tbody>
 <tr><td>Models &amp; managers</td><td><span class="pill">Yes</span></td><td>Test the interface — <code>NoteManager.pull()</code> — not the job it schedules.</td></tr>
 <tr><td>Action Validators</td><td><span class="pill">Yes</span></td><td>Pure precondition logic, Foundation-only.</td></tr>
-<tr><td>View State Controllers</td><td><span class="pill">Yes</span></td><td>Foundation-only data shaping — the one testable controller kind.</td></tr>
+<tr><td>View State Controllers</td><td><span class="pill">Yes</span></td><td>Foundation-only data shaping — the one testable controller kind. That means the loader; a flow controller only sequences, and what gets the test is the value whose transitions it calls.</td></tr>
+<tr><td>View state values</td><td><span class="pill">Yes</span></td><td>A value type with rules and transitions — how an export is going, whether a form is complete — is where a screen's decisions live. Plain values, asserted directly.</td></tr>
 <tr><td>Actions</td><td><span class="pill">Only if multi-step</span></td><td>An Action that forwards a single manager call is covered by the manager's test.</td></tr>
 <tr><td>Action Controllers</td><td><span class="pill">No</span></td><td>Present UI. Test the Action they dispatch instead.</td></tr>
 <tr><td>All other controllers</td><td><span class="pill">No</span></td><td>Coordination only. Test what they coordinate.</td></tr>
@@ -45,7 +46,7 @@ The Foundation/AppKit boundary from <a href="/guide/01-getting-started">Chapter 
 Controllers coordinate — they wire collaborators together, present dialogs, observe notifications, and forward calls. There is no decision in them that can plausibly regress on its own, so a controller test either restates the wiring or turns into a test of everything the controller touches. The criterion is the boundary itself:
 
 - **Touches AppKit** (Action Controllers, window controllers, menu controllers, view controllers) — never tested. There is nothing to assert that isn't UI presentation.
-- **Pure Foundation** — testable <em>if</em> it actually produces data. In practice that means one kind: the View State Controller, a Foundation-only class that loads data from the model layer and shapes it for display — filter, group, sort — and writes the result into a view state model. It has real input-output behavior, so it's tested directly on its shaped output: how many items, in what order, grouped how, which ones filtered out. Never on its internal loading mechanics.
+- **Pure Foundation** — testable <em>if</em> it actually produces data. In practice that means one kind: the View State Controller, a Foundation-only class that loads data from the model layer and shapes it for display — filter, group, sort — and writes the result into a view state model. It has real input-output behavior, so it's tested directly on its shaped output: how many items, in what order, grouped how, which ones filtered out. Never on its internal loading mechanics. Its sibling the flow controller, which runs one user-started operation for a single window, is Foundation-only too but produces no data of its own: it calls transitions on a value in order, and the value gets the test — <a href="/guide/07-2-view-state">Chapter 7.2</a>.
 
 Test what the controller coordinates instead: an Action Controller's Action, a view controller's View State Controller, a background controller's manager function or model behavior. <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a> works each of these through in the notebook app.
 

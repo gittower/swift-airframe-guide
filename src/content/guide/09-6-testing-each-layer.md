@@ -145,6 +145,33 @@ final class NoteListStateControllerTests: TestCase {
 }
 ```
 
+That covers the loader. The other kind of view state controller, the flow controller from <a href="/guide/07-2-view-state">Chapter 7.2</a>, gets no test of its own: it only sequences, and every decision it relies on is a transition on the value it writes. The value is what's tested — a plain struct, no controller, no `await`. `NotebookExport` from <a href="/guide/07-7-screen-examples">Chapter 7.7</a>:
+
+```swift
+final class NotebookExportTests: TestCase {
+    /// A second start is refused while an export runs.
+    func testBegin_WhileRunning() {
+        var export = NotebookExport()
+        XCTAssertTrue(export.begin())
+
+        XCTAssertFalse(export.begin())
+    }
+
+    /// An error arriving after the user cancelled leaves nothing behind.
+    func testFail_AfterCancel() {
+        var export = NotebookExport()
+        XCTAssertTrue(export.begin())
+        export.cancel()
+
+        export.fail(with: CancellationError())
+
+        XCTAssertNil(export.activity)
+    }
+}
+```
+
+The same goes for what the user edits: a form object's rules — is it complete, what does it produce — are asserted on the object directly. If a flow controller or a view controller turns out to hold a decision no test reaches, the fix is to move the decision into a value, not to test the controller.
+
 ## Async, errors and cancellation
 
 Prefer `async` test methods over expectation-based bridging; the test awaits the manager the way any caller would. Synchronous errors use `XCTAssertThrowsError`; async ones use a free-function `XCTAssertAsyncThrowsError` from `Support/`, since the built-in doesn't take an `async` expression:

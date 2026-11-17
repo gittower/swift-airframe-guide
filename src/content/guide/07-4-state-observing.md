@@ -1,11 +1,11 @@
 ---
 title: "State Observing"
-description: "Chapter 7.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale."
+description: "Chapter 7.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus which of `@StateObserving`, `@Tracked` and `@Observable` a type needs, and the edge cases that separate a correct `observeState()` from one that quietly goes stale."
 order: 7
 subOrder: 4
 ---
 
-Chapter 7.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus the edge cases that separate a correct `observeState()` from one that quietly goes stale.
+Chapter 7.2 named `observeState()` and `activateObservation()` without explaining them. This subchapter does: the activation lifecycle that drives StateObserving, worked through as a view controller, a self-rendering view, and a container that activates a whole subtree of subcontrollers at once — plus which of `@StateObserving`, `@Tracked` and `@Observable` a type needs, and the edge cases that separate a correct `observeState()` from one that quietly goes stale.
 
 ## Why this pattern exists
 
@@ -148,7 +148,80 @@ The tracking half rides on the Observation framework (macOS 14+) — the same ma
 
 `@Observable` classes get the same deduplication from the framework itself: the macro's generated setter routes through `shouldNotifyObservers()`, whose `Equatable` overload compares old and new value, so equal assignments of `Equatable` properties never notify — no extra guard is needed in a view state model. The gate only exists where a comparison exists, though: non-`Equatable` value properties always notify, and reference-typed ones compare by identity — give hot properties an `Equatable` type if dedupe matters.
 
-Use `@Tracked` for state a controller or view hosts and renders itself; state that is shared, loads asynchronously, or cascades belongs to a view state controller writing a dedicated `@Observable` view state model — see <a href="/guide/07-2-view-state">Chapter 7.2</a>.
+Use `@Tracked` for a small value its owner writes and something observes — a view controller's derived summary, a flow controller's value, a flag or mode that decides what a view controller shows. State that is a collection, loads asynchronously into several independent pieces, or cascades belongs to a loader writing a dedicated `@Observable` view state model — see <a href="/guide/07-2-view-state">Chapter 7.2</a>.
+
+## Watched, or watching?
+
+Three tools, one question decides between them: <strong>is this object watched, or does it watch?</strong>
+
+- <strong>Watched</strong> — others need to know when its state changes. It gets `@Tracked` on a property, or `@Observable` on the class.
+- <strong>Watches</strong> — it reacts to changes or renders them. It gets `@StateObserving`.
+
+The two are independent. A flow controller is watched and watches nothing. A view controller usually watches, and is watched only when it holds a `@Tracked` value of its own.
+
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Makes</th><th>Goes on</th></tr></thead>
+<tbody>
+<tr><td><code>@Tracked</code></td><td>One property observable</td><td>A property of a plain class</td></tr>
+<tr><td><code>@Observable</code></td><td>Every stored property of a class observable</td><td>A class whose purpose is to be state</td></tr>
+<tr><td><code>@StateObserving</code></td><td>A class able to observe: <code>observations</code>, <code>observeState()</code>, activation</td><td>The class that reacts or renders</td></tr>
+</tbody>
+</table>
+</div>
+
+### When each one fits, and when it doesn't
+
+<strong>`@StateObserving`</strong> goes on a class that does at least one of three things: renders state into views it owns — an AppKit view's properties, or a value assigned to a hosted SwiftUI root view; reacts to a notification or publisher; or reacts to a change of observable state, such as an edit the user made in a bound form. That is typically a view controller, an AppKit view that renders itself, or a controller for a toolbar item or a sidebar section. Leave it off when:
+
+- <strong>The class is only watched.</strong> Loaders, flow controllers and state objects never get it. A loader does not subscribe to what makes its data stale; its view controller does and calls `reload()`.
+- <strong>The view controller has nothing to react to.</strong> It hosts a SwiftUI view, hands it an `@Observable` object, and receives intents through closures. SwiftUI tracks the object itself; `@StateObserving` with an empty `observeState()` is noise.
+- <strong>The type is a SwiftUI view.</strong> `body`, `.onChange` and `.task` are its tools.
+- <strong>The class is in the model layer.</strong> Managers and domain models signal with notifications and observe nothing this way.
+- <strong>A simple AppKit view has properties its owner sets one by one</strong> and reads no other state. A `didSet { apply() }` is enough.
+
+<strong>`@Tracked`</strong> fits when all of these hold: the value lives on a controller or a view controller, and that class is its only writer; something observes it — a tracked updater renders it, or `observe({ read }, perform:)` reacts to it; the type is `Equatable`; and it is small enough that comparing it on every assignment is cheap. Make it `private(set)` when another object reads it and `private` when only its owner does — with a struct and mutating transitions, `private(set)` is what stops everyone else from changing it. Leave it off when:
+
+- <strong>Nothing observes the value.</strong> Then it is a plain property. Inputs from a parent are usually plain properties with a `didSet`.
+- <strong>The class is `@Observable`.</strong> That macro cannot rewrite a wrapped property; an `@Observable` class keeps plain stored properties.
+- <strong>SwiftUI must bind to it.</strong> Bindings need an `@Observable` object and `@Bindable`.
+- <strong>The value is a large collection or a loaded document</strong>, or several pieces that change independently. Each assignment compares the whole value and re-runs every updater that read it. Use an `@Observable` model.
+- <strong>The state is a domain model, a store or a manager's own state.</strong> Those are never observation-tracked; they post notifications.
+
+<strong>`@Observable`</strong> makes a class whose job is to be state: state the user edits in a SwiftUI view, taken as `@Bindable`, or a loader's model, with `fileprivate(set)` setters and the loader in the same file. Leave it off:
+
+- <strong>A controller.</strong> A controller is never handed to a view. If one of its values must be observed, that value is `@Tracked`.
+- <strong>Domain models, stores, managers</strong> — the exceptions being the flat main-actor settings and app-state objects of <a href="/guide/05-1-the-model">Chapter 5.1</a> — and `NSManagedObject` subclasses, whose accessors the macro cannot rewrite.
+- <strong>Small read-only state</strong> that fits a value type. A struct with its rules, held as `@Tracked private(set)` by its writer, is simpler and cannot be mutated by anyone else.
+
+### The combinations that occur
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Class</th><th>Gets</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>View controller that sets values on its views or reacts to notifications</td><td><code>@StateObserving</code>; <code>@Tracked</code> for values of its own</td><td>It watches, and may hold state it renders.</td></tr>
+<tr><td>View controller that only hands an <code>@Observable</code> to SwiftUI and receives intents</td><td>Nothing</td><td>SwiftUI does the tracking.</td></tr>
+<tr><td>Loader</td><td>Nothing on the class; its model is <code>@Observable</code></td><td>It is watched through its model.</td></tr>
+<tr><td>Flow controller</td><td><code>@Tracked private(set)</code> on its value</td><td>It is watched; it watches nothing.</td></tr>
+<tr><td>Editable form</td><td><code>@Observable</code></td><td>SwiftUI binds to it.</td></tr>
+<tr><td>Read-only value — an activity, a summary</td><td>Nothing; it is a struct</td><td>Its holder makes it observable.</td></tr>
+<tr><td>AppKit view that renders itself from several properties</td><td><code>@StateObserving</code>; <code>@Tracked</code> on its data properties</td><td>It watches its own data and coalesces updates.</td></tr>
+<tr><td>SwiftUI view</td><td>Nothing</td><td><code>body</code> tracks what it reads.</td></tr>
+<tr><td>Manager, domain model</td><td>Nothing</td><td>Notifications.</td></tr>
+</tbody>
+</table>
+</div>
+
+### Signs that one is misplaced
+
+- `@StateObserving` on a class whose `observeState()` is empty or only forwards to another object.
+- `@StateObserving` on a loader or a flow controller.
+- `@Tracked` on a property nobody reads inside a `track` or `observe`.
+- `@Tracked` inside an `@Observable` class.
+- An `@Observable` controller passed to a view.
+- A notification handler that sets a label or reloads a table directly, with no tracked updater in between.
+- An observation created outside `observeState()`.
 
 ## Example: a view controller
 
@@ -334,7 +407,7 @@ private func updateRowState() {
 }
 ```
 
-Every subscription in `observeState()` calls `updateRowState()`, however often the underlying signals fire; `@Tracked`'s equality guard means the render updater re-runs only when the snapshot actually changed. Anything derived for display — a formatted date, a computed title — lives as a property on the snapshot itself, so the updater stays a dumb application of already-decided state. Keep supporting value types like the snapshot at file scope (`fileprivate`), above the class, so the class body leads with its actual state. Reach for this over a view state controller and model once the values are ones the object renders itself and nothing else needs to share or await; a view state controller and its model earn their place instead once loading, cascading, a model-layer subscription, or another consumer enters the picture — see <a href="/guide/07-2-view-state">Chapter 7.2</a>.
+Every subscription in `observeState()` calls `updateRowState()`, however often the underlying signals fire; `@Tracked`'s equality guard means the render updater re-runs only when the snapshot actually changed. Anything derived for display — a formatted date, a computed title — lives as a property on the snapshot itself, so the updater stays a dumb application of already-decided state. Keep supporting value types like the snapshot at file scope (`fileprivate`), above the class, so the class body leads with its actual state. Reach for this over a loader and its model once the values can be computed from the model synchronously and the object renders them itself — <a href="/guide/07-7-screen-examples">Chapter 7.7</a> builds a whole screen this way, as its <em>Derived values</em> example. A loader and its model earn their place instead once the data needs an `await`, cascades, or a newer request has to replace one in flight — see <a href="/guide/07-2-view-state">Chapter 7.2</a>.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>

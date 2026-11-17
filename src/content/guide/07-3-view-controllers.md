@@ -16,7 +16,7 @@ A view controller does four jobs — assemble, wire, map, and coordinate — alw
 <tr><td><strong>Assemble</strong></td><td><code>loadView()</code></td><td>Create the root view and every top-level component, and lay them out.</td></tr>
 <tr><td><strong>Wire</strong></td><td><code>loadView()</code>, <code>observeState()</code></td><td>Connect action closures and targets where a component is built; declare every subscription the controller reacts to.</td></tr>
 <tr><td><strong>Map</strong></td><td>A tracked updater</td><td>Push current state into each component — one line per component, nothing more.</td></tr>
-<tr><td><strong>Coordinate</strong></td><td>Action handlers</td><td>Handle a component's outcome and hand off to whatever should happen next — trigger a load, dispatch an Action.</td></tr>
+<tr><td><strong>Coordinate</strong></td><td>Action handlers</td><td>Handle a component's outcome and hand off to whatever should happen next — trigger a load, run a flow controller in a task it owns, dispatch an Action — and move values between the screen's state objects, which never know each other.</td></tr>
 </tbody>
 </table>
 </div>
@@ -131,7 +131,7 @@ final class SyncStatusViewController: NSViewController {
 }
 ```
 
-`statusView` is the exact `SyncStatusView` component from <a href="/guide/07-1-views">Chapter 7.1</a> — this controller doesn't rebuild it, it composes it. Both `SyncStore.shared.status` and the notebook's sync target are plain, non-`@Observable` model state, per <a href="/guide/05-1-the-model">Chapter 5.1</a>'s signalling table — so both need a notification bridged into a `@Tracked` property before a tracked updater can render them. Two independent bridges, one tracked updater: each signal gets exactly the subscription it needs, and `updateComponents()` stays a dumb application of whatever the two bridges most recently decided.
+`statusView` is the exact `SyncStatusView` component from <a href="/guide/07-1-views">Chapter 7.1</a> — this controller doesn't rebuild it, it composes it. Both `SyncStore.shared.status` and the notebook's sync target are plain, non-`@Observable` model state, per <a href="/guide/05-1-the-model">Chapter 5.1</a>'s signalling table — so both need a notification bridged into a `@Tracked` property before a tracked updater can render them. Two independent bridges, one tracked updater: each signal gets exactly the subscription it needs, and `updateComponents()` stays a dumb application of whatever the two bridges most recently decided. Here the view controller is the state's writer, so there is no controller behind it — the smallest shape in <a href="/guide/07-2-view-state">Chapter 7.2</a>'s table, values derived synchronously from the model. Not every view controller needs even this much: one that hosts a SwiftUI view, hands it an `@Observable` object and receives only intents has nothing to observe, and takes no `@StateObserving` at all.
 
 ## Scoping: when a piece of UI earns its own view controller
 
@@ -141,7 +141,7 @@ The guiding principle is that one view controller covers one logical concern —
 <table>
 <thead><tr><th>Question</th><th>If yes</th></tr></thead>
 <tbody>
-<tr><td>Does it need its own data source or state?</td><td>Separate view controller, with its own state controller and model.</td></tr>
+<tr><td>Does it need its own data source or state?</td><td>Separate view controller, with its own state and whatever controller writes it.</td></tr>
 <tr><td>Could it appear in a different context — a different pane, a different window?</td><td>Separate view controller, so it can be reused.</td></tr>
 <tr><td>Does it have its own lifecycle needs — appear/disappear timing, its own subscriptions?</td><td>Separate view controller.</td></tr>
 <tr><td>Would embedding it make the parent's <code>loadView()</code> or tracked updater span two unrelated concerns?</td><td>Split it out.</td></tr>
@@ -155,9 +155,11 @@ The naming threshold makes the call concrete: if a view controller's purpose fit
 
 Take a notebook sidebar with a bottom bar of filter and settings buttons, and a separate area showing live sync activity. That's three sibling view controllers under the sidebar: a content controller for the notebook list itself, plus two accessory controllers — one for the bottom bar, one for the activity area — each independently shown or hidden, each with whatever state it actually needs. Folding the activity area into the bottom-bar controller would coordinate two things that have nothing to do with each other: a `loadView()` that assembles unrelated components, and a tracked updater that renders unrelated state, both because they happened to live in the same corner of the screen.
 
+Scoped controllers never share a state object. A child reports to its parent with a closure or a delegate, and the parent sets a plain input property on the sibling that needs to know; each child activates its own observation and owns its own state, and the parent never reaches into either. <a href="/guide/07-7-screen-examples">Chapter 7.7</a> works that through as its <em>Parent and child view controllers</em> example.
+
 A well-scoped view controller shows up as a focused `loadView()` — one that reads clearly because it only ever had one concern to assemble. Child-view-controller nesting is how scoped controllers compose into a screen, the same containment idea <a href="/guide/07-1-views">Chapter 7.1</a> covers for view components one level down. And the same instinct that says "two pieces of UI needing different state belong in different view controllers" applies again inside a single controller, to its components: a component that needs its own state and its own lifecycle is a candidate to become its own view component controller, not a widening of the one it's currently attached to.
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-The activation lifecycle behind <code>observeState()</code> and <code>@Tracked</code>, worked through in full, is next: <a href="/guide/07-4-state-observing">Chapter 7.4, State Observing</a>.
+The activation lifecycle behind <code>observeState()</code> and <code>@Tracked</code>, worked through in full, is next: <a href="/guide/07-4-state-observing">Chapter 7.4, State Observing</a>. Whole screens — a form with an async submit, a long-running operation, a parent routing between children — are built end to end in <a href="/guide/07-7-screen-examples">Chapter 7.7</a>.
 </div>

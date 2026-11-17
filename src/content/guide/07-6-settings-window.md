@@ -572,5 +572,5 @@ Testing splits the same way. The settings objects are tested as models — <a hr
 
 <div class="seealso">
 <strong>Ahead in this guide</strong>
-Opening the window on a given pane from a URL is one use of the navigation stack in <a href="/guide/08-navigation">Chapter 8</a>. Testing the settings objects and section controllers built here is <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>.
+Opening the window on a given pane from a URL is one use of the navigation stack in <a href="/guide/08-navigation">Chapter 8</a>. Testing the settings objects and section controllers built here is <a href="/guide/09-6-testing-each-layer">Chapter 9.6</a>. The recurring shapes of every other screen — derived values, a form with an async submit, a long-running operation — are next: <a href="/guide/07-7-screen-examples">Chapter 7.7</a>.
 </div>
