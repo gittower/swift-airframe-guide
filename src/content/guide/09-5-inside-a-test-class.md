@@ -42,6 +42,8 @@ final class MoveNoteTests: TestCase {
 
 A test with `setUp` is read in two places, and when tests diverge the `setUp` grows conditionals or the ivars go optional. A self-contained test can be moved, copied and changed without checking its siblings.
 
+The starting state is created directly, never produced by running the code under test once first. A test of an update creates the stored item it expects the update to change or remove, then runs the update once. A first run as setup hides the starting state behind the code being tested, runs that code twice, and fails for the wrong reason when the first run breaks.
+
 Accepted exceptions:
 
 - **Cleanup** goes into the helper that created the resource, via `addTeardownBlock` (XCTest) or a `defer`, so the test body shows one line and no `setUp`/`tearDown` pair is needed.
@@ -113,6 +115,7 @@ A per-operation, per-provider or per-endpoint class exists only when that subjec
 This answers every question about testing the same thing twice.
 
 - A behavior handled <strong>centrally</strong> — mapping an HTTP status to a `SyncError`, resolving an export option, pagination — gets its <strong>full case matrix once</strong>, in the class for that mechanism.
+- When the public interface can only run against an <strong>external system a test cannot create</strong> — a hosted service over the network, a paid or credentialed tool — do not build the case matrix by mocking the system to reach it. Split the work into <strong>decide → fetch → store</strong>. Whether the work runs at all, and the step that stores what was fetched — including any check that must still hold when it stores, such as the notebook not having been removed while the request ran — become model members that take plain data, and are tested there. The fetch between them is glue and gets no test. This applies only to systems a test cannot create: work against a temp directory or an in-memory database is tested end to end through its public interface with the real thing, since the test builds that state itself. <a href="/guide/05-10-core-data-models">Chapter 5.10</a> shows a job cut this way.
 - Each <strong>boundary it must survive</strong> — the request, the manager's thrown error, the printed output — gets <strong>one exemplary test</strong> proving it arrives there, on one caller, not every caller. The comment on that test says what it adds beyond the mechanism's tests.
 - A <strong>higher-level component</strong> over an extensively tested lower one gets its happy path plus the cases where <strong>it adds a decision</strong>. It never re-enumerates the lower component's matrix. If it adds no decision, it may need no test at all.
 - When correctness depends on checks running in an <strong>order</strong> a later change could flip, test both orders even though today only one is reachable; the test guards the reordering.

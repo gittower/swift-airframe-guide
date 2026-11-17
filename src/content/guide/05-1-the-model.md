@@ -107,7 +107,14 @@ Every mutation, from every source, goes through the model's one manager. Reads n
 
 ## Mutating methods never save
 
-The funnel says who decides to write. It does not say every write is a manager method. A persisted entity that is a reference type — the notebook itself, whose title and sync state are stored alongside its notes — may well carry mutating methods: a status change, a rename that also bumps a timestamp, keeping a relationship in step. Those are the pieces a manager or a job builds a unit of work from, and they share one rule: <strong>none of them saves</strong>, directly or through a helper.
+The funnel says who decides to write. It does not say the manager holds every line of mutation logic. The work splits in two, and the split is the same in every shape of <a href="/guide/05-7-model-shapes">Chapter 5.7</a> — database entity, file-backed store, in-memory holder:
+
+- <strong>The manager owns the unit of work.</strong> It, or the job it dispatches, decides <em>what</em> happens: which objects are added, deleted or updated, in which order, on which storage. It persists the result and posts the change notification after the write lands. Nothing else saves or posts.
+- <strong>The model owns how its own state changes.</strong> A model may carry methods that update state on itself and on what it reaches through its relationships. These are the building blocks the manager composes. They change state and return what changed — a changeset, a `Bool`, `nil` for "a guard I own stopped me" — and that is all.
+
+The line to draw: one object changing itself is a model method; deciding which unit of work happens, persisting it and announcing it is the manager's or job's. A mutating method that saves has crossed the line in one direction. A manager that sets a model's properties one by one has crossed it in the other.
+
+A persisted entity that is a reference type — the notebook itself, whose title and sync state are stored alongside its notes — may well carry mutating methods: a status change, a rename that also bumps a timestamp, keeping a relationship in step. Those are the pieces a manager or a job builds a unit of work from, and they share one rule: <strong>none of them saves</strong>, directly or through a helper.
 
 ```swift
 // NotebookCore/Notebooks/Notebook+Sync.swift — grouped by concern, synchronous, save-free
@@ -125,6 +132,32 @@ extension Notebook {
 The owner of the unit of work saves, once: the job on its background write in the synced shape, the manager on the main context in the main-only shape — <a href="/guide/05-7-model-shapes">Chapter 5.7</a> shows both. One save means the change lands all-or-nothing, the database merges it once, and exactly one notification follows. Only the caller knows which context or storage the change is being made on, so only the caller can save it. And the method stays trivially testable on the object itself, with no store behind it.
 
 The shape that follows from that: a synchronous instance method, no `async`, no hop, no notification, no I/O. It may throw, and it may return what changed — a `Bool`, a changeset — so the caller knows whether there is anything to save and announce. An operation that must persist on its own is not a model method at all; it is a manager or job operation. Normalisation the store applies on every save — trimming whitespace, assigning identifiers — is unaffected: that runs regardless of who changed what.
+
+Putting the mutation logic on the model rather than in the manager buys four things:
+
+- <strong>The model knows its own structure best.</strong> Which relationships to maintain, which invariants to keep, which late guard applies — "the notebook was removed while the request ran" — belongs with the type, not with every caller that happens to change it.
+- <strong>Reuse.</strong> Two jobs, a manager method and a test all call the same `markOffline(after:)`. The logic isn't duplicated across them, and it can't drift.
+- <strong>Encapsulation.</strong> The manager stays a coordinator that reads as a sequence of named steps and one save, instead of a type that reaches into another's relationships. A model whose state is only ever set from the outside has no shape of its own.
+- <strong>Testability.</strong> A save-free mutating method is tested on the model directly, with no server and no runner, by calling it and asserting on the object and the returned value. The manager or job around it is thin enough to need no test of its own for that logic.
+
+```swift
+// Avoid — the job reaches into the model and re-derives what the model already knows
+notebook.syncState = .offline                               // the status rules now live in the job,
+notebook.lastSyncError = error.localizedDescription         // and in every other caller that touches them
+try context.save()
+
+// Prefer — one named step, and the job saves what it changed
+if notebook.markOffline(after: error) {
+    try context.save()
+}
+```
+
+Four questions catch a split that has drifted:
+
+- Does a manager or job set a model's properties directly, or walk its relationships, when a named model method could do it? Move the logic onto the model and have the manager call it.
+- Does a model instance method save, post a notification, or do I/O? Move that to the manager or job that owns the unit of work.
+- Does a model method return nothing when the caller needs to know whether to post? Return what changed.
+- Is a static `save…` helper — the one exception, <a href="/guide/05-10-core-data-models">Chapter 5.10</a> — wrapping something only one caller does? Inline it into that caller's store step.
 
 ## What a model's statics are for
 

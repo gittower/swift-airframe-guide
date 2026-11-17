@@ -10,6 +10,8 @@ The Model is the source of truth, and it stays trustworthy because of one rule a
 
 Views read from the Model. They never write to it directly — every write, whether it originates from a button click, a background sync or an automated pipeline, converges on the same manager before it touches state. That convergence is what makes the rest of the architecture possible: it does not matter <em>where</em> a change came from, because ordering, validation, persistence and notification all have exactly one place to live; and views can stay naive, reading current state and reacting to a change signal without reasoning about who else might be writing.
 
+The funnel says who decides, not who holds every line. The manager — or the job it dispatches — owns the unit of work: what is added, removed or updated, the one save, the one notification. The model owns how its own state changes, in mutating methods the manager composes, which never save and never post. <a href="/guide/05-1-the-model">Chapter 5.1</a> draws that line.
+
 Everything else in this chapter is machinery in service of that one sentence. A notebook's model layer is six kinds of object, and each one exists to keep the funnel narrow while letting real work — network, disk, an assistant — happen off the main thread without ever letting that work touch state directly.
 
 ## The pieces, and who owns what

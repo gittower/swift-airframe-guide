@@ -135,6 +135,7 @@ The related line — whether a piece of work is a manager function at all, or th
 - A method that persists or publishes a job's result itself after `enqueue` returns — the next conflicting job has already started by then. That work belongs in the job's `finalize`.
 - A job carrying a dependency handed in by the manager — a client, a store, an activity. The manager passes intent; the job reaches the rest itself.
 - A manager with its own `static let shared` and a private runner in a domain that has an environment — two queues over one resource.
+- A manager or job setting a model's properties one by one, or walking its relationships, where a named mutating method on the model could do it — the manager owns the unit of work, the model owns how its own state changes, per <a href="/guide/05-1-the-model">Chapter 5.1</a>.
 - A manager calling another manager, or a manager method that reads state, `await`s, and writes state with no strategy chosen — <a href="/guide/05-8-execution-strategies">Chapter 5.8</a>.
 
 <div class="seealso">

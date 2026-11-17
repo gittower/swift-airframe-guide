@@ -130,18 +130,29 @@ If there is no branching at all, write no test.
 
 **8. Order dependencies.** When correctness depends on checks running in an order that a later change could flip — a delete validator checking "is syncing" before "is empty" — test both orders even though today only one is reachable. The test guards the reordering.
 
-**9. Brittleness check before committing.** Run the mental diff: <em>copy reworded → must not break; data reordered → must not break; internals refactored → must not break; behavior changed → must break.</em> A test failing any of the first three is brittle. Fix the test's altitude, not the code.
+**9. Reconciling updates: test each change from the stored state it changes.** Code that makes stored data match a fetched list — a sync, a reload, an updater that deletes what the list leaves out — is tested on each change it can make. The test creates the stored state it starts from, including the item it expects to be updated or removed, and runs the update once; it never runs the code under test once just to produce its starting state (<a href="/guide/09-5-inside-a-test-class">Chapter 9.5</a>). Cover:
+
+- input that matches what is stored changes nothing, so an unchanged reload reports no changes and reloads no screens;
+- a changed item is updated;
+- an item no longer listed is removed, once for <strong>each path an item can be stored by</strong> — a note owned by the notebook, shared into it, linked from another — since each path is collected for deletion separately;
+- a change in the input's mode — a listing the server now refuses — removes what the new mode no longer stores.
+
+A test that only starts from an empty store proves inserts. Deletion, where data is lost, and churn, where every reload reports changes, are never exercised.
+
+**10. Brittleness check before committing.** Run the mental diff: <em>copy reworded → must not break; data reordered → must not break; internals refactored → must not break; behavior changed → must break.</em> A test failing any of the first three is brittle. Fix the test's altitude, not the code.
 
 ## What to test
 
 - **All non-trivial logic:** parsing, mapping, validation, state transitions, anything with more than one code path, wherever it lives.
 - **Bug fixes:** reproduce the bug in a failing test first, then fix — the workflow is <a href="/guide/09-2-testing-workflows">Chapter 9.2</a>. If you cannot write the test, ask why: a missing factory or builder primitive is written first, code that resists testing is restructured.
-- **The public interface**, not the mechanism behind it: `NoteManager.pull()`, not the `PullNotesJob` it enqueues; the model's query, not the store underneath it.
+- **The public interface**, not the mechanism behind it: `NoteManager.pull()`, not the `PullNotesJob` it enqueues; the model's query, not the store underneath it. When that interface can only run against an external system a test cannot create, the decisions move onto the model and are tested there — <a href="/guide/09-5-inside-a-test-class">Chapter 9.5</a>.
 - **Components that add a decision** over the ones they call. A multi-step Action or a coordinator with branching is tested; one that forwards a single call is covered by the callee's tests and needs none of its own.
 
 ## What not to test
 
 - **Trivial code.** Appending to an array, setting a property, a one-branch helper. The probability of a bug is near zero and the maintenance cost is not.
+- **Adapters and mapping tables, row by row.** Properties that pass a value from one type to another get no test. A mapping row earns a test only when it changes behavior further on, and then it is tested through that consequence: an unauthorized response is tested as "the notebook's sync account is marked invalid", not by the error code it maps to. Rows that only change a message, or end up in the same branch as another row, get none. A decision inside an adapter — an owner presented as a team or as a person — is tested through the operation that consumes the adapter.
+- **A dependency's behavior.** A library or package is tested in its own repository. The app tests the decision it makes on top — which value a job coalesces on — never the dependency's mechanism — that jobs with different keys run separately.
 - **View glue and coordinating controllers.** Anything touching AppKit is never tested, per the layer table above. When a controller does hold logic worth guarding, extract it into a plain Foundation type and test that.
 - **Private methods.** Never, by any means. A private method complex enough to need its own tests is a type waiting to be extracted.
 - **Test infrastructure.** A factory or harness is self-validating through use; if it breaks, every test using it fails first.
@@ -162,6 +173,9 @@ Flag a test when any of these hold:
 - Expected values are the same literals as the source file, verbatim.
 - Heavy setup (a built notebook, a database graph) feeding a constant-lookup assertion.
 - A protocol or seam introduced only so this test can swap in a double.
+- An adapter test asserting that a property was passed through.
+- A test of a dependency's mechanism rather than the decision the app makes on top of it.
+- A reconciling update tested only from an empty store, or a test that runs the code under test to build its own starting state.
 - You cannot name a realistic regression this test would catch.
 
 <div class="seealso">
